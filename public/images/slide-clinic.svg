@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="عيادة أسنان">
+  <defs>
+    <linearGradient id="cRoom" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#173059"/>
+      <stop offset="1" stop-color="#0d1a36"/>
+    </linearGradient>
+    <radialGradient id="cWarm" cx="0.32" cy="0.32" r="0.55">
+      <stop offset="0" stop-color="#d9b968" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#d9b968" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cWin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a6aa8"/>
+      <stop offset="1" stop-color="#1b3a91"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="600" fill="url(#cRoom)"/>
+
+  <!-- window with daylight -->
+  <g>
+    <rect x="470" y="60" width="280" height="250" rx="8" fill="url(#cWin)"/>
+    <path d="M610 60v250M470 150h280M470 220h280" stroke="#0d1a36" stroke-width="6" opacity="0.6"/>
+    <rect x="470" y="60" width="280" height="250" rx="8" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="3"/>
+  </g>
+
+  <rect width="800" height="600" fill="url(#cWarm)"/>
+
+  <!-- floor -->
+  <rect x="0" y="470" width="800" height="130" fill="#0a1329"/>
+  <path d="M0 470h800" stroke="#ffffff" stroke-opacity="0.06" stroke-width="2"/>
+
+  <!-- overhead exam lamp -->
+  <path d="M300 40v70l-30 40" fill="none" stroke="#12264f" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="258" cy="168" r="48" fill="#1b3563"/>
+  <circle cx="258" cy="168" r="30" fill="#d9b968" opacity="0.35"/>
+  <circle cx="258" cy="168" r="48" fill="none" stroke="#d9b968" stroke-opacity="0.4" stroke-width="2"/>
+
+  <!-- dental chair silhouette -->
+  <g fill="#101f42">
+    <rect x="250" y="470" width="150" height="24" rx="8"/>
+    <rect x="312" y="360" width="26" height="120"/>
+    <rect x="210" y="330" width="180" height="46" rx="20"/>
+    <g transform="rotate(-24 250 320)">
+      <rect x="180" y="210" width="150" height="120" rx="26"/>
+    </g>
+    <rect x="150" y="196" width="70" height="52" rx="18"/>
+  </g>
+  <path d="M210 330h180" stroke="#d9b968" stroke-opacity="0.35" stroke-width="3"/>
+
+  <!-- bottom vignette for caption legibility -->
+  <rect x="0" y="430" width="800" height="170" fill="#0d1a36" opacity="0.45"/>
+</svg>

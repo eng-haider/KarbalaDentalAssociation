@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" preserveAspectRatio="xMidYMid slice" role="img" aria-label="خلفية كربلاء المقدسة">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#0d1a36"/>
+      <stop offset="0.55" stop-color="#12264f"/>
+      <stop offset="1"   stop-color="#1b3a91"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.7" cy="0.42" r="0.5">
+      <stop offset="0"   stop-color="#d9b968" stop-opacity="0.45"/>
+      <stop offset="0.4" stop-color="#b58a2e" stop-opacity="0.18"/>
+      <stop offset="1"   stop-color="#b58a2e" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hazeFar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16306f" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#16306f" stop-opacity="0.35"/>
+    </linearGradient>
+  </defs>
+
+  <!-- sky -->
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <rect width="1600" height="900" fill="url(#sun)"/>
+
+  <!-- soft horizon haze -->
+  <rect x="0" y="520" width="1600" height="220" fill="url(#hazeFar)"/>
+
+  <!-- distant skyline (lightest, farthest) -->
+  <g fill="#20336a" opacity="0.55">
+    <rect x="60"  y="560" width="70"  height="200"/>
+    <rect x="150" y="600" width="54"  height="160"/>
+    <rect x="230" y="575" width="60"  height="185"/>
+    <rect x="1180" y="590" width="60" height="170"/>
+    <rect x="1270" y="560" width="72" height="200"/>
+    <rect x="1370" y="600" width="52" height="160"/>
+    <rect x="1450" y="580" width="64" height="180"/>
+  </g>
+
+  <!-- mid-ground: shrine domes & minarets (Karbala silhouette) -->
+  <g fill="#152a58">
+    <!-- left minaret -->
+    <rect x="470" y="330" width="26" height="360"/>
+    <path d="M470 330 h26 l-6 -30 h-14 Z"/>
+    <circle cx="483" cy="292" r="12"/>
+    <path d="M483 268 v-22" stroke="#152a58" stroke-width="4"/>
+
+    <!-- right minaret -->
+    <rect x="1104" y="330" width="26" height="360"/>
+    <path d="M1104 330 h26 l-6 -30 h-14 Z"/>
+    <circle cx="1117" cy="292" r="12"/>
+    <path d="M1117 268 v-22" stroke="#152a58" stroke-width="4"/>
+
+    <!-- central golden dome (kept monochrome; overlay + sun add warmth) -->
+    <rect x="700" y="470" width="200" height="220"/>
+    <path d="M700 470 q100 -170 200 0 Z"/>
+    <path d="M800 300 q6 -34 -0 -46 q-6 12 0 46 Z"/>
+    <rect x="792" y="252" width="16" height="20" rx="4"/>
+
+    <!-- flanking smaller domes -->
+    <rect x="560" y="560" width="120" height="130"/>
+    <path d="M560 560 q60 -96 120 0 Z"/>
+    <rect x="920" y="560" width="120" height="130"/>
+    <path d="M920 560 q60 -96 120 0 Z"/>
+  </g>
+
+  <!-- warm rim light on the central dome -->
+  <path d="M700 470 q100 -170 200 0" fill="none" stroke="#d9b968" stroke-opacity="0.25" stroke-width="3"/>
+
+  <!-- foreground ridge (darkest, closest) -->
+  <path d="M0 720 Q400 660 800 700 T1600 700 V900 H0 Z" fill="#0b1631"/>
+  <path d="M0 790 Q500 740 1000 780 T1600 770 V900 H0 Z" fill="#0a1329"/>
+</svg>

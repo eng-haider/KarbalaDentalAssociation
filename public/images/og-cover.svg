@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0F172A"/>
+      <stop offset="0.6" stop-color="#172554"/>
+      <stop offset="1" stop-color="#1E3A8A"/>
+    </linearGradient>
+    <linearGradient id="crest" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1E3A8A"/>
+      <stop offset="1" stop-color="#0EA5E9"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.8" cy="0.2" r="0.6">
+      <stop offset="0" stop-color="#0EA5E9" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#0EA5E9" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <!-- crest -->
+  <g transform="translate(840 175) scale(4.2)">
+    <path d="M24 3 7 9v13c0 11 7.6 18.4 17 23 9.4-4.6 17-12 17-23V9L24 3Z" fill="url(#crest)"/>
+    <path d="M24 14c-3.4 0-5.2-2.2-8-2.2-3 0-4.7 2.5-4.7 6 0 2.6 1 4.7 1.8 7.6.6 2.2.7 5.4 2.3 5.4 1.7 0 1.5-3.2 2.4-5.4.6-1.5 1.3-2.4 2.2-2.4s1.6.9 2.2 2.4c.9 2.2.7 5.4 2.4 5.4 1.6 0 1.7-3.2 2.3-5.4.8-2.9 1.8-5 1.8-7.6 0-3.5-1.7-6-4.7-6-2.8 0-4.6 2.2-8 2.2Z" fill="#fff"/>
+  </g>
+  <!-- text (RTL, right-aligned) -->
+  <text x="1120" y="300" text-anchor="end" font-family="Cairo, sans-serif" font-size="64" font-weight="800" fill="#ffffff" direction="rtl">نقابة أطباء الأسنان</text>
+  <text x="1120" y="375" text-anchor="end" font-family="Cairo, sans-serif" font-size="44" font-weight="700" fill="#0EA5E9" direction="rtl">فرع كربلاء المقدسة</text>
+  <text x="1120" y="445" text-anchor="end" font-family="Cairo, sans-serif" font-size="28" font-weight="500" fill="#94A3B8" direction="rtl">البوابة الرقمية الرسمية</text>
+  <rect x="980" y="478" width="140" height="6" rx="3" fill="#0EA5E9"/>
+</svg>

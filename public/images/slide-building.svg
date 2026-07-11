@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="مقرّ النقابة">
+  <defs>
+    <linearGradient id="bSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0d1a36"/>
+      <stop offset="1" stop-color="#1b3a91"/>
+    </linearGradient>
+    <radialGradient id="bSun" cx="0.8" cy="0.25" r="0.5">
+      <stop offset="0" stop-color="#d9b968" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#d9b968" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="600" fill="url(#bSky)"/>
+  <rect width="800" height="600" fill="url(#bSun)"/>
+
+  <!-- side buildings -->
+  <rect x="0" y="300" width="150" height="300" fill="#132750"/>
+  <rect x="660" y="340" width="140" height="260" fill="#132750"/>
+
+  <!-- main HQ facade -->
+  <rect x="180" y="180" width="440" height="420" fill="#16306f"/>
+  <rect x="180" y="180" width="440" height="420" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2"/>
+
+  <!-- crown / cornice -->
+  <rect x="168" y="164" width="464" height="22" fill="#1b3a91"/>
+  <rect x="360" y="120" width="80" height="46" fill="#1b3a91"/>
+  <path d="M400 96l14 24h-28Z" fill="#d9b968" opacity="0.8"/>
+
+  <!-- window grid (some lit gold) -->
+  <g>
+    <g fill="#0d1a36">
+      <rect x="212" y="214" width="54" height="40"/><rect x="292" y="214" width="54" height="40"/><rect x="372" y="214" width="54" height="40"/><rect x="452" y="214" width="54" height="40"/><rect x="532" y="214" width="54" height="40"/>
+      <rect x="212" y="286" width="54" height="40"/><rect x="292" y="286" width="54" height="40"/><rect x="372" y="286" width="54" height="40"/><rect x="452" y="286" width="54" height="40"/><rect x="532" y="286" width="54" height="40"/>
+      <rect x="212" y="358" width="54" height="40"/><rect x="292" y="358" width="54" height="40"/><rect x="372" y="358" width="54" height="40"/><rect x="452" y="358" width="54" height="40"/><rect x="532" y="358" width="54" height="40"/>
+    </g>
+    <g fill="#d9b968" opacity="0.75">
+      <rect x="292" y="214" width="54" height="40"/><rect x="532" y="286" width="54" height="40"/><rect x="212" y="358" width="54" height="40"/><rect x="452" y="358" width="54" height="40"/>
+    </g>
+  </g>
+
+  <!-- entrance -->
+  <rect x="366" y="470" width="68" height="130" fill="#0b1631"/>
+  <path d="M366 470q34 -40 68 0Z" fill="#0b1631"/>
+  <rect x="360" y="600" width="80" height="0"/>
+
+  <!-- plaza ground -->
+  <rect x="0" y="560" width="800" height="40" fill="#0a1329"/>
+
+  <rect x="0" y="430" width="800" height="170" fill="#0d1a36" opacity="0.35"/>
+</svg>

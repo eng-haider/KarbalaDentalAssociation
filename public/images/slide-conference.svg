@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="مؤتمر علمي">
+  <defs>
+    <linearGradient id="fHall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0d1a36"/>
+      <stop offset="1" stop-color="#12264f"/>
+    </linearGradient>
+    <linearGradient id="fScreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d9b968" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#b58a2e" stop-opacity="0.55"/>
+    </linearGradient>
+    <radialGradient id="fGlow" cx="0.5" cy="0.28" r="0.6">
+      <stop offset="0" stop-color="#d9b968" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#d9b968" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="600" fill="url(#fHall)"/>
+  <rect width="800" height="600" fill="url(#fGlow)"/>
+
+  <!-- stage screen -->
+  <rect x="250" y="70" width="300" height="170" rx="6" fill="url(#fScreen)"/>
+  <rect x="250" y="70" width="300" height="170" rx="6" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="3"/>
+  <rect x="286" y="108" width="150" height="12" rx="6" fill="#0d1a36" opacity="0.35"/>
+  <rect x="286" y="134" width="228" height="9" rx="4.5" fill="#0d1a36" opacity="0.25"/>
+  <rect x="286" y="156" width="180" height="9" rx="4.5" fill="#0d1a36" opacity="0.25"/>
+
+  <!-- podium -->
+  <g fill="#16306f">
+    <rect x="600" y="250" width="70" height="130" rx="6"/>
+    <circle cx="635" cy="230" r="18"/>
+  </g>
+
+  <!-- stage floor line -->
+  <path d="M0 300h800" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2"/>
+
+  <!-- audience seat rows (silhouettes, receding) -->
+  <g fill="#0a1631">
+    <g opacity="0.9">
+      <rect x="40" y="330" width="720" height="34" rx="16"/>
+    </g>
+    <g opacity="0.95">
+      <rect x="20" y="392" width="760" height="40" rx="18"/>
+    </g>
+    <rect x="0" y="462" width="800" height="46" rx="20"/>
+    <rect x="0" y="540" width="800" height="60" rx="22"/>
+  </g>
+  <!-- heads -->
+  <g fill="#132750">
+    <circle cx="150" cy="332" r="15"/><circle cx="280" cy="332" r="15"/><circle cx="410" cy="332" r="15"/><circle cx="540" cy="332" r="15"/><circle cx="660" cy="332" r="15"/>
+    <circle cx="120" cy="396" r="17"/><circle cx="270" cy="396" r="17"/><circle cx="430" cy="396" r="17"/><circle cx="590" cy="396" r="17"/><circle cx="710" cy="396" r="17"/>
+  </g>
+
+  <rect x="0" y="440" width="800" height="160" fill="#0d1a36" opacity="0.4"/>
+</svg>
