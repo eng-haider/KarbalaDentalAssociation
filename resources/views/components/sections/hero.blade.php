@@ -6,14 +6,6 @@
         'accent' => 'bg-gov-gold text-brand-900 hover:brightness-95',
         'ghost'  => 'bg-white/5 text-white ring-1 ring-inset ring-white/25 hover:bg-white/10',
     ];
-
-    // Photo slider images. Replace these SVG placeholders with real photos by
-    // dropping .jpg files in public/images and updating the 'img' values.
-    $photos = [
-        ['img' => 'slide-clinic.svg',     'tag' => 'عيادات مرخّصة', 'caption' => 'بيئة علاجية آمنة مطابقة للمعايير المهنية'],
-        ['img' => 'slide-conference.svg', 'tag' => 'مؤتمرات علمية', 'caption' => 'مؤتمرات وورش عمل معتمدة على مدار العام'],
-        ['img' => 'slide-building.svg',   'tag' => 'مقرّ النقابة',   'caption' => 'مقرّ نقابة أطباء الأسنان في كربلاء المقدسة'],
-    ];
 @endphp
 
 <section id="hero" class="relative overflow-hidden bg-brand-900">
@@ -24,10 +16,10 @@
         <div class="absolute inset-0 bg-brand-900"></div>
         <div class="absolute inset-0 bg-cover bg-center"
              style="background-image: url('{{ asset('images/hero-bg.svg') }}');"></div>
-        {{-- darken toward the right (reading side, RTL) so text stays legible --}}
-        <div class="absolute inset-0 bg-gradient-to-l from-brand-900/95 via-brand-900/80 to-brand-900/55"></div>
-        <div class="absolute inset-0 bg-brand-900/25"></div>
-        <div class="absolute inset-0 bg-grid opacity-40"></div>
+        {{-- lighter wash: lets the background photo show, still dark on the
+             right (reading side, RTL) so the headline text stays legible --}}
+        <div class="absolute inset-0 bg-gradient-to-l from-brand-900/92 via-brand-900/55 to-brand-900/20"></div>
+        <div class="absolute inset-0 bg-grid opacity-30"></div>
         <div class="absolute inset-x-0 top-0 h-0.5 bg-gov-gold/70"></div>
         <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-brand-900 to-transparent"></div>
     </div>
@@ -36,7 +28,7 @@
         <div class="grid items-center gap-14 lg:grid-cols-12">
 
             {{-- ===== Slider (copy) ===== --}}
-            <div class="lg:col-span-7"
+            <div class="lg:col-span-12"
                  x-data="carousel({{ count($slides) }})"
                  @mouseenter="paused = true" @mouseleave="paused = false"
                  @touchstart.passive="touchStart($event)" @touchend.passive="touchEnd($event)"
@@ -126,79 +118,6 @@
                 </div>
             </div>
 
-            {{-- ===== Photo slider ===== --}}
-            <div class="lg:col-span-5">
-                <div class="relative mx-auto max-w-md overflow-hidden rounded-lg ring-1 ring-white/15 shadow-[var(--shadow-lift)]"
-                     x-data="carousel({{ count($photos) }})"
-                     @mouseenter="paused = true" @mouseleave="paused = false"
-                     @touchstart.passive="touchStart($event)" @touchend.passive="touchEnd($event)"
-                     role="region" aria-roledescription="عرض شرائح الصور" aria-label="صور من النقابة">
-
-                    <div class="absolute inset-x-0 top-0 z-20 h-1 bg-gov-gold"></div>
-
-                    {{-- images (crossfade) --}}
-                    <div class="relative aspect-[4/3] bg-brand-900">
-                        @foreach($photos as $i => $p)
-                            <img src="{{ asset('images/'.$p['img']) }}" alt="{{ $p['caption'] }}"
-                                 loading="{{ $i === 0 ? 'eager' : 'lazy' }}"
-                                 class="absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ease-out motion-reduce:transition-none"
-                                 :class="active === {{ $i }} ? 'opacity-100' : 'opacity-0'"
-                                 :aria-hidden="(active !== {{ $i }}).toString()">
-                        @endforeach
-
-                        {{-- caption overlay --}}
-                        <div class="absolute inset-0 bg-gradient-to-t from-brand-900/90 via-brand-900/10 to-transparent"></div>
-                        <div class="absolute inset-x-0 bottom-0 p-5">
-                            <div class="grid">
-                                @foreach($photos as $i => $p)
-                                    <div class="col-start-1 row-start-1 transition-opacity duration-500 motion-reduce:transition-none"
-                                         :class="active === {{ $i }} ? 'opacity-100' : 'opacity-0 pointer-events-none'"
-                                         :aria-hidden="(active !== {{ $i }}).toString()">
-                                        <span class="inline-flex items-center gap-2 rounded-sm border-r-2 border-gov-gold bg-brand-900/60 px-2.5 py-1 text-xs font-bold text-white">
-                                            <span class="size-1.5 bg-gov-gold"></span> {{ $p['tag'] }}
-                                        </span>
-                                        <p class="mt-2 text-base font-bold leading-snug text-white text-balance">{{ $p['caption'] }}</p>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        {{-- prev / next --}}
-                        <div class="absolute top-4 left-4 z-20 flex gap-2">
-                            <button @click="prev()" aria-label="الصورة السابقة"
-                                    class="grid size-9 place-items-center rounded-sm bg-brand-900/50 text-white ring-1 ring-inset ring-white/25 transition-colors hover:bg-brand-900/80">
-                                <x-icon name="chevron-left" class="size-4 rotate-180" />
-                            </button>
-                            <button @click="next()" aria-label="الصورة التالية"
-                                    class="grid size-9 place-items-center rounded-sm bg-brand-900/50 text-white ring-1 ring-inset ring-white/25 transition-colors hover:bg-brand-900/80">
-                                <x-icon name="chevron-left" class="size-4" />
-                            </button>
-                        </div>
-
-                        {{-- dots --}}
-                        <div class="absolute bottom-5 left-5 z-20 flex items-center gap-2" role="tablist" aria-label="مؤشر الصور">
-                            @foreach($photos as $i => $p)
-                                <button @click="go({{ $i }})" role="tab"
-                                        :aria-selected="(active === {{ $i }}).toString()"
-                                        aria-label="الانتقال إلى الصورة {{ $i + 1 }}"
-                                        class="h-1.5 rounded-sm transition-all duration-300"
-                                        :class="active === {{ $i }} ? 'w-6 bg-gov-gold' : 'w-3 bg-white/40 hover:bg-white/70'"></button>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-
-                {{-- verified strip under the slider --}}
-                <div class="mx-auto mt-4 flex max-w-md items-center gap-2.5 rounded-lg bg-brand-800 p-4 ring-1 ring-white/10">
-                    <span class="grid size-9 place-items-center rounded-sm bg-green-accent/15 text-green-accent">
-                        <x-icon name="verify" class="size-5" />
-                    </span>
-                    <div>
-                        <p class="text-xs font-bold text-white">عضوية موثّقة</p>
-                        <p class="text-[0.65rem] text-brand-100/60">تحقق فوري من سجل النقابة</p>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
