@@ -34,7 +34,7 @@
                  @touchstart.passive="touchStart($event)" @touchend.passive="touchEnd($event)"
                  @keydown.arrow-left.prevent="next()" @keydown.arrow-right.prevent="prev()"
                  tabindex="0" role="region" aria-roledescription="عرض شرائح"
-                 aria-label="أبرز خدمات وأخبار النقابة"
+                 aria-label="أبرز خدمات ونشاطات النقابة"
                  class="focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-4 focus-visible:ring-offset-brand-900 rounded-sm">
 
                 {{-- stacked slides: all rendered, only the active one is visible (crossfade) --}}

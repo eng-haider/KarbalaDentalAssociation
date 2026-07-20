@@ -1,0 +1,13 @@
+<svg width="240" height="240" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="صورة عضو المجلس">
+  <rect width="240" height="240" fill="#F8FAFC"/>
+  <rect width="240" height="240" fill="url(#g)"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F1F5FB"/>
+      <stop offset="1" stop-color="#E5EBF3"/>
+    </linearGradient>
+  </defs>
+  <circle cx="120" cy="96" r="42" fill="#C7D2E4"/>
+  <path d="M40 214c0-44 36-72 80-72s80 28 80 72Z" fill="#C7D2E4"/>
+  <path d="M120 138c23 0 42-19 42-42s-19-42-42-42-42 19-42 42 19 42 42 42Z" fill="none" stroke="#0C2D6B" stroke-opacity=".12" stroke-width="3"/>
+</svg>

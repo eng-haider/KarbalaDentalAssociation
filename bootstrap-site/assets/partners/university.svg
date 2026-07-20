@@ -1,0 +1,9 @@
+<svg width="200" height="80" viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="جامعة كربلاء - كلية طب الأسنان">
+  <g fill="#0C2D6B">
+    <path d="M40 18 66 30 40 42 14 30 40 18Z"/>
+    <path d="M22 34v12c0 6 8 10 18 10s18-4 18-10V34l-18 8-18-8Z" opacity=".8"/>
+    <rect x="63" y="30" width="3" height="16" rx="1.5"/>
+  </g>
+  <text x="80" y="37" font-family="Cairo, sans-serif" font-size="14" font-weight="800" fill="#0C2D6B">جامعة كربلاء</text>
+  <text x="80" y="56" font-family="Cairo, sans-serif" font-size="11" font-weight="600" fill="#64748B">كلية طب الأسنان</text>
+</svg>

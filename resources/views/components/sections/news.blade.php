@@ -13,10 +13,10 @@
     <div x-data="reveal()" x-intersect.once="show()" class="reveal">
         <x-section-heading
             eyebrow="المركز الإخباري"
-            title="آخر الأخبار والمستجدات"
+            title="آخر النشاطات والمستجدات"
             subtitle="تابع أحدث أنشطة النقابة ومشاركاتها المحلية والعلمية أولاً بأول.">
             <x-slot:action>
-                <a href="#" class="btn-soft">عرض كل الأخبار <x-icon name="arrow-left" class="size-4" /></a>
+                <a href="#" class="btn-soft">عرض كل النشاطات <x-icon name="arrow-left" class="size-4" /></a>
             </x-slot:action>
         </x-section-heading>
     </div>

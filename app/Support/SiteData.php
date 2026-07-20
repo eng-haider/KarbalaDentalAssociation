@@ -43,7 +43,7 @@ class SiteData
     {
         return [
             ['label' => 'الرئيسية',          'href' => '#hero'],
-            ['label' => 'الأخبار',           'href' => '#news'],
+            ['label' => 'النشاطات',           'href' => '#news'],
             ['label' => 'الإعلانات',         'href' => '#announcements'],
             ['label' => 'التعليم المستمر',   'href' => '#education'],
             ['label' => 'الخدمات الرقمية',   'href' => '#services'],
@@ -73,10 +73,10 @@ class SiteData
                 'eyebrow'      => 'بوابة رقمية رسمية — محدّثة باستمرار',
                 'title_main'   => 'نقابة أطباء الأسنان',
                 'title_accent' => 'في كربلاء المقدسة',
-                'desc'         => 'مرحباً بكم في المنصة الرسمية للنقابة. خدمات إلكترونية متكاملة، أخبار موثّقة، وتعليم طبي مستمر — كل ذلك في مكان واحد يخدم الطبيب والمجتمع.',
+                'desc'         => 'مرحباً بكم في المنصة الرسمية للنقابة. خدمات إلكترونية متكاملة، نشاطات موثّقة، وتعليم طبي مستمر — كل ذلك في مكان واحد يخدم الطبيب والمجتمع.',
                 'icon'         => 'verify',
                 'ctas'         => [
-                    ['label' => 'آخر الأخبار',     'href' => '#news',      'icon' => 'sparkle',  'style' => 'light'],
+                    ['label' => 'آخر النشاطات',     'href' => '#news',      'icon' => 'sparkle',  'style' => 'light'],
                     ['label' => 'الخدمات',         'href' => '#services',  'icon' => 'verify',   'style' => 'accent'],
                     ['label' => 'التعليم المستمر', 'href' => '#education', 'icon' => 'academic', 'style' => 'ghost'],
                 ],

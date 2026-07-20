@@ -2,26 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\SiteData;
+use App\Models\BoardMember;
+use App\Models\Course;
+use App\Models\Discount;
+use App\Models\Event;
+use App\Models\HeroSlide;
+use App\Models\News;
+use App\Models\RegulationType;
+use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function index()
+    public function __invoke(): View
     {
         return view('home', [
-            'org'           => SiteData::org(),
-            'nav'           => SiteData::nav(),
-            'stats'         => SiteData::stats(),
-            'heroSlides'    => SiteData::heroSlides(),
-            'news'          => SiteData::news(),
-            'announcements' => SiteData::announcements(),
-            'eduCategories' => SiteData::eduCategories(),
-            'playlists'     => SiteData::playlists(),
-            'services'      => SiteData::services(),
-            'events'        => SiteData::events(),
-            'gallery'       => SiteData::gallery(),
-            'publications'  => SiteData::publications(),
-            'about'         => SiteData::about(),
+            'heroSlides' => HeroSlide::active()->get(),
+            'featuredEvent' => Event::featured(),
+            'news' => News::published()->latest('published_at')->take(6)->get(),
+            'boardMembers' => BoardMember::orderBy('sort_order')->get(),
+            'courses' => Course::published()->orderByDesc('starts_at')->take(6)->get(),
+            'regulationTypes' => RegulationType::active()->get(),
+            'discounts' => Discount::active()->get(),
         ]);
     }
 }

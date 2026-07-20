@@ -27,7 +27,7 @@
     ],
     "shortcuts": [
         { "name": "الخدمات الرقمية", "url": "/#services" },
-        { "name": "آخر الأخبار", "url": "/#news" },
+        { "name": "آخر النشاطات", "url": "/#news" },
         { "name": "التعليم المستمر", "url": "/#education" }
     ]
 }

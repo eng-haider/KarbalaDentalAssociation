@@ -1,0 +1,11 @@
+<svg width="200" height="80" viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="مستشفى كربلاء التعليمي">
+  <g fill="#0C2D6B">
+    <rect x="16" y="24" width="48" height="36" rx="4"/>
+    <g fill="#fff">
+      <rect x="36" y="30" width="8" height="24" rx="1"/>
+      <rect x="28" y="38" width="24" height="8" rx="1"/>
+    </g>
+  </g>
+  <text x="78" y="37" font-family="Cairo, sans-serif" font-size="14" font-weight="800" fill="#0C2D6B">مستشفى كربلاء</text>
+  <text x="78" y="56" font-family="Cairo, sans-serif" font-size="11" font-weight="600" fill="#64748B">التعليمي</text>
+</svg>
