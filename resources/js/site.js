@@ -401,72 +401,17 @@
         }
 
         /* ---------------------------------------------------------------
-           12. Transaction search
-
-           Reads the association's published transactions sheet and matches
-           names the way the previous portal did: Arabic letter forms are
-           folded together (أ/إ/آ→ا, ة→ه, ى→ي, diacritics dropped) so a
-           doctor finds their record however they happen to type it.
+           12. Transaction search — database-backed search
            --------------------------------------------------------------- */
         const trxInput = $('#trxInput');
         if (trxInput) {
-            const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSd5s-PrXwWHDK5' +
-                'RV5BS6qe4LDY-ajWtfQ8R-G0DmkxHfX7APt0P7bWsSCvKzNbMFFXz_6ZgcZx8Jk9/pub?output=csv';
-            const MIN_CHARS = 2;   // shorter queries match almost everything
-            const MAX_RESULTS = 30;
-
+            const API_URL = '/api/transactions/search';
+            const MIN_CHARS = 2;
             const trxState = $('#trxState');
             const trxResults = $('#trxResults');
             const trxClear = $('#trxClear');
             const trxStats = $('#trxStats');
 
-            /* --- Arabic-aware text folding --- */
-            const fold = (s) => String(s).toLowerCase().trim()
-                .replace(/[أإآ]/g, 'ا')
-                .replace(/ة/g, 'ه')
-                .replace(/[ىي]/g, 'ي')
-                .replace(/[ً-ْ]/g, '');
-
-            /* --- Sørensen–Dice coefficient over character bigrams --- */
-            const similarity = (a, b) => {
-                a = a.replace(/\s+/g, '');
-                b = b.replace(/\s+/g, '');
-                if (a === b) return 1;
-                if (a.length < 2 || b.length < 2) return 0;
-                const grams = new Map();
-                for (let i = 0; i < a.length - 1; i++) {
-                    const g = a.slice(i, i + 2);
-                    grams.set(g, (grams.get(g) || 0) + 1);
-                }
-                let hits = 0;
-                for (let i = 0; i < b.length - 1; i++) {
-                    const g = b.slice(i, i + 2);
-                    const n = grams.get(g) || 0;
-                    if (n > 0) { grams.set(g, n - 1); hits++; }
-                }
-                return (2 * hits) / (a.length + b.length - 2);
-            };
-
-            /* --- Minimal RFC-4180 CSV reader (names may contain commas) --- */
-            const parseCsv = (text) => {
-                const rows = [];
-                let row = [], field = '', quoted = false;
-                for (let i = 0; i < text.length; i++) {
-                    const c = text[i];
-                    if (quoted) {
-                        if (c === '"') {
-                            if (text[i + 1] === '"') { field += '"'; i++; } else quoted = false;
-                        } else field += c;
-                    } else if (c === '"') quoted = true;
-                    else if (c === ',') { row.push(field); field = ''; }
-                    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-                    else if (c !== '\r') field += c;
-                }
-                if (field || row.length) { row.push(field); rows.push(row); }
-                return rows;
-            };
-
-            /* --- Category drives the row colour and chip --- */
             const categorise = (t) => {
                 if (t.includes('انتماء')) return { key: 'join',     label: 'انتماء',      icon: 'bi-person-plus' };
                 if (t.includes('بدون'))   return { key: 'noclinic', label: 'بدون عيادة',  icon: 'bi-person-badge' };
@@ -474,71 +419,27 @@
                 return { key: 'other', label: 'معاملة', icon: 'bi-file-earmark-text' };
             };
 
-            let records = null;         // [{ name, txn, nName, nTxn, cat }]
-            let loading = null;         // in-flight promise, so we fetch once
+            let statsCache = null;
 
             const setState = (html, kind) => {
                 trxState.className = 'trx-state' + (kind ? ' trx-state--' + kind : '');
                 trxState.innerHTML = html;
             };
 
-            const load = () => {
-                if (loading) return loading;
-                setState('<span class="trx-spinner" aria-hidden="true"></span> جارٍ تحميل سجل المعاملات…', 'loading');
-                loading = fetch(SHEET_URL)
-                    .then((r) => { if (!r.ok) throw new Error(r.status); return r.text(); })
-                    .then((text) => {
-                        const rows = parseCsv(text).slice(1); // drop header
-                        records = rows
-                            .filter((r) => r.length > 1 && r[0].trim())
-                            .map((r) => {
-                                const name = r[0].trim(), txn = r[1].trim();
-                                return { name, txn, nName: fold(name), nTxn: fold(txn), cat: categorise(txn) };
-                            });
-                        renderStats();
-                        setState('', '');
-                        return records;
-                    })
-                    .catch(() => {
-                        loading = null; // allow a retry on the next keystroke
-                        setState('<i class="bi bi-wifi-off" aria-hidden="true"></i> تعذّر تحميل سجل المعاملات حالياً. تحقق من اتصالك ثم حاول مرة أخرى.', 'error');
-                        return null;
-                    });
-                return loading;
-            };
-
-            const renderStats = () => {
-                if (!records) return;
-                const n = { total: records.length, clinic: 0, noclinic: 0, join: 0 };
-                records.forEach((r) => { if (n[r.cat.key] !== undefined) n[r.cat.key]++; });
+            const renderStats = (stats) => {
+                if (!stats) return;
                 $$('[data-trx-stat]', trxStats).forEach((el) => {
-                    el.textContent = toArabicNumber(n[el.dataset.trxStat] || 0);
+                    const key = el.dataset.trxStat;
+                    el.textContent = toArabicNumber(stats[key] || 0);
                 });
                 trxStats.hidden = false;
-            };
-
-            /* --- Ranking mirrors the old portal: exact contains beats fuzzy --- */
-            const search = (raw) => {
-                const q = fold(raw);
-                const score = (r) => {
-                    let s = similarity(r.nName, q);
-                    if (r.nName.includes(q)) s += 0.4;
-                    if (r.nName.startsWith(q)) s += 0.2;
-                    return Math.max(s, similarity(r.nTxn, q));
-                };
-                return records
-                    .filter((r) => r.nName.includes(q) || r.nTxn.includes(q) || similarity(r.nName, q) > 0.35)
-                    .map((r) => ({ r, s: score(r) }))
-                    .sort((a, b) => b.s - a.s || a.r.txn.localeCompare(b.r.txn, 'ar'))
-                    .slice(0, MAX_RESULTS)
-                    .map((x) => x.r);
             };
 
             const escapeHtml = (s) => s.replace(/[&<>"]/g, (c) =>
                 ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-            const render = (list, query) => {
-                if (!list.length) {
+            const render = (results, stats, query) => {
+                if (!results.length) {
                     trxResults.innerHTML = '';
                     setState(
                         '<i class="bi bi-search" aria-hidden="true"></i> لم نعثر على نتائج لـ "' +
@@ -546,18 +447,20 @@
                     return;
                 }
                 setState('<i class="bi bi-check2-circle" aria-hidden="true"></i> ' +
-                    toArabicNumber(list.length) + ' نتيجة مطابقة' +
-                    (list.length === MAX_RESULTS ? ' (اكتب اسماً أدق لتضييق النتائج)' : ''), 'found');
-                trxResults.innerHTML = list.map((r) => `
-                    <div class="trx-item trx-${r.cat.key}">
-                        <span class="trx-item-icon"><i class="bi ${r.cat.icon}" aria-hidden="true"></i></span>
+                    toArabicNumber(results.length) + ' نتيجة مطابقة', 'found');
+                trxResults.innerHTML = results.map((r) => {
+                    const cat = categorise(r.transaction_type);
+                    return `
+                    <div class="trx-item trx-${cat.key}">
+                        <span class="trx-item-icon"><i class="bi ${cat.icon}" aria-hidden="true"></i></span>
                         <span class="trx-item-text">
                             <strong>${escapeHtml(r.name)}</strong>
-                            <small>${escapeHtml(r.txn)}</small>
+                            <small>${escapeHtml(r.transaction_type)}</small>
                         </span>
-                        <span class="trx-chip">${r.cat.label}</span>
+                        <span class="trx-chip">${cat.label}</span>
                         <span class="trx-done"><i class="bi bi-patch-check-fill" aria-hidden="true"></i> منجزة</span>
-                    </div>`).join('');
+                    </div>`;
+                }).join('');
             };
 
             const run = async () => {
@@ -568,27 +471,48 @@
                     setState(raw ? '<i class="bi bi-info-circle" aria-hidden="true"></i> اكتب حرفين على الأقل للبحث.' : '', raw ? 'hint' : '');
                     return;
                 }
-                if (!records && !(await load())) return;
-                render(search(raw), raw);
+
+                setState('<span class="trx-spinner" aria-hidden="true"></span> جارٍ البحث…', 'loading');
+                try {
+                    const response = await fetch(`${API_URL}?q=${encodeURIComponent(raw)}`);
+                    if (!response.ok) throw new Error(response.status);
+                    const data = await response.json();
+                    if (statsCache !== data.stats) {
+                        statsCache = data.stats;
+                        renderStats(data.stats);
+                    }
+                    render(data.results, data.stats, raw);
+                } catch {
+                    setState('<i class="bi bi-wifi-off" aria-hidden="true"></i> تعذّر البحث حالياً. تحقق من اتصالك ثم حاول مرة أخرى.', 'error');
+                }
+            };
+
+            const loadStats = async () => {
+                try {
+                    const response = await fetch(`${API_URL}?q=`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        statsCache = data.stats;
+                        renderStats(data.stats);
+                    }
+                } catch {}
             };
 
             let timer;
             trxInput.addEventListener('input', () => {
                 clearTimeout(timer);
-                timer = setTimeout(run, 220); // debounce so we filter once per pause
+                timer = setTimeout(run, 220);
             });
-            trxInput.addEventListener('focus', load, { once: true });
+            trxInput.addEventListener('focus', loadStats, { once: true });
             trxClear.addEventListener('click', () => {
                 trxInput.value = '';
                 trxInput.focus();
                 run();
             });
 
-            // Warm the sheet up as the section comes into view, so the first
-            // search feels instant instead of waiting on the network.
             if ('IntersectionObserver' in window) {
                 const io = new IntersectionObserver((entries, obs) => {
-                    if (entries.some((e) => e.isIntersecting)) { load(); obs.disconnect(); }
+                    if (entries.some((e) => e.isIntersecting)) { loadStats(); obs.disconnect(); }
                 }, { rootMargin: '200px' });
                 io.observe($('#transaction-search'));
             }

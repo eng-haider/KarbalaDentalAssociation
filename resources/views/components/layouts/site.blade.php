@@ -85,11 +85,12 @@
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">الرئيسية</a></li>
                     {{-- <li class="nav-item"><a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">عن النقابة</a></li> --}}
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('news.*') ? 'active' : '' }}" href="{{ route('news.index') }}">النشاطات</a></li>
-                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('events.*') ? 'active' : '' }}" href="{{ route('events.index') }}">الفعاليات</a></li>
+                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('transaction-search') ? 'active' : '' }}" href="{{ route('transaction-search') }}">البحث عن معاملة</a></li>
+                    {{-- <li class="nav-item"><a class="nav-link {{ request()->routeIs('events.*') ? 'active' : '' }}" href="{{ route('events.index') }}">الفعاليات</a></li> --}}
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('courses.*') ? 'active' : '' }}" href="{{ route('courses.index') }}">الدورات التدريبية</a></li>
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('regulations') ? 'active' : '' }}" href="{{ route('regulations') }}">الضوابط والشروط</a></li>
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('discounts') ? 'active' : '' }}" href="{{ route('discounts') }}">الخصومات</a></li>
-                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('transaction-search') ? 'active' : '' }}" href="{{ route('transaction-search') }}">البحث عن معاملة</a></li>
+
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('complaint') ? 'active' : '' }}" href="{{ route('complaint') }}">إرسال شكوى</a></li>
                     {{-- <li class="nav-item"><a class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}" href="{{ route('contact') }}">اتصل بنا</a></li> --}}
 

@@ -7,6 +7,7 @@ use App\Http\Controllers\EventRegistrationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -41,3 +42,7 @@ Route::post('/complaints', [ComplaintController::class, 'store'])
 Route::post('/events/{event}/register', [EventRegistrationController::class, 'store'])
     ->middleware('throttle:6,1')
     ->name('events.register');
+
+// Transaction search API
+Route::get('/api/transactions/search', [TransactionController::class, 'search'])
+    ->name('transactions.search');
