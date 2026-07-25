@@ -51,4 +51,34 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="trxModal" tabindex="-1" aria-labelledby="trxModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="trxModalLabel">تفاصيل المعاملة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="trx-detail">
+                        <div class="detail-field">
+                            <label>الاسم</label>
+                            <p id="trxDetailName"></p>
+                        </div>
+                        <div class="detail-field">
+                            <label>نوع المعاملة</label>
+                            <p id="trxDetailType"></p>
+                        </div>
+                        <div class="detail-field">
+                            <label>الحالة</label>
+                            <p><span class="badge bg-success"><i class="bi bi-patch-check-fill"></i> منجزة</span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </section>

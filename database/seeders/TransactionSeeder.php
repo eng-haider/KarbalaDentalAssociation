@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Transaction;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Database\Seeder;
 
 class TransactionSeeder extends Seeder
@@ -18,53 +19,26 @@ class TransactionSeeder extends Seeder
             return;
         }
 
-        $scriptPath = base_path('storage/read_excel.py');
-        $this->createPythonScript($scriptPath, $filePath);
+        $rows = Excel::toArray([], $filePath)[0];
 
-        $output = shell_exec("python3 $scriptPath 2>&1");
-        $data = json_decode($output, true);
+        $imported = 0;
+        foreach ($rows as $index => $row) {
+            if ($index === 0) continue; // Skip header
 
-        if (!is_array($data)) {
-            $this->command->error("Failed to read Excel file: $output");
-            return;
-        }
+            $name = trim($row[0] ?? '');
+            $type = trim($row[1] ?? '');
 
-        foreach ($data as $row) {
-            if (empty($row['name']) || empty($row['transaction_type'])) {
+            if (empty($name) || empty($type)) {
                 continue;
             }
 
             Transaction::create([
-                'name' => $row['name'],
-                'transaction_type' => $row['transaction_type'],
+                'name' => $name,
+                'transaction_type' => $type,
             ]);
+            $imported++;
         }
 
-        $this->command->info("Imported " . Transaction::count() . " transactions successfully!");
-    }
-
-    private function createPythonScript(string $scriptPath, string $filePath): void
-    {
-        $script = <<<'PYTHON'
-import openpyxl
-import json
-
-try:
-    wb = openpyxl.load_workbook('%s')
-    ws = wb.active
-    data = []
-    for i, row in enumerate(ws.iter_rows(values_only=True)):
-        if i == 0:  # Skip header
-            continue
-        if row and len(row) > 1 and row[0]:
-            data.append({
-                'name': str(row[0]).strip(),
-                'transaction_type': str(row[1]).strip(),
-            })
-    print(json.dumps(data))
-except Exception as e:
-    print(json.dumps([]))
-PYTHON;
-        file_put_contents($scriptPath, sprintf($script, $filePath));
+        $this->command->info("Imported {$imported} transactions successfully!");
     }
 }

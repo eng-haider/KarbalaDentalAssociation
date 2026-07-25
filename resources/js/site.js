@@ -438,6 +438,13 @@
             const escapeHtml = (s) => s.replace(/[&<>"]/g, (c) =>
                 ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+            const showModal = (name, type) => {
+                $('#trxDetailName').textContent = name;
+                $('#trxDetailType').textContent = type;
+                const modal = bootstrap.Modal.getOrCreateInstance('#trxModal');
+                modal.show();
+            };
+
             const render = (results, stats, query) => {
                 if (!results.length) {
                     trxResults.innerHTML = '';
@@ -451,7 +458,7 @@
                 trxResults.innerHTML = results.map((r) => {
                     const cat = categorise(r.transaction_type);
                     return `
-                    <div class="trx-item trx-${cat.key}">
+                    <div class="trx-item trx-${cat.key}" role="button" tabindex="0" style="cursor: pointer;">
                         <span class="trx-item-icon"><i class="bi ${cat.icon}" aria-hidden="true"></i></span>
                         <span class="trx-item-text">
                             <strong>${escapeHtml(r.name)}</strong>
@@ -461,6 +468,21 @@
                         <span class="trx-done"><i class="bi bi-patch-check-fill" aria-hidden="true"></i> منجزة</span>
                     </div>`;
                 }).join('');
+
+                // Add click handlers to result items
+                $$('.trx-item', trxResults).forEach((item) => {
+                    item.addEventListener('click', () => {
+                        const name = item.querySelector('.trx-item-text strong').textContent;
+                        const type = item.querySelector('.trx-item-text small').textContent;
+                        showModal(name, type);
+                    });
+                    item.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            item.click();
+                        }
+                    });
+                });
             };
 
             const run = async () => {

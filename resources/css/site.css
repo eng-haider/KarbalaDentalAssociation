@@ -1157,6 +1157,14 @@ a { text-decoration: none; }
     .trx-chip { order: 3; }
 }
 
+/* Transaction detail modal */
+.trx-detail { display: flex; flex-direction: column; gap: 1.5rem; }
+.detail-field { display: flex; flex-direction: column; gap: .4rem; }
+.detail-field label { font-weight: 700; color: var(--muted); font-size: .85rem; text-transform: uppercase; letter-spacing: .03em; }
+.detail-field p { margin: 0; font-size: 1rem; color: var(--ink); line-height: 1.5; }
+.trx-item { transition: background .2s ease, transform .2s ease; }
+.trx-item:hover { background: rgba(12, 45, 107, .04); transform: translateX(-4px); }
+
 /* ==========================================================================
    Regulations & conditions
    Mobile: accordion (answers open in place). Desktop: sidebar + panel.
