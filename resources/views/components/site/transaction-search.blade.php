@@ -71,7 +71,7 @@
                         </div>
                         <div class="detail-field">
                             <label>الحالة</label>
-                            <p><span class="badge bg-success"><i class="bi bi-patch-check-fill"></i> منجزة</span></p>
+                            <p id="trxDetailStatus"></p>
                         </div>
                     </div>
                 </div>

@@ -17,7 +17,7 @@ class TransactionController extends Controller
         }
 
         $results = Transaction::where('name', 'like', "%{$query}%")
-            ->select('name', 'transaction_type')
+            ->select('name', 'transaction_type', 'status')
             ->limit(10)
             ->get();
 

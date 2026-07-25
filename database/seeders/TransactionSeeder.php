@@ -35,6 +35,7 @@ class TransactionSeeder extends Seeder
             Transaction::create([
                 'name' => $name,
                 'transaction_type' => $type,
+                'status' => rand(1, 100) <= 25 ? 'pending' : 'completed',
             ]);
             $imported++;
         }

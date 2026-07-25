@@ -419,6 +419,17 @@
                 return { key: 'other', label: 'معاملة', icon: 'bi-file-earmark-text' };
             };
 
+            const getStatusLabel = (status) => {
+                return status === 'pending' ? 'قيد الانجاز' : 'منجزة';
+            };
+
+            const getStatusBadge = (status) => {
+                if (status === 'pending') {
+                    return '<span class="badge bg-warning"><i class="bi bi-hourglass-split"></i> قيد الانجاز</span>';
+                }
+                return '<span class="badge bg-success"><i class="bi bi-patch-check-fill"></i> منجزة</span>';
+            };
+
             let statsCache = null;
 
             const setState = (html, kind) => {
@@ -438,9 +449,13 @@
             const escapeHtml = (s) => s.replace(/[&<>"]/g, (c) =>
                 ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-            const showModal = (name, type) => {
+            const showModal = (name, type, status) => {
                 $('#trxDetailName').textContent = name;
                 $('#trxDetailType').textContent = type;
+                const statusEl = $('#trxDetailStatus');
+                if (statusEl) {
+                    statusEl.innerHTML = getStatusBadge(status);
+                }
                 const modal = bootstrap.Modal.getOrCreateInstance('#trxModal');
                 modal.show();
             };
@@ -457,15 +472,18 @@
                     toArabicNumber(results.length) + ' نتيجة مطابقة', 'found');
                 trxResults.innerHTML = results.map((r) => {
                     const cat = categorise(r.transaction_type);
+                    const statusIcon = r.status === 'pending' ? 'bi-hourglass-split' : 'bi-patch-check-fill';
+                    const statusLabel = getStatusLabel(r.status);
+                    const statusClass = r.status === 'pending' ? 'pending' : 'done';
                     return `
-                    <div class="trx-item trx-${cat.key}" role="button" tabindex="0" style="cursor: pointer;">
+                    <div class="trx-item trx-${cat.key}" role="button" tabindex="0" style="cursor: pointer;" data-status="${r.status}">
                         <span class="trx-item-icon"><i class="bi ${cat.icon}" aria-hidden="true"></i></span>
                         <span class="trx-item-text">
                             <strong>${escapeHtml(r.name)}</strong>
                             <small>${escapeHtml(r.transaction_type)}</small>
                         </span>
                         <span class="trx-chip">${cat.label}</span>
-                        <span class="trx-done"><i class="bi bi-patch-check-fill" aria-hidden="true"></i> منجزة</span>
+                        <span class="trx-${statusClass}"><i class="bi ${statusIcon}" aria-hidden="true"></i> ${statusLabel}</span>
                     </div>`;
                 }).join('');
 
@@ -474,7 +492,8 @@
                     item.addEventListener('click', () => {
                         const name = item.querySelector('.trx-item-text strong').textContent;
                         const type = item.querySelector('.trx-item-text small').textContent;
-                        showModal(name, type);
+                        const status = item.dataset.status;
+                        showModal(name, type, status);
                     });
                     item.addEventListener('keydown', (e) => {
                         if (e.key === 'Enter' || e.key === ' ') {

@@ -1165,6 +1165,10 @@ a { text-decoration: none; }
 .trx-item { transition: background .2s ease, transform .2s ease; }
 .trx-item:hover { background: rgba(12, 45, 107, .04); transform: translateX(-4px); }
 
+/* Status badges */
+.trx-done { font-size: .85rem; font-weight: 700; color: #15803d; background: rgba(22, 163, 74, .1); padding: .35rem .65rem; border-radius: .35rem; white-space: nowrap; }
+.trx-pending { font-size: .85rem; font-weight: 700; color: #ca8a04; background: rgba(180, 83, 9, .1); padding: .35rem .65rem; border-radius: .35rem; white-space: nowrap; }
+
 /* ==========================================================================
    Regulations & conditions
    Mobile: accordion (answers open in place). Desktop: sidebar + panel.
