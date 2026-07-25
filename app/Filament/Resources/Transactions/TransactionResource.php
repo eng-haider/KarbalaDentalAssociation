@@ -15,7 +15,7 @@ use Filament\Tables\Table;
 class TransactionResource extends Resource
 {
     protected static ?string $model = Transaction::class;
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationLabel = 'المعاملات';
     protected static ?int $navigationSort = 10;
 
