@@ -6,6 +6,26 @@
 
     <section class="section">
         <div class="container">
+            @if ($categories->isNotEmpty())
+                <div class="filter-bar cat-bar mb-5 reveal">
+                    <a href="{{ route('courses.index') }}" class="filter-btn cat-chip @if (! $activeCategory) active @endif">
+                        <i class="bi bi-grid"></i> جميع التصنيفات
+                    </a>
+                    @foreach ($categories as $category)
+                        <a href="{{ route('courses.index', ['category' => $category->slug]) }}"
+                           class="filter-btn cat-chip @if ($activeCategory?->is($category)) active @endif">
+                            @if ($category->image)
+                                <img src="{{ Storage::url($category->image) }}" alt="{{ $category->name }}" class="cat-chip-img">
+                            @else
+                                <i class="bi bi-bookmark"></i>
+                            @endif
+                            {{ $category->name }}
+                            <span class="cat-chip-count">{{ $category->courses_count }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+
             @if ($items->isEmpty())
                 <p class="text-center text-muted-2 py-5">لا توجد دورات منشورة حالياً.</p>
             @else
@@ -13,9 +33,23 @@
                     @foreach ($items as $course)
                         <div class="col-md-6 col-lg-4 reveal">
                             <article class="card course-card hover-lift h-100">
-                                @if ($course->image)
-                                    <img src="{{ Storage::url($course->image) }}" alt="{{ $course->title }}" class="course-img">
-                                @endif
+                                <div class="course-thumb">
+                                    @if ($course->image)
+                                        <img src="{{ Storage::url($course->image) }}" alt="{{ $course->title }}" class="course-img">
+                                    @else
+                                        <div class="course-img course-img-placeholder">
+                                            <i class="bi bi-mortarboard"></i>
+                                        </div>
+                                    @endif
+                                    @if ($course->category)
+                                        <span class="course-tag">{{ $course->category->name }}</span>
+                                    @endif
+                                    @if ($course->published_lessons_count)
+                                        <span class="course-lessons-badge">
+                                            <i class="bi bi-play-btn"></i> {{ $course->published_lessons_count }} درساً
+                                        </span>
+                                    @endif
+                                </div>
                                 <div class="course-body">
                                     <h3>{{ $course->title }}</h3>
                                     <p>{{ Str::limit($course->description, 120) }}</p>

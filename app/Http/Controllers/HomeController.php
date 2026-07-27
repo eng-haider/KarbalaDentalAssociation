@@ -20,7 +20,12 @@ class HomeController extends Controller
             'featuredEvent' => Event::featured(),
             'news' => News::published()->latest('published_at')->take(6)->get(),
             'boardMembers' => BoardMember::orderBy('sort_order')->get(),
-            'courses' => Course::published()->orderByDesc('starts_at')->take(6)->get(),
+            'courses' => Course::published()
+                ->with('category')
+                ->withCount('publishedLessons')
+                ->orderByDesc('starts_at')
+                ->take(6)
+                ->get(),
             'regulationTypes' => RegulationType::active()->get(),
             'discounts' => Discount::active()->get(),
         ]);

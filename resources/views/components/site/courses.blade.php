@@ -15,9 +15,23 @@
                 @foreach ($items as $course)
                     <div class="col-md-6 col-lg-4 reveal @if($loop->index) delay-{{ min($loop->index, 3) }} @endif">
                         <article class="card course-card hover-lift h-100">
-                            @if ($course->image)
-                                <img src="{{ Storage::url($course->image) }}" alt="{{ $course->title }}" class="course-img">
-                            @endif
+                            <div class="course-thumb">
+                                @if ($course->image)
+                                    <img src="{{ Storage::url($course->image) }}" alt="{{ $course->title }}" class="course-img">
+                                @else
+                                    <div class="course-img course-img-placeholder">
+                                        <i class="bi bi-mortarboard"></i>
+                                    </div>
+                                @endif
+                                @if ($course->category)
+                                    <span class="course-tag">{{ $course->category->name }}</span>
+                                @endif
+                                @if ($course->published_lessons_count)
+                                    <span class="course-lessons-badge">
+                                        <i class="bi bi-play-btn"></i> {{ $course->published_lessons_count }} درساً
+                                    </span>
+                                @endif
+                            </div>
                             <div class="course-body">
                                 <h3>{{ $course->title }}</h3>
                                 <p>{{ $course->description }}</p>

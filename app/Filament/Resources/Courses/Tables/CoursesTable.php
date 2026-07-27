@@ -8,6 +8,7 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
@@ -25,6 +26,16 @@ class CoursesTable
                     ->searchable()
                     ->limit(50)
                     ->weight('bold'),
+                TextColumn::make('category.name')
+                    ->label('التصنيف')
+                    ->badge()
+                    ->placeholder('—')
+                    ->sortable(),
+                TextColumn::make('lessons_count')
+                    ->label('الدروس')
+                    ->counts('lessons')
+                    ->badge()
+                    ->color('gray'),
                 TextColumn::make('instructor')
                     ->label('المحاضر')
                     ->searchable()
@@ -43,6 +54,11 @@ class CoursesTable
             ])
             ->defaultSort('starts_at', 'desc')
             ->filters([
+                SelectFilter::make('course_category_id')
+                    ->label('التصنيف')
+                    ->relationship('category', 'name')
+                    ->searchable()
+                    ->preload(),
                 TernaryFilter::make('is_published')->label('منشورة'),
             ])
             ->recordActions([

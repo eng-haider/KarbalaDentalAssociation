@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Courses\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -29,6 +30,27 @@ class CourseForm
                             ->label('الرابط اللطيف')
                             ->required()
                             ->unique(ignoreRecord: true),
+                        Select::make('course_category_id')
+                            ->label('التصنيف')
+                            ->relationship('category', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->createOptionForm([
+                                TextInput::make('name')
+                                    ->label('اسم التصنيف')
+                                    ->required()
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(fn (string $state, callable $set) => $set('slug', Str::slug($state))),
+                                TextInput::make('slug')
+                                    ->label('الرابط اللطيف')
+                                    ->required()
+                                    ->unique('course_categories', 'slug'),
+                                FileUpload::make('image')
+                                    ->label('صورة التصنيف')
+                                    ->image()
+                                    ->directory('course-categories')
+                                    ->imageEditor(),
+                            ]),
                         Textarea::make('description')
                             ->label('الوصف')
                             ->rows(4)
