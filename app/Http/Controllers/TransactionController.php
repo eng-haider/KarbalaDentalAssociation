@@ -18,8 +18,17 @@ class TransactionController extends Controller
 
         $results = Transaction::where('name', 'like', "%{$query}%")
             ->select('name', 'transaction_type', 'status')
+            ->with('statusModel:slug,name,color,icon')
             ->limit(10)
-            ->get();
+            ->get()
+            ->map(fn (Transaction $transaction): array => [
+                'name' => $transaction->name,
+                'transaction_type' => $transaction->transaction_type,
+                'status' => $transaction->status,
+                'status_label' => $transaction->statusLabel(),
+                'status_color' => $transaction->statusModel?->publicColorClass() ?? 'bg-secondary',
+                'status_icon' => $transaction->statusModel?->icon ?? 'bi-circle',
+            ]);
 
         return response()->json([
             'results' => $results,

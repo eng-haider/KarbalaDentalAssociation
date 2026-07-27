@@ -419,16 +419,20 @@
                 return { key: 'other', label: 'معاملة', icon: 'bi-file-earmark-text' };
             };
 
-            const getStatusLabel = (status) => {
-                return status === 'pending' ? 'قيد الانجاز' : 'منجزة';
+            // Statuses are managed from the dashboard, so the API sends the label,
+            // colour and icon along with each result instead of hardcoding them.
+            const getStatusBadge = (status) => {
+                const color = status.color || 'bg-secondary';
+                const icon = status.icon || 'bi-circle';
+                return '<span class="badge ' + escapeHtml(color) + '"><i class="bi ' +
+                    escapeHtml(icon) + '"></i> ' + escapeHtml(status.label) + '</span>';
             };
 
-            const getStatusBadge = (status) => {
-                if (status === 'pending') {
-                    return '<span class="badge bg-warning"><i class="bi bi-hourglass-split"></i> قيد الانجاز</span>';
-                }
-                return '<span class="badge bg-success"><i class="bi bi-patch-check-fill"></i> منجزة</span>';
-            };
+            const readStatus = (r) => ({
+                label: r.status_label || r.status || '',
+                color: r.status_color || 'bg-secondary',
+                icon: r.status_icon || 'bi-circle',
+            });
 
             let statsCache = null;
 
@@ -456,6 +460,7 @@
                 if (statusEl) {
                     statusEl.innerHTML = getStatusBadge(status);
                 }
+
                 const modal = bootstrap.Modal.getOrCreateInstance('#trxModal');
                 modal.show();
             };
@@ -472,18 +477,20 @@
                     toArabicNumber(results.length) + ' نتيجة مطابقة', 'found');
                 trxResults.innerHTML = results.map((r) => {
                     const cat = categorise(r.transaction_type);
-                    const statusIcon = r.status === 'pending' ? 'bi-hourglass-split' : 'bi-patch-check-fill';
-                    const statusLabel = getStatusLabel(r.status);
-                    const statusClass = r.status === 'pending' ? 'pending' : 'done';
+                    const status = readStatus(r);
+                    const statusMod = status.color.replace('bg-', '');
                     return `
-                    <div class="trx-item trx-${cat.key}" role="button" tabindex="0" style="cursor: pointer;" data-status="${r.status}">
+                    <div class="trx-item trx-${cat.key}" role="button" tabindex="0" style="cursor: pointer;"
+                         data-status-label="${escapeHtml(status.label)}"
+                         data-status-color="${escapeHtml(status.color)}"
+                         data-status-icon="${escapeHtml(status.icon)}">
                         <span class="trx-item-icon"><i class="bi ${cat.icon}" aria-hidden="true"></i></span>
                         <span class="trx-item-text">
                             <strong>${escapeHtml(r.name)}</strong>
                             <small>${escapeHtml(r.transaction_type)}</small>
                         </span>
                         <span class="trx-chip">${cat.label}</span>
-                        <span class="trx-${statusClass}"><i class="bi ${statusIcon}" aria-hidden="true"></i> ${statusLabel}</span>
+                        <span class="trx-status trx-status--${escapeHtml(statusMod)}"><i class="bi ${escapeHtml(status.icon)}" aria-hidden="true"></i> ${escapeHtml(status.label)}</span>
                     </div>`;
                 }).join('');
 
@@ -492,8 +499,11 @@
                     item.addEventListener('click', () => {
                         const name = item.querySelector('.trx-item-text strong').textContent;
                         const type = item.querySelector('.trx-item-text small').textContent;
-                        const status = item.dataset.status;
-                        showModal(name, type, status);
+                        showModal(name, type, {
+                            label: item.dataset.statusLabel,
+                            color: item.dataset.statusColor,
+                            icon: item.dataset.statusIcon,
+                        });
                     });
                     item.addEventListener('keydown', (e) => {
                         if (e.key === 'Enter' || e.key === ' ') {

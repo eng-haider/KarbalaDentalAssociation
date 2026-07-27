@@ -1153,7 +1153,8 @@ a { text-decoration: none; }
     .trx-item { flex-wrap: wrap; row-gap: .5rem; }
     .trx-item-text { flex: 1 1 100%; order: 2; }
     .trx-item-icon { order: 1; }
-    .trx-done { order: 1; margin-inline-start: auto; }
+    .trx-done,
+    .trx-status { order: 1; margin-inline-start: auto; }
     .trx-chip { order: 3; }
 }
 
@@ -1168,6 +1169,18 @@ a { text-decoration: none; }
 /* Status badges */
 .trx-done { font-size: .85rem; font-weight: 700; color: #15803d; background: rgba(22, 163, 74, .1); padding: .35rem .65rem; border-radius: .35rem; white-space: nowrap; }
 .trx-pending { font-size: .85rem; font-weight: 700; color: #ca8a04; background: rgba(180, 83, 9, .1); padding: .35rem .65rem; border-radius: .35rem; white-space: nowrap; }
+
+/* Admin-defined statuses: one class per colour offered in the dashboard */
+.trx-status {
+    font-size: .85rem; font-weight: 700; padding: .35rem .65rem;
+    border-radius: .35rem; white-space: nowrap;
+    color: #475569; background: rgba(100, 116, 139, .12);
+}
+.trx-status--success { color: #15803d; background: rgba(22, 163, 74, .1); }
+.trx-status--warning { color: #ca8a04; background: rgba(180, 83, 9, .1); }
+.trx-status--danger { color: #b91c1c; background: rgba(220, 38, 38, .1); }
+.trx-status--info { color: #1d4ed8; background: rgba(37, 99, 235, .1); }
+.trx-status--secondary { color: #475569; background: rgba(100, 116, 139, .12); }
 
 /* ==========================================================================
    Regulations & conditions
