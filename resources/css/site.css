@@ -780,138 +780,56 @@ a { text-decoration: none; }
     border-block: 1px solid var(--border);
 }
 
-.ad-list { display: grid; gap: 2rem; max-width: 1120px; margin-inline: auto; }
+.ad-list { display: grid; gap: 1.5rem; max-width: 1120px; margin-inline: auto; }
 
-/* ---- Ad billboard ---- */
+/* ---- Ad banner: image + title, nothing else ---- */
 .ad-card {
-    position: relative; isolation: isolate; overflow: hidden;
+    position: relative; display: block; overflow: hidden;
+    aspect-ratio: 21 / 9;
     border-radius: var(--radius-lg);
-    min-height: 360px; display: flex;
-    box-shadow: var(--shadow-lg);
+    background: var(--primary-900);
+    box-shadow: var(--shadow);
+    text-decoration: none;
     transition: transform .25s ease, box-shadow .25s ease;
 }
-.ad-card:hover { transform: translateY(-4px); box-shadow: 0 26px 60px rgba(12, 45, 107, .22); }
+a.ad-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
 
 .ad-bg {
-    position: absolute; inset: 0; z-index: -2;
+    position: absolute; inset: 0;
     width: 100%; height: 100%; object-fit: cover;
     transition: transform .6s ease;
 }
-.ad-card:hover .ad-bg { transform: scale(1.05); }
+a.ad-card:hover .ad-bg { transform: scale(1.04); }
 .ad-bg--fallback {
-    display: grid; place-items: center; font-size: 5rem; color: rgba(200, 154, 43, .5);
+    display: grid; place-items: center; font-size: 4.5rem; color: rgba(200, 154, 43, .55);
     background:
         radial-gradient(circle at 75% 20%, rgba(200, 154, 43, .30), transparent 55%),
         linear-gradient(150deg, var(--primary-900) 0%, var(--primary) 60%, var(--primary-700) 100%);
 }
-/* Scrim: heaviest under the copy, lighter over the photo */
-.ad-card::before {
-    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-    background:
-        linear-gradient(to left, rgba(6, 22, 52, .96) 0%, rgba(6, 22, 52, .88) 42%, rgba(6, 22, 52, .55) 72%, rgba(6, 22, 52, .35) 100%);
-}
 
-/* "إعلان" flag — states plainly that this is paid placement */
-.ad-flag {
-    position: absolute; top: 1rem; inset-inline-end: 1rem; z-index: 3;
-    padding: .2rem .7rem; border-radius: 5px;
-    font-size: .68rem; font-weight: 800; letter-spacing: .04em;
-    background: rgba(255, 255, 255, .18); color: rgba(255, 255, 255, .92);
-    border: 1px solid rgba(255, 255, 255, .28); backdrop-filter: blur(4px);
-}
-
-.ad-inner {
-    position: relative; z-index: 1; flex: 1;
-    display: grid; grid-template-columns: minmax(0, 1fr) 300px;
-    gap: 2rem; align-items: center; padding: 2.5rem;
-}
-
-/* ---- Copy side ---- */
-.ad-brandline { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; }
-.ad-logo {
-    width: 52px; height: 52px; border-radius: 14px; flex: 0 0 auto; overflow: hidden;
-    display: grid; place-items: center; font-size: 1.5rem;
-    background: #fff; color: var(--primary);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, .3);
-}
-.ad-logo img { width: 100%; height: 100%; object-fit: contain; padding: 7px; }
-.ad-brandtext { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
-.ad-brand { font-size: 1rem; font-weight: 800; color: #fff; }
-.ad-tag {
-    align-self: flex-start;
-    padding: .12rem .6rem; border-radius: 999px;
-    font-size: .72rem; font-weight: 700;
-    background: rgba(255, 255, 255, .16); color: rgba(255, 255, 255, .9);
+/* Scrim only where the title sits, so the image stays visible */
+.ad-card::after {
+    content: ""; position: absolute; inset-inline: 0; inset-block-end: 0; height: 65%;
+    background: linear-gradient(to top, rgba(6, 22, 52, .92) 0%, rgba(6, 22, 52, .55) 55%, transparent 100%);
+    pointer-events: none;
 }
 
 .ad-title {
-    font-size: clamp(1.35rem, 2.6vw, 1.9rem); font-weight: 900; line-height: 1.25;
-    color: #fff; margin: 0 0 .6rem;
-}
-.ad-desc {
-    color: rgba(255, 255, 255, .82); font-size: .97rem; line-height: 1.8;
-    margin: 0 0 1.1rem; max-width: 62ch;
+    position: absolute; inset-inline: 0; inset-block-end: 0; z-index: 1;
+    margin: 0; padding: 1.5rem 1.75rem;
+    font-size: clamp(1.15rem, 2.4vw, 1.75rem); font-weight: 900; line-height: 1.35;
+    color: #fff; text-shadow: 0 2px 12px rgba(0, 0, 0, .35);
 }
 
-.ad-perks { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem; }
-.ad-perks li {
-    display: inline-flex; align-items: center; gap: .4rem;
-    padding: .38rem .8rem; border-radius: 999px;
-    font-size: .84rem; font-weight: 700; color: #fff;
-    background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .2);
-}
-.ad-perks i { color: #6ee7a8; font-size: .78rem; }
-
-/* ---- Offer side ---- */
-.ad-offer {
-    display: flex; flex-direction: column; align-items: center; text-align: center; gap: .35rem;
-    padding: 1.6rem 1.35rem; border-radius: var(--radius);
-    background: rgba(255, 255, 255, .97);
-    box-shadow: 0 16px 44px rgba(0, 0, 0, .3);
-}
-.ad-offer-ribbon {
-    padding: .28rem .8rem; border-radius: 999px; margin-bottom: .35rem;
-    font-size: .7rem; font-weight: 800; line-height: 1.5;
-    background: var(--secondary); color: #1a1204;
-}
-.ad-value {
-    font-size: clamp(2rem, 4.4vw, 2.9rem); font-weight: 900; line-height: 1;
-    color: var(--primary); letter-spacing: -.01em;
-}
-.ad-value-sub { font-size: .86rem; font-weight: 700; color: var(--muted); }
-.ad-cta {
-    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-    width: 100%; margin-top: .9rem; padding: .8rem 1.1rem;
-    border-radius: var(--radius-sm);
-    font-size: .97rem; font-weight: 800; text-decoration: none;
-    background: var(--primary); color: #fff;
-    transition: background .2s ease, transform .2s ease;
-}
-.ad-cta:hover { background: var(--primary-800); color: #fff; transform: translateY(-1px); }
-.ad-note {
-    display: inline-flex; align-items: flex-start; gap: .35rem; margin-top: .6rem;
-    font-size: .76rem; font-weight: 600; color: var(--muted); line-height: 1.6;
-}
-.ad-note i { color: var(--secondary-600); margin-top: .15rem; flex: 0 0 auto; }
-
-@media (max-width: 991.98px) {
-    .ad-card { min-height: 0; }
-    .ad-inner { grid-template-columns: 1fr; gap: 1.5rem; padding: 2rem 1.5rem; }
-    /* Even scrim once the copy sits over the whole width */
-    .ad-card::before { background: linear-gradient(to top, rgba(6, 22, 52, .96) 30%, rgba(6, 22, 52, .78) 100%); }
-    .ad-offer { max-width: 420px; width: 100%; margin-inline: auto; }
-}
-@media (max-width: 575.98px) {
-    .ad-inner { padding: 1.5rem 1.15rem; }
-    .ad-desc { font-size: .92rem; }
-    .ad-perks li { font-size: .8rem; padding: .32rem .7rem; }
+@media (max-width: 767.98px) {
+    .ad-card { aspect-ratio: 16 / 9; }
+    .ad-title { padding: 1.15rem 1.15rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .ad-card, .ad-bg, .ad-cta { transition: none; }
-    .ad-card:hover { transform: none; }
-    .ad-card:hover .ad-bg { transform: none; }
-    .ad-cta:hover { transform: none; }
+    .ad-card, .ad-bg { transition: none; }
+    a.ad-card:hover { transform: none; }
+    a.ad-card:hover .ad-bg { transform: none; }
 }
 
 /* ==========================================================================
