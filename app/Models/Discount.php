@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class Discount extends Model
 {
     protected $fillable = [
-        'brand', 'title', 'tag', 'description', 'value_label', 'value_caption',
-        'perks', 'link', 'icon', 'note', 'is_active', 'sort_order',
+        'brand', 'title', 'tag', 'description', 'image', 'logo', 'value_label',
+        'value_caption', 'perks', 'link', 'icon', 'note', 'is_active', 'sort_order',
     ];
 
     protected function casts(): array
