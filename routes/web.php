@@ -5,6 +5,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventRegistrationController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MarketplaceController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\TransactionController;
@@ -29,6 +30,12 @@ Route::get('/news/{news}', [NewsController::class, 'show'])->name('news.show');
 // Courses
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
 Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+
+// Marketplace (buy & sell)
+Route::get('/marketplace', [MarketplaceController::class, 'index'])->name('marketplace.index');
+Route::post('/marketplace', [MarketplaceController::class, 'store'])
+    ->middleware('throttle:6,1')
+    ->name('marketplace.store');
 
 // Events
 Route::get('/events', [EventController::class, 'index'])->name('events.index');

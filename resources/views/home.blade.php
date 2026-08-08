@@ -11,6 +11,7 @@
     <x-site.regulations :types="$regulationTypes" />
     <x-site.apply />
     <x-site.discounts :items="$discounts" />
+    <x-site.marketplace :items="$listings" />
     <x-site.partners />
     <x-site.social />
     <x-site.complaint />

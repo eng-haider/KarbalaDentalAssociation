@@ -1719,3 +1719,88 @@ a { text-decoration: none; }
     aspect-ratio: 16 / 10;
     background: linear-gradient(135deg, var(--primary-900), var(--primary));
 }
+
+/* ==========================================================================
+   Marketplace (buy & sell)
+   ========================================================================== */
+.listing-card { overflow: hidden; height: 100%; }
+.listing-thumb { position: relative; overflow: hidden; }
+.listing-img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; display: block; }
+.listing-img-placeholder {
+    display: grid; place-items: center;
+    background: var(--light); border-block-end: 1px solid var(--border);
+    color: var(--primary); font-size: 2.4rem; opacity: .5;
+}
+
+/* Type chip tells "offered" from "wanted" at a glance */
+.listing-type {
+    position: absolute; top: 12px; inset-inline-end: 12px;
+    font-size: .74rem; font-weight: 800; padding: .3rem .7rem;
+    border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);
+    color: #fff;
+}
+.listing-sale   .listing-type { background: #15803D; }
+.listing-wanted .listing-type { background: var(--primary); }
+.listing-tag {
+    position: absolute; top: 12px; inset-inline-start: 12px;
+    background: rgba(255, 255, 255, .94); color: var(--primary);
+    font-size: .74rem; font-weight: 800; padding: .3rem .7rem;
+    border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);
+}
+
+.listing-body { padding: 1.35rem; }
+.listing-body h3 { font-size: 1.1rem; margin-bottom: .5rem; }
+.listing-body > p { color: var(--muted); font-size: .93rem; margin-bottom: .9rem; }
+.listing-price {
+    display: inline-flex; align-items: center; gap: .45rem;
+    font-size: 1rem; font-weight: 900; color: var(--primary);
+    background: rgba(200, 154, 43, .14); border-radius: var(--radius-sm);
+    padding: .4rem .75rem; margin-bottom: .9rem;
+}
+.listing-price i { color: var(--secondary-600); }
+.listing-meta { list-style: none; margin: 0 0 .25rem; padding: 0; display: grid; gap: .4rem; }
+.listing-meta li {
+    display: flex; align-items: center; gap: .5rem;
+    font-size: .88rem; font-weight: 600; color: var(--ink);
+}
+.listing-meta i { color: var(--secondary-600); }
+
+.listing-add-btn { margin-block-end: .35rem; align-self: center; }
+
+.listing-empty i { font-size: 3rem; color: var(--primary); opacity: .35; display: block; margin-bottom: 1rem; }
+
+/* ---- Submission form ---- */
+.listing-form-card { padding: 1.75rem; }
+.listing-form-card .form-label { font-weight: 700; color: var(--ink); }
+
+.listing-type-choice { display: flex; flex-wrap: wrap; gap: .75rem; }
+.listing-type-option { flex: 1 1 200px; }
+.listing-type-option input { position: absolute; opacity: 0; pointer-events: none; }
+.listing-type-option span {
+    display: flex; align-items: center; justify-content: center; gap: .5rem;
+    padding: .85rem 1rem; cursor: pointer;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-weight: 700; color: var(--muted); background: #fff;
+    transition: border-color .2s, color .2s, background .2s;
+}
+.listing-type-option input:checked + span {
+    border-color: var(--primary); color: var(--primary);
+    background: rgba(12, 45, 107, .06); box-shadow: inset 0 0 0 1px var(--primary);
+}
+.listing-type-option input:focus-visible + span { outline: 2px solid var(--secondary); outline-offset: 2px; }
+
+.listing-form-foot {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 1rem; margin-top: .5rem; padding-top: 1.1rem; border-top: 1px solid var(--border);
+}
+.listing-form-hint {
+    display: inline-flex; align-items: center; gap: .45rem;
+    font-size: .84rem; font-weight: 600; color: var(--muted);
+}
+
+@media (max-width: 575.98px) {
+    .listing-form-card { padding: 1.1rem; }
+    .listing-form-foot { flex-direction: column; align-items: stretch; }
+    .listing-form-foot .btn { width: 100%; }
+    .listing-add-btn { display: none; }
+}
