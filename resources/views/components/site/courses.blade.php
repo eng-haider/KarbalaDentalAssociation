@@ -23,8 +23,8 @@
                                         <i class="bi bi-mortarboard"></i>
                                     </div>
                                 @endif
-                                @if ($course->category)
-                                    <span class="course-tag">{{ $course->category->name }}</span>
+                                @if ($category = $course->visibleCategory())
+                                    <span class="course-tag">{{ $category->name }}</span>
                                 @endif
                                 @if ($course->published_lessons_count)
                                     <span class="course-lessons-badge">

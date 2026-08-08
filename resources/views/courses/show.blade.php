@@ -9,15 +9,15 @@
                         <img src="{{ Storage::url($course->image) }}" alt="{{ $course->title }}" class="article-hero">
                     @endif
 
-                    @if ($course->category)
+                    @if ($category = $course->visibleCategory())
                         <p class="mb-3">
-                            <a href="{{ route('courses.index', ['category' => $course->category->slug]) }}" class="badge-gov d-inline-flex align-items-center gap-2 text-decoration-none">
-                                @if ($course->category->image)
-                                    <img src="{{ Storage::url($course->category->image) }}" alt="{{ $course->category->name }}" class="cat-chip-img">
+                            <a href="{{ route('courses.index', ['category' => $category->slug]) }}" class="badge-gov d-inline-flex align-items-center gap-2 text-decoration-none">
+                                @if ($category->image)
+                                    <img src="{{ Storage::url($category->image) }}" alt="{{ $category->name }}" class="cat-chip-img">
                                 @else
                                     <i class="bi bi-bookmark"></i>
                                 @endif
-                                {{ $course->category->name }}
+                                {{ $category->name }}
                             </a>
                         </p>
                     @endif
@@ -69,8 +69,8 @@
                     <div class="card p-4">
                         <h3 class="mb-3" style="font-size:1.1rem">تفاصيل الدورة</h3>
                         <ul class="course-meta">
-                            @if ($course->category)
-                                <li><i class="bi bi-bookmark"></i> التصنيف: {{ $course->category->name }}</li>
+                            @if ($category = $course->visibleCategory())
+                                <li><i class="bi bi-bookmark"></i> التصنيف: {{ $category->name }}</li>
                             @endif
                             @if ($course->instructor)
                                 <li><i class="bi bi-person-video3"></i> المحاضر: {{ $course->instructor }}</li>

@@ -7,27 +7,38 @@
     <section class="section">
         <div class="container">
             @if ($categories->isNotEmpty())
-                <div class="filter-bar cat-bar mb-5 reveal">
-                    <a href="{{ route('courses.index') }}" class="filter-btn cat-chip @if (! $activeCategory) active @endif">
-                        <i class="bi bi-grid"></i> جميع التصنيفات
+                <nav class="course-tabs reveal" aria-label="تصنيفات الدورات">
+                    <a href="{{ route('courses.index') }}"
+                       class="course-tab @if (! $activeCategory) active @endif"
+                       @if (! $activeCategory) aria-current="page" @endif>
+                        <i class="bi bi-grid"></i>
+                        الكل
+                        <span class="course-tab-count">{{ $totalCount }}</span>
                     </a>
                     @foreach ($categories as $category)
                         <a href="{{ route('courses.index', ['category' => $category->slug]) }}"
-                           class="filter-btn cat-chip @if ($activeCategory?->is($category)) active @endif">
+                           class="course-tab @if ($activeCategory?->is($category)) active @endif"
+                           @if ($activeCategory?->is($category)) aria-current="page" @endif>
                             @if ($category->image)
-                                <img src="{{ Storage::url($category->image) }}" alt="{{ $category->name }}" class="cat-chip-img">
+                                <img src="{{ Storage::url($category->image) }}" alt="" class="course-tab-img">
                             @else
                                 <i class="bi bi-bookmark"></i>
                             @endif
                             {{ $category->name }}
-                            <span class="cat-chip-count">{{ $category->courses_count }}</span>
+                            <span class="course-tab-count">{{ $category->courses_count }}</span>
                         </a>
                     @endforeach
-                </div>
+                </nav>
             @endif
 
             @if ($items->isEmpty())
-                <p class="text-center text-muted-2 py-5">لا توجد دورات منشورة حالياً.</p>
+                <p class="text-center text-muted-2 py-5">
+                    @if ($activeCategory)
+                        لا توجد دورات منشورة ضمن تصنيف "{{ $activeCategory->name }}" حالياً.
+                    @else
+                        لا توجد دورات منشورة حالياً.
+                    @endif
+                </p>
             @else
                 <div class="row g-4">
                     @foreach ($items as $course)
@@ -41,8 +52,8 @@
                                             <i class="bi bi-mortarboard"></i>
                                         </div>
                                     @endif
-                                    @if ($course->category)
-                                        <span class="course-tag">{{ $course->category->name }}</span>
+                                    @if ($category = $course->visibleCategory())
+                                        <span class="course-tag">{{ $category->name }}</span>
                                     @endif
                                     @if ($course->published_lessons_count)
                                         <span class="course-lessons-badge">

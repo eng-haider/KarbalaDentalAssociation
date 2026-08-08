@@ -54,6 +54,39 @@ class TransactionStatusManagementTest extends TestCase
         $this->assertContains('قيد المراجعة', Transaction::statuses());
     }
 
+    public function test_a_status_can_be_saved_without_an_icon(): void
+    {
+        Livewire::test(CreateTransactionStatus::class)
+            ->fillForm([
+                'name' => 'بدون أيقونة',
+                'color' => 'success',
+                'icon' => null,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $status = TransactionStatus::where('name', 'بدون أيقونة')->firstOrFail();
+
+        $this->assertNull($status->icon);
+        $this->assertSame('bi-circle', $status->publicIcon());
+    }
+
+    public function test_search_api_falls_back_to_a_default_icon_when_none_is_set(): void
+    {
+        $status = TransactionStatus::create(['name' => 'بدون أيقونة', 'icon' => null]);
+
+        Transaction::create([
+            'name' => 'كرار جبار',
+            'transaction_type' => 'مع عيادة',
+            'status' => $status->slug,
+        ]);
+
+        $this->getJson(route('transactions.search', ['q' => 'كرار']))
+            ->assertOk()
+            ->assertJsonPath('results.0.status_label', 'بدون أيقونة')
+            ->assertJsonPath('results.0.status_icon', 'bi-circle');
+    }
+
     public function test_an_arabic_name_produces_a_unique_non_empty_slug(): void
     {
         $first = TransactionStatus::create(['name' => 'مؤجلة']);

@@ -9,6 +9,7 @@ use App\Models\Event;
 use App\Models\HeroSlide;
 use App\Models\News;
 use App\Models\RegulationType;
+use App\Models\Transaction;
 use Illuminate\View\View;
 
 class HomeController extends Controller
@@ -28,6 +29,7 @@ class HomeController extends Controller
                 ->get(),
             'regulationTypes' => RegulationType::active()->get(),
             'discounts' => Discount::active()->get(),
+            'transactionAnalytics' => Transaction::analytics(),
         ]);
     }
 }

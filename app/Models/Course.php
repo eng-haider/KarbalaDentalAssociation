@@ -27,6 +27,15 @@ class Course extends Model
         return $this->belongsTo(CourseCategory::class, 'course_category_id');
     }
 
+    /**
+     * The category as shown to the public. Deactivating a category removes it
+     * from the tabs, so it must not keep labelling courses either.
+     */
+    public function visibleCategory(): ?CourseCategory
+    {
+        return $this->category?->is_active ? $this->category : null;
+    }
+
     public function lessons(): HasMany
     {
         return $this->hasMany(Lesson::class)->orderBy('sort_order');

@@ -11,9 +11,17 @@ class CourseController extends Controller
 {
     public function index(Request $request): View
     {
-        $categories = CourseCategory::active()->withCount(['courses' => fn ($query) => $query->published()])->get();
+        $categories = CourseCategory::active()
+            ->withCount(['courses' => fn ($query) => $query->published()])
+            ->get();
 
         $active = $categories->firstWhere('slug', $request->query('category'));
+
+        // An empty tab is a dead end, so only offer categories that actually have
+        // published courses — plus whichever one is currently selected.
+        $tabs = $categories
+            ->filter(fn (CourseCategory $category): bool => $category->courses_count > 0 || $active?->is($category))
+            ->values();
 
         $items = Course::published()
             ->with('category')
@@ -25,8 +33,9 @@ class CourseController extends Controller
 
         return view('courses.index', [
             'items' => $items,
-            'categories' => $categories,
+            'categories' => $tabs,
             'activeCategory' => $active,
+            'totalCount' => Course::published()->count(),
         ]);
     }
 

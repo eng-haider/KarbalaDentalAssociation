@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BoardMember;
 use App\Models\Discount;
 use App\Models\RegulationType;
+use App\Models\Transaction;
 use Illuminate\View\View;
 
 class PageController extends Controller
@@ -42,7 +43,9 @@ class PageController extends Controller
 
     public function transactionSearch(): View
     {
-        return view('pages.transaction-search');
+        return view('pages.transaction-search', [
+            'analytics' => Transaction::analytics(),
+        ]);
     }
 
     public function contact(): View

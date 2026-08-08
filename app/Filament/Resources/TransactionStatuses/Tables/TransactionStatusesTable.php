@@ -27,6 +27,7 @@ class TransactionStatusesTable
                     ->color('gray'),
                 TextColumn::make('icon')
                     ->label('الأيقونة')
+                    ->placeholder('bi-circle')
                     ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('is_default')
                     ->label('افتراضية')

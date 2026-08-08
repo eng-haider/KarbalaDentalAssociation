@@ -1,6 +1,7 @@
 <x-layouts.site>
     <x-site.hero :slides="$heroSlides" />
     <x-site.transaction-search />
+    <x-site.clinic-analytics :analytics="$transactionAnalytics" />
     <x-site.featured-event :event="$featuredEvent" />
     <x-site.about />
     <x-site.news :items="$news" />

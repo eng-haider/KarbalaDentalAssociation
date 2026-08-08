@@ -85,6 +85,12 @@ class TransactionStatus extends Model
         return $query->where('is_active', true);
     }
 
+    /** The icon is optional, so fall back to a neutral one for the public site. */
+    public function publicIcon(): string
+    {
+        return filled($this->icon) ? $this->icon : 'bi-circle';
+    }
+
     /** Bootstrap background class used by the public transaction search. */
     public function publicColorClass(): string
     {

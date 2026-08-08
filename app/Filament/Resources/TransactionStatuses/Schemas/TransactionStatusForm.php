@@ -31,7 +31,8 @@ class TransactionStatusForm
                             ->native(false),
                         TextInput::make('icon')
                             ->label('الأيقونة')
-                            ->helperText('اسم أيقونة Bootstrap، مثال: bi-hourglass-split')
+                            ->helperText('اختياري — اسم أيقونة Bootstrap، مثال: bi-hourglass-split')
+                            ->placeholder('bi-circle')
                             ->default('bi-circle')
                             ->maxLength(255),
                         TextInput::make('sort_order')

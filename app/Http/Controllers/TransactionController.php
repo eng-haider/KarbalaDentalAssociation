@@ -27,7 +27,7 @@ class TransactionController extends Controller
                 'status' => $transaction->status,
                 'status_label' => $transaction->statusLabel(),
                 'status_color' => $transaction->statusModel?->publicColorClass() ?? 'bg-secondary',
-                'status_icon' => $transaction->statusModel?->icon ?? 'bi-circle',
+                'status_icon' => $transaction->statusModel?->publicIcon() ?? 'bi-circle',
             ]);
 
         return response()->json([

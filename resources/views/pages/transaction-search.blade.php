@@ -6,5 +6,6 @@
 
     <div class="page-body">
         <x-site.transaction-search :heading="false" />
+        <x-site.clinic-analytics :analytics="$analytics" />
     </div>
 </x-layouts.site>
