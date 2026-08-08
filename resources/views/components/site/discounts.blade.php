@@ -11,66 +11,69 @@
             </div>
             @endif
 
-            <div class="discount-list">
+            <div class="ad-list">
                 @foreach ($items as $discount)
-                    <article class="discount-card reveal">
-                        <div class="discount-media">
-                            @if ($discount->image)
-                                <img src="{{ Storage::url($discount->image) }}" alt="{{ $discount->brand }}" class="discount-img" loading="lazy">
-                            @else
-                                <div class="discount-img discount-img--fallback">
-                                    <i class="bi {{ $discount->icon }}" aria-hidden="true"></i>
+                    <article class="ad-card reveal">
+                        {{-- Backdrop: the partner's photo, or a branded panel when there isn't one --}}
+                        @if ($discount->image)
+                            <img src="{{ Storage::url($discount->image) }}" alt="" class="ad-bg" loading="lazy">
+                        @else
+                            <div class="ad-bg ad-bg--fallback" aria-hidden="true">
+                                <i class="bi {{ $discount->icon }}"></i>
+                            </div>
+                        @endif
+
+                        <span class="ad-flag">إعلان</span>
+
+                        <div class="ad-inner">
+                            <div class="ad-main">
+                                <div class="ad-brandline">
+                                    <span class="ad-logo">
+                                        @if ($discount->logo)
+                                            <img src="{{ Storage::url($discount->logo) }}" alt="{{ $discount->brand }}" loading="lazy">
+                                        @else
+                                            <i class="bi {{ $discount->icon }}" aria-hidden="true"></i>
+                                        @endif
+                                    </span>
+                                    <span class="ad-brandtext">
+                                        <span class="ad-brand">{{ $discount->brand }}</span>
+                                        @if ($discount->tag)
+                                            <span class="ad-tag">{{ $discount->tag }}</span>
+                                        @endif
+                                    </span>
                                 </div>
-                            @endif
 
-                            <span class="discount-ribbon">عرض حصري لأعضاء النقابة</span>
+                                <h3 class="ad-title">{{ $discount->title }}</h3>
 
-                            <div class="discount-value-badge">
-                                <strong>{{ $discount->value_label }}</strong>
-                                @if ($discount->value_caption)
-                                    <span>{{ $discount->value_caption }}</span>
+                                @if ($discount->description)
+                                    <p class="ad-desc">{{ $discount->description }}</p>
+                                @endif
+
+                                @if ($discount->perks)
+                                    <ul class="ad-perks">
+                                        @foreach ($discount->perks as $perk)
+                                            <li><i class="bi bi-check-lg" aria-hidden="true"></i> {{ $perk }}</li>
+                                        @endforeach
+                                    </ul>
                                 @endif
                             </div>
 
-                            <div class="discount-brandbar">
-                                <span class="discount-logo">
-                                    @if ($discount->logo)
-                                        <img src="{{ Storage::url($discount->logo) }}" alt="{{ $discount->brand }}" loading="lazy">
-                                    @else
-                                        <i class="bi {{ $discount->icon }}" aria-hidden="true"></i>
-                                    @endif
-                                </span>
-                                <span class="discount-brand">{{ $discount->brand }}</span>
-                            </div>
-                        </div>
+                            <div class="ad-offer">
+                                <span class="ad-offer-ribbon">عرض حصري لأعضاء النقابة</span>
+                                <strong class="ad-value">{{ $discount->value_label }}</strong>
+                                @if ($discount->value_caption)
+                                    <span class="ad-value-sub">{{ $discount->value_caption }}</span>
+                                @endif
 
-                        <div class="discount-body">
-                            @if ($discount->tag)
-                                <span class="discount-tag">
-                                    <i class="bi bi-stars" aria-hidden="true"></i> {{ $discount->tag }}
-                                </span>
-                            @endif
-                            <h3>{{ $discount->title }}</h3>
-                            @if ($discount->description)
-                                <p>{{ $discount->description }}</p>
-                            @endif
-
-                            @if ($discount->perks)
-                                <ul class="discount-perks">
-                                    @foreach ($discount->perks as $perk)
-                                        <li><i class="bi bi-check-lg" aria-hidden="true"></i> {{ $perk }}</li>
-                                    @endforeach
-                                </ul>
-                            @endif
-
-                            <div class="discount-actions">
                                 <a href="{{ $discount->link ?: '#' }}"
                                    @if ($discount->link) target="_blank" rel="noopener" @endif
-                                   class="btn btn-gov btn-lg">
-                                    <i class="bi bi-box-arrow-up-left" aria-hidden="true"></i> سجّل واحصل على الخصم
+                                   class="ad-cta">
+                                    <i class="bi bi-box-arrow-up-left" aria-hidden="true"></i>
+                                    سجّل واحصل على الخصم
                                 </a>
+
                                 @if ($discount->note)
-                                    <span class="discount-note">
+                                    <span class="ad-note">
                                         <i class="bi bi-info-circle" aria-hidden="true"></i> {{ $discount->note }}
                                     </span>
                                 @endif

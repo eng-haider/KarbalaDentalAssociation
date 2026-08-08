@@ -89,7 +89,7 @@
                     {{-- <li class="nav-item"><a class="nav-link {{ request()->routeIs('events.*') ? 'active' : '' }}" href="{{ route('events.index') }}">الفعاليات</a></li> --}}
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('courses.*') ? 'active' : '' }}" href="{{ route('courses.index') }}">الدورات التدريبية</a></li>
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('regulations') ? 'active' : '' }}" href="{{ route('regulations') }}">الضوابط والشروط</a></li>
-                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('discounts') ? 'active' : '' }}" href="{{ route('discounts') }}">الخصومات</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link--featured {{ request()->routeIs('discounts') ? 'active' : '' }}" href="{{ route('discounts') }}"><i class="bi bi-star-fill" aria-hidden="true"></i> الخصومات</a></li>
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('marketplace.*') ? 'active' : '' }}" href="{{ route('marketplace.index') }}">بيع وشراء</a></li>
 
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('complaint') ? 'active' : '' }}" href="{{ route('complaint') }}">إرسال شكوى</a></li>
