@@ -46,7 +46,7 @@ class CourseCategoryTabsTest extends TestCase
             ->assertSee(route('courses.index', ['category' => 'implants']), false);
     }
 
-    public function test_categories_without_published_courses_are_not_shown_as_tabs(): void
+    public function test_every_active_category_gets_a_tab_even_without_published_courses(): void
     {
         $used = $this->makeCategory('زراعة الأسنان', 'implants');
         $this->makeCategory('تصنيف فارغ', 'empty-one');
@@ -58,8 +58,21 @@ class CourseCategoryTabsTest extends TestCase
         $this->get(route('courses.index'))
             ->assertOk()
             ->assertSee('زراعة الأسنان', false)
-            ->assertDontSee('تصنيف فارغ', false)
-            ->assertDontSee('تصنيف مخفي', false);
+            ->assertSee('تصنيف فارغ', false)
+            ->assertSee('تصنيف مخفي', false)
+            ->assertSee(route('courses.index', ['category' => 'empty-one']), false);
+    }
+
+    public function test_an_empty_category_tab_explains_itself_instead_of_showing_a_blank_list(): void
+    {
+        $this->makeCategory('تصنيف فارغ', 'empty-one');
+        $this->makeCourse('دورة بدون تصنيف', 'c1');
+
+        $this->get(route('courses.index', ['category' => 'empty-one']))
+            ->assertOk()
+            ->assertViewHas('activeCategory', fn (?CourseCategory $c): bool => $c?->slug === 'empty-one')
+            ->assertSee('لا توجد دورات منشورة ضمن تصنيف "تصنيف فارغ" حالياً.', false)
+            ->assertDontSee('دورة بدون تصنيف', false);
     }
 
     public function test_inactive_categories_are_not_shown_as_tabs(): void

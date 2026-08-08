@@ -17,11 +17,10 @@ class CourseController extends Controller
 
         $active = $categories->firstWhere('slug', $request->query('category'));
 
-        // An empty tab is a dead end, so only offer categories that actually have
-        // published courses — plus whichever one is currently selected.
-        $tabs = $categories
-            ->filter(fn (CourseCategory $category): bool => $category->courses_count > 0 || $active?->is($category))
-            ->values();
+        // Every active category gets a tab, including ones with no published
+        // course yet — the count on each tab says so, and the list below shows
+        // an explanatory empty state rather than a blank page.
+        $tabs = $categories;
 
         $items = Course::published()
             ->with('category')
