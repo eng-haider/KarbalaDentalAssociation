@@ -243,32 +243,57 @@ a { text-decoration: none; }
     background: var(--secondary);
 }
 
-/* Featured link — gold pill so the offers page is findable at a glance */
-.navbar-gov .navbar-nav .nav-link--featured {
+/* Featured link — gold pill so the offers page is findable at a glance.
+   Two copies exist: the last item in the desktop bar, and a standalone one
+   beside the toggler on phones (outside .navbar-nav, hence both selectors). */
+.navbar-gov .navbar-nav .nav-link--featured,
+.navbar-gov .nav-featured-inline {
     display: inline-flex; align-items: center; gap: .4rem;
     color: #6b4e0c;
     background: linear-gradient(180deg, rgba(200, 154, 43, .20), rgba(200, 154, 43, .13));
     border: 1px solid rgba(200, 154, 43, .45);
     border-radius: 999px;
     padding-inline: .95rem;
+    text-decoration: none;
+    white-space: nowrap;
 }
-.navbar-gov .navbar-nav .nav-link--featured i { color: var(--secondary-600); font-size: .8rem; }
+.navbar-gov .navbar-nav .nav-link--featured i,
+.navbar-gov .nav-featured-inline i { color: var(--secondary-600); font-size: .8rem; }
 .navbar-gov .navbar-nav .nav-link--featured:hover,
-.navbar-gov .navbar-nav .nav-link--featured.active {
+.navbar-gov .navbar-nav .nav-link--featured.active,
+.navbar-gov .nav-featured-inline:hover,
+.navbar-gov .nav-featured-inline.active {
     color: #1a1204;
     background: var(--secondary);
     border-color: var(--secondary-600);
 }
 .navbar-gov .navbar-nav .nav-link--featured:hover i,
-.navbar-gov .navbar-nav .nav-link--featured.active i { color: #1a1204; }
+.navbar-gov .navbar-nav .nav-link--featured.active i,
+.navbar-gov .nav-featured-inline:hover i,
+.navbar-gov .nav-featured-inline.active i { color: #1a1204; }
 /* The gold pill already marks it; the shared underline would double up */
 .navbar-gov .navbar-nav .nav-link--featured.active::after { display: none; }
-/* Collapsed menu: inset the pill so it lines up with the other links' text
-   instead of sitting flush against the drawer edge. */
-@media (max-width: 1199.98px) {
-    .navbar-gov .navbar-nav .nav-link--featured {
-        margin-block: .35rem; margin-inline-start: .85rem;
+
+/* Phone copy: compact enough to share the row with the brand and toggler */
+.navbar-gov .nav-featured-inline {
+    padding-block: .4rem; padding-inline: .8rem;
+    font-weight: 700; font-size: .85rem; line-height: 1.2;
+}
+/* Phones: brand + pill + toggler have to share one row, and Bootstrap's 1rem
+   brand margin is what tips them over into wrapping. */
+@media (max-width: 575.98px) {
+    .navbar-gov .navbar-brand { margin-inline-end: 0; }
+    .navbar-gov .nav-featured-inline {
+        padding-block: .35rem; padding-inline: .55rem;
+        font-size: .75rem; gap: .28rem;
     }
+    .navbar-gov .nav-featured-inline i { font-size: .7rem; }
+}
+@media (max-width: 389.98px) {
+    /* Below this the label no longer fits beside the brand, so show the star
+       alone rather than letting the navbar wrap to two rows. */
+    .navbar-gov .nav-featured-inline { padding-inline: .55rem; font-size: 0; gap: 0; }
+    .navbar-gov .nav-featured-inline i { font-size: .95rem; }
 }
 
 /* ==========================================================================

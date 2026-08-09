@@ -76,9 +76,17 @@
                 </span>
             </a>
 
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-controls="navMenu" aria-expanded="false" aria-label="فتح القائمة">
-                <i class="bi bi-list fs-2 text-primary"></i>
-            </button>
+            {{-- Below xl the menu is collapsed, so the offers link rides outside it
+                 next to the toggler and stays visible without opening the menu. --}}
+            <div class="d-flex align-items-center gap-2 d-xl-none">
+                <a class="nav-link nav-link--featured nav-featured-inline {{ request()->routeIs('discounts') ? 'active' : '' }}"
+                   href="{{ route('discounts') }}">
+                    <i class="bi bi-star-fill" aria-hidden="true"></i> الخصومات
+                </a>
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-controls="navMenu" aria-expanded="false" aria-label="فتح القائمة">
+                    <i class="bi bi-list fs-2 text-primary"></i>
+                </button>
+            </div>
 
             <div class="collapse navbar-collapse" id="navMenu">
              <ul class="navbar-nav mx-auto mt-3 mt-xl-0">
@@ -89,11 +97,12 @@
                     {{-- <li class="nav-item"><a class="nav-link {{ request()->routeIs('events.*') ? 'active' : '' }}" href="{{ route('events.index') }}">الفعاليات</a></li> --}}
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('courses.*') ? 'active' : '' }}" href="{{ route('courses.index') }}">الدورات التدريبية</a></li>
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('regulations') ? 'active' : '' }}" href="{{ route('regulations') }}">الضوابط والشروط</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link--featured {{ request()->routeIs('discounts') ? 'active' : '' }}" href="{{ route('discounts') }}"><i class="bi bi-star-fill" aria-hidden="true"></i> الخصومات</a></li>
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('marketplace.*') ? 'active' : '' }}" href="{{ route('marketplace.index') }}">بيع وشراء</a></li>
 
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('complaint') ? 'active' : '' }}" href="{{ route('complaint') }}">إرسال شكوى</a></li>
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}" href="{{ route('contact') }}">اتصل بنا</a></li>
+                    {{-- Last in the bar on desktop; below xl the copy beside the toggler stands in for it. --}}
+                    <li class="nav-item d-none d-xl-block"><a class="nav-link nav-link--featured {{ request()->routeIs('discounts') ? 'active' : '' }}" href="{{ route('discounts') }}"><i class="bi bi-star-fill" aria-hidden="true"></i> الخصومات</a></li>
 
                 </ul>
 
