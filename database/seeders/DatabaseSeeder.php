@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
         $this->events();
         $this->courses();
         $this->call(CourseCategorySeeder::class);
+        $this->call(HomeSectionSeeder::class);
         $this->announcements();
         $this->discounts();
         $this->regulationTypes();

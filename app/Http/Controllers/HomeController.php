@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Discount;
 use App\Models\Event;
 use App\Models\HeroSlide;
+use App\Models\HomeSection;
 use App\Models\MarketplaceListing;
 use App\Models\News;
 use App\Models\RegulationType;
@@ -32,6 +33,7 @@ class HomeController extends Controller
             'discounts' => Discount::active()->get(),
             'transactionAnalytics' => Transaction::analytics(),
             'listings' => MarketplaceListing::published()->latest()->take(3)->get(),
+            'sections' => HomeSection::ordered(),
         ]);
     }
 }
