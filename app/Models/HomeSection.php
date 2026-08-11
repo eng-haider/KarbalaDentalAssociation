@@ -45,6 +45,7 @@ class HomeSection extends Model
             'regulations' => 'الضوابط والشروط',
             'apply' => 'التقديم والتجديد',
             'discounts' => 'الخصومات والإعلانات',
+            'jobs' => 'فرص العمل',
             'marketplace' => 'بيع وشراء',
             'partners' => 'شركاء النقابة',
             'social' => 'وسائل التواصل',

@@ -469,8 +469,8 @@
                 if (!results.length) {
                     trxResults.innerHTML = '';
                     setState(
-                        '<i class="bi bi-search" aria-hidden="true"></i> لم نعثر على نتائج لـ "' +
-                        escapeHtml(query) + '". جرب كتابة الاسم الأول أو اللقب فقط.', 'empty');
+                        '<i class="bi bi-hourglass-split" aria-hidden="true"></i> معاملتك قيد الانتظار.',
+                        'empty');
                     return;
                 }
                 setState('<i class="bi bi-check2-circle" aria-hidden="true"></i> ' +

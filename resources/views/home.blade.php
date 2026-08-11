@@ -39,6 +39,9 @@
             @case('discounts')
                 <x-site.discounts :items="$discounts" />
                 @break
+            @case('jobs')
+                <x-site.jobs :items="$jobs" />
+                @break
             @case('marketplace')
                 <x-site.marketplace :items="$listings" />
                 @break

@@ -8,6 +8,7 @@ use App\Models\Discount;
 use App\Models\Event;
 use App\Models\HeroSlide;
 use App\Models\HomeSection;
+use App\Models\JobOpening;
 use App\Models\MarketplaceListing;
 use App\Models\News;
 use App\Models\RegulationType;
@@ -31,6 +32,7 @@ class HomeController extends Controller
                 ->get(),
             'regulationTypes' => RegulationType::active()->get(),
             'discounts' => Discount::active()->get(),
+            'jobs' => JobOpening::open()->take(3)->get(),
             'transactionAnalytics' => Transaction::analytics(),
             'listings' => MarketplaceListing::published()->latest()->take(3)->get(),
             'sections' => HomeSection::ordered(),

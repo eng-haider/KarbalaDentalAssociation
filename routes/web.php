@@ -5,6 +5,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventRegistrationController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\JobController;
 use App\Http\Controllers\MarketplaceController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PageController;
@@ -36,6 +37,9 @@ Route::get('/marketplace', [MarketplaceController::class, 'index'])->name('marke
 Route::post('/marketplace', [MarketplaceController::class, 'store'])
     ->middleware('throttle:6,1')
     ->name('marketplace.store');
+
+// Job opportunities
+Route::get('/jobs', [JobController::class, 'index'])->name('jobs.index');
 
 // Events
 Route::get('/events', [EventController::class, 'index'])->name('events.index');

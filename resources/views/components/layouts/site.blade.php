@@ -98,6 +98,7 @@
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('courses.*') ? 'active' : '' }}" href="{{ route('courses.index') }}">الدورات التدريبية</a></li>
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('regulations') ? 'active' : '' }}" href="{{ route('regulations') }}">الضوابط والشروط</a></li>
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('marketplace.*') ? 'active' : '' }}" href="{{ route('marketplace.index') }}">بيع وشراء</a></li>
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('jobs.*') ? 'active' : '' }}" href="{{ route('jobs.index') }}">فرص العمل</a></li>
 
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('complaint') ? 'active' : '' }}" href="{{ route('complaint') }}">إرسال شكوى</a></li>
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}" href="{{ route('contact') }}">اتصل بنا</a></li>
@@ -153,6 +154,7 @@
                     <a href="{{ route('transaction-search') }}"><i class="bi bi-chevron-left"></i>البحث عن معاملة</a>
                     <a href="{{ route('regulations') }}"><i class="bi bi-chevron-left"></i>الضوابط والشروط</a>
                     <a href="{{ route('discounts') }}"><i class="bi bi-chevron-left"></i>خصومات الأعضاء</a>
+                    <a href="{{ route('jobs.index') }}"><i class="bi bi-chevron-left"></i>فرص العمل</a>
                     <a href="{{ route('complaint') }}"><i class="bi bi-chevron-left"></i>إرسال شكوى</a>
                 </div>
             </div>
