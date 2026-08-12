@@ -60,17 +60,18 @@
     <div class="container hero-strip">
         <div class="card-strip">
             <div class="row g-0">
+                {{-- Values come from لوحة التحكم → إعدادات الموقع (معلومات التواصل). --}}
                 <div class="col-md-4 strip-item reveal">
                     <i class="bi bi-clock-history"></i>
-                    <div><small>أوقات الدوام الرسمي</small><br><strong>الأحد – الخميس ٩ص – ٣م</strong></div>
+                    <div><small>أوقات الدوام الرسمي</small><br><strong>{{ setting('working_hours', 'الأحد – الخميس: ٩:٠٠ ص – ٣:٠٠ م') }}</strong></div>
                 </div>
                 <div class="col-md-4 strip-item reveal delay-1">
                     <i class="bi bi-geo-alt-fill"></i>
-                    <div><small>مقر النقابة</small><br><strong>كربلاء المقدسة – حي الحسين</strong></div>
+                    <div><small>مقر النقابة</small><br><strong>{{ setting('address', 'كربلاء المقدسة – حي الحسين') }}</strong></div>
                 </div>
                 <div class="col-md-4 strip-item reveal delay-2">
                     <i class="bi bi-headset"></i>
-                    <div><small>خط الدعم والاستفسار</small><br><strong dir="ltr">+964 780 123 4567</strong></div>
+                    <div><small>خط الدعم والاستفسار</small><br><strong dir="ltr">{{ setting('phone', '+964 780 123 4567') }}</strong></div>
                 </div>
             </div>
         </div>
