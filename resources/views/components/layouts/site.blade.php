@@ -99,6 +99,7 @@
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('regulations') ? 'active' : '' }}" href="{{ route('regulations') }}">الضوابط والشروط</a></li>
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('marketplace.*') ? 'active' : '' }}" href="{{ route('marketplace.index') }}">بيع وشراء</a></li>
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('jobs.*') ? 'active' : '' }}" href="{{ route('jobs.index') }}">فرص العمل</a></li>
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('app') ? 'active' : '' }}" href="{{ route('app') }}">تطبيق النقابة</a></li>
 
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('complaint') ? 'active' : '' }}" href="{{ route('complaint') }}">إرسال شكوى</a></li>
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}" href="{{ route('contact') }}">اتصل بنا</a></li>
@@ -150,6 +151,7 @@
             <div class="col-6 col-lg-3">
                 <h5>الخدمات الإلكترونية</h5>
                 <div class="footer-links">
+                    <a href="{{ route('app') }}"><i class="bi bi-chevron-left"></i>تطبيق النقابة</a>
                     <a href="{{ route('apply') }}"><i class="bi bi-chevron-left"></i>التجديد والانتماء</a>
                     <a href="{{ route('transaction-search') }}"><i class="bi bi-chevron-left"></i>البحث عن معاملة</a>
                     <a href="{{ route('regulations') }}"><i class="bi bi-chevron-left"></i>الضوابط والشروط</a>

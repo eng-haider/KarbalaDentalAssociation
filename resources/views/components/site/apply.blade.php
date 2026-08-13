@@ -17,20 +17,7 @@
                     <h3>حمّل تطبيق النقابة</h3>
                     <p>التطبيق الرسمي المعتمد — متوفر لأجهزة أندرويد و iOS.</p>
 
-                    <div class="apply-stores">
-                        <a class="store-btn"
-                           href="https://play.google.com/store/apps/details?id=dev.flutter.dental.dental_app&amp;pcampaignid=web_share"
-                           target="_blank" rel="noopener">
-                            <i class="bi bi-google-play" aria-hidden="true"></i>
-                            <span><small>احصل عليه من</small><strong>Google Play</strong></span>
-                        </a>
-                        <a class="store-btn"
-                           href="https://apps.apple.com/app/id6756843335"
-                           target="_blank" rel="noopener">
-                            <i class="bi bi-apple" aria-hidden="true"></i>
-                            <span><small>حمّله من</small><strong>App Store</strong></span>
-                        </a>
-                    </div>
+                    <x-site.app-stores />
 
                     <p class="apply-note">
                         <i class="bi bi-shield-check" aria-hidden="true"></i>

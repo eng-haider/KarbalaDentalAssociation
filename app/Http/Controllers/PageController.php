@@ -41,6 +41,11 @@ class PageController extends Controller
         return view('pages.apply');
     }
 
+    public function app(): View
+    {
+        return view('pages.app');
+    }
+
     public function transactionSearch(): View
     {
         return view('pages.transaction-search', [

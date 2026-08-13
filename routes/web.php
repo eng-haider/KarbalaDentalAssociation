@@ -20,6 +20,7 @@ Route::get('/board', [PageController::class, 'board'])->name('board');
 Route::get('/regulations', [PageController::class, 'regulations'])->name('regulations');
 Route::get('/discounts', [PageController::class, 'discounts'])->name('discounts');
 Route::get('/apply', [PageController::class, 'apply'])->name('apply');
+Route::get('/app', [PageController::class, 'app'])->name('app');
 Route::get('/search', [PageController::class, 'transactionSearch'])->name('transaction-search');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 Route::get('/complaint', [PageController::class, 'complaint'])->name('complaint');

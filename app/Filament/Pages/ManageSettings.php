@@ -42,6 +42,9 @@ class ManageSettings extends Page
             'address' => 'كربلاء المقدسة – حي الحسين',
             'working_hours' => 'الأحد – الخميس: ٩:٠٠ ص – ٣:٠٠ م',
             'map_url' => '',
+            'app_android_url' => 'https://play.google.com/store/apps/details?id=dev.flutter.dental.dental_app',
+            'app_ios_url' => 'https://apps.apple.com/app/id6756843335',
+            'app_intro' => 'التطبيق الرسمي المعتمد من نقابة أطباء الأسنان – فرع كربلاء المقدسة، يتيح لك إنجاز معاملاتك ومتابعة حالتها ومواكبة تعاميم النقابة ودوراتها من هاتفك.',
             'facebook_url' => '',
             'instagram_url' => '',
             'telegram_url' => '',
@@ -85,6 +88,24 @@ class ManageSettings extends Page
                             ->label('رابط الخريطة')
                             ->url()
                             ->placeholder('https://maps.app.goo.gl/...')
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
+
+                Section::make('تطبيق النقابة')
+                    ->description('روابط المتاجر تظهر في صفحة التطبيق وقسم التجديد والانتماء. اترك الرابط فارغاً ليظهر "قريباً".')
+                    ->schema([
+                        TextInput::make('app_android_url')
+                            ->label('رابط Google Play')
+                            ->url()
+                            ->placeholder('https://play.google.com/store/apps/details?id=...'),
+                        TextInput::make('app_ios_url')
+                            ->label('رابط App Store')
+                            ->url()
+                            ->placeholder('https://apps.apple.com/app/id...'),
+                        Textarea::make('app_intro')
+                            ->label('نبذة عن التطبيق')
+                            ->rows(3)
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
