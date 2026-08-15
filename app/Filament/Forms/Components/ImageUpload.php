@@ -58,7 +58,7 @@ class ImageUpload extends FileUpload
                 // reach the disk — better a clear error than a broken image.
                 if (! $path || ! HeicConverter::convertInPlace($path)) {
                     throw ValidationException::withMessages([
-                        $component->getStatePath() => 'تعذّر تحويل صورة HEIC على الخادم. يرجى حفظ الصورة بصيغة JPG ثم رفعها.',
+                        $component->getStatePath() => 'تعذّر تحويل صورة HEIC على الخادم. يرجى حفظ الصورة بصيغة JPG ثم رفعها. (للمسؤول التقني: نفّذ php artisan images:convert-heic --check لمعرفة السبب)',
                     ]);
                 }
             }

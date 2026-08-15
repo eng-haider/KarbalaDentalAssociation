@@ -2,8 +2,10 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Maestroerror\HeicToJpg;
+use Throwable;
 
 /**
  * Converts HEIC/HEIF photos to JPEG.
@@ -38,21 +40,26 @@ class HeicConverter
     public static function convert(string $source, string $destination): ?string
     {
         foreach (['imagick', 'cli', 'library', 'preview'] as $backend) {
-            $succeeded = rescue(
-                fn (): bool => match ($backend) {
+            try {
+                $succeeded = match ($backend) {
                     'imagick' => static::withImagick($source, $destination),
                     'library' => static::withLibrary($source, $destination),
                     'cli' => static::withCli($source, $destination),
                     'preview' => static::withEmbeddedPreview($source, $destination),
-                },
-                false,
-                report: false,
-            );
+                };
+            } catch (Throwable $exception) {
+                $succeeded = false;
+                // A server missing one decoder is normal; the log is what tells
+                // an admin why the last resort failed too.
+                Log::debug("HEIC conversion via [{$backend}] failed: ".$exception->getMessage());
+            }
 
-            if ($succeeded && filesize($destination)) {
+            if ($succeeded && file_exists($destination) && filesize($destination)) {
                 return $backend;
             }
         }
+
+        Log::warning('HEIC conversion failed on every backend.', static::backends());
 
         return null;
     }
@@ -126,7 +133,24 @@ class HeicConverter
             return false;
         }
 
+        static::makeBundledBinariesExecutable();
+
         return (bool) HeicToJpg::convert($source)->saveAs($destination);
+    }
+
+    /**
+     * Composer does not always keep the executable bit when it unpacks a zip,
+     * and the bundled decoder is useless without it.
+     */
+    private static function makeBundledBinariesExecutable(): void
+    {
+        $directory = dirname((new \ReflectionClass(HeicToJpg::class))->getFileName(), 2).'/bin';
+
+        foreach ((array) glob($directory.'/php-heic-to-jpg-*') as $binary) {
+            if (is_file($binary) && ! is_executable($binary)) {
+                @chmod($binary, 0755);
+            }
+        }
     }
 
     private static function withCli(string $source, string $destination): bool
@@ -164,22 +188,29 @@ class HeicConverter
             return false;
         }
 
-        $start = strpos($bytes, "\xFF\xD8\xFF");
+        $best = null;
+        $offset = 0;
 
-        if ($start === false) {
-            return false;
+        // A file can hold several previews (and random bytes can look like one),
+        // so every candidate is decoded and the largest real image wins.
+        while (($start = strpos($bytes, "\xFF\xD8\xFF", $offset)) !== false) {
+            $offset = $start + 3;
+            $end = strpos($bytes, "\xFF\xD9", $start);
+
+            if ($end === false) {
+                break;
+            }
+
+            $candidate = substr($bytes, $start, $end - $start + 2);
+            $size = @getimagesizefromstring($candidate);
+
+            if ($size && (! $best || ($size[0] * $size[1]) > $best['pixels'])) {
+                $best = ['jpeg' => $candidate, 'pixels' => $size[0] * $size[1]];
+            }
         }
 
-        $end = strrpos($bytes, "\xFF\xD9");
-
-        if ($end === false || $end <= $start) {
-            return false;
-        }
-
-        $jpeg = substr($bytes, $start, $end - $start + 2);
-
-        return @getimagesizefromstring($jpeg) !== false
-            && file_put_contents($destination, $jpeg) !== false;
+        return $best !== null
+            && file_put_contents($destination, $best['jpeg']) !== false;
     }
 
     private static function findBinary(): ?string
