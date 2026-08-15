@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\Discounts\Schemas;
 
-use Filament\Forms\Components\FileUpload;
+use App\Filament\Forms\Components\ImageUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -33,15 +33,13 @@ class DiscountForm
                             ->label('الوصف')
                             ->rows(3)
                             ->columnSpanFull(),
-                        FileUpload::make('image')
+                        ImageUpload::make('image')
                             ->label('صورة العرض')
-                            ->image()
                             ->directory('discounts')
                             ->imageEditor()
                             ->helperText('الصورة الكبيرة في البطاقة. يُفضّل مقاس عريض (٤:٣ أو أعرض). بدونها تظهر لوحة ملوّنة بالأيقونة.'),
-                        FileUpload::make('logo')
+                        ImageUpload::make('logo')
                             ->label('شعار الجهة')
-                            ->image()
                             ->directory('discounts/logos')
                             ->imageEditor()
                             ->helperText('يظهر داخل دائرة بيضاء فوق الصورة. بدونه تظهر الأيقونة.'),

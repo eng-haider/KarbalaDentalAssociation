@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\CourseCategories\Schemas;
 
-use Filament\Forms\Components\FileUpload;
+use App\Filament\Forms\Components\ImageUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -37,9 +37,8 @@ class CourseCategoryForm
 
                 Section::make('الصورة والنشر')
                     ->schema([
-                        FileUpload::make('image')
+                        ImageUpload::make('image')
                             ->label('صورة التصنيف')
-                            ->image()
                             ->directory('course-categories')
                             ->imageEditor()
                             ->columnSpanFull(),

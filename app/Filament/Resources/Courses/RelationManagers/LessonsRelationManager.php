@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\Courses\RelationManagers;
 
+use App\Filament\Forms\Components\ImageUpload;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -49,9 +49,8 @@ class LessonsRelationManager extends RelationManager
                     ->label('الوصف')
                     ->rows(3)
                     ->columnSpanFull(),
-                FileUpload::make('image')
+                ImageUpload::make('image')
                     ->label('صورة الدرس')
-                    ->image()
                     ->directory('lessons')
                     ->imageEditor()
                     ->columnSpanFull(),

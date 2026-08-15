@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\JobOpenings\Schemas;
 
+use App\Filament\Forms\Components\ImageUpload;
 use App\Models\JobOpening;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -59,9 +59,8 @@ class JobOpeningForm
                             ->rows(5)
                             ->helperText('اكتب شرطاً واحداً في كل سطر ليظهر كقائمة نقطية.')
                             ->columnSpanFull(),
-                        FileUpload::make('logo')
+                        ImageUpload::make('logo')
                             ->label('شعار جهة العمل')
-                            ->image()
                             ->directory('jobs')
                             ->imageEditor()
                             ->columnSpanFull(),

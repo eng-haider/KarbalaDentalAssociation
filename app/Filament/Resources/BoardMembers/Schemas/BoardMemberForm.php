@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\BoardMembers\Schemas;
 
-use Filament\Forms\Components\FileUpload;
+use App\Filament\Forms\Components\ImageUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -23,9 +23,8 @@ class BoardMemberForm
                             ->label('المنصب')
                             ->required()
                             ->maxLength(255),
-                        FileUpload::make('photo')
+                        ImageUpload::make('photo')
                             ->label('الصورة')
-                            ->image()
                             ->avatar()
                             ->directory('board')
                             ->imageEditor(),

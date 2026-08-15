@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\HeroSlides\Schemas;
 
-use Filament\Forms\Components\FileUpload;
+use App\Filament\Forms\Components\ImageUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -17,9 +17,8 @@ class HeroSlideForm
             ->components([
                 Section::make('محتوى الشريحة')
                     ->schema([
-                        FileUpload::make('image')
+                        ImageUpload::make('image')
                             ->label('صورة الخلفية')
-                            ->image()
                             ->directory('hero')
                             ->imageEditor()
                             ->columnSpanFull(),

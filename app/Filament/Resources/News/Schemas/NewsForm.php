@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\News\Schemas;
 
+use App\Filament\Forms\Components\ImageUpload;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -46,9 +46,8 @@ class NewsForm
                 Section::make('الوسيلة الرئيسية (صورة أو فيديو)')
                     ->description('تظهر أعلى صفحة الخبر. إذا أضفت رابط فيديو سيُعرض الفيديو بدلاً من الصورة.')
                     ->schema([
-                        FileUpload::make('image')
+                        ImageUpload::make('image')
                             ->label('صورة الخبر')
-                            ->image()
                             ->directory('news')
                             ->imageEditor()
                             ->helperText('تُستخدم كصورة مصغّرة، وكغلاف للفيديو إن وُجد.'),

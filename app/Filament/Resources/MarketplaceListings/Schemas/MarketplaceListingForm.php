@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\MarketplaceListings\Schemas;
 
+use App\Filament\Forms\Components\ImageUpload;
 use App\Models\MarketplaceListing;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -43,9 +43,8 @@ class MarketplaceListingForm
                             ->numeric()
                             ->minValue(0)
                             ->helperText('اتركه فارغاً ليظهر "السعر عند التواصل".'),
-                        FileUpload::make('image')
+                        ImageUpload::make('image')
                             ->label('الصورة')
-                            ->image()
                             ->directory('marketplace')
                             ->imageEditor(),
                     ])

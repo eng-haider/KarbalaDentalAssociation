@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Courses\Schemas;
 
+use App\Filament\Forms\Components\ImageUpload;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -45,9 +45,8 @@ class CourseForm
                                     ->label('الرابط اللطيف')
                                     ->required()
                                     ->unique('course_categories', 'slug'),
-                                FileUpload::make('image')
+                                ImageUpload::make('image')
                                     ->label('صورة التصنيف')
-                                    ->image()
                                     ->directory('course-categories')
                                     ->imageEditor(),
                             ]),
@@ -71,9 +70,8 @@ class CourseForm
 
                 Section::make('النشر')
                     ->schema([
-                        FileUpload::make('image')
+                        ImageUpload::make('image')
                             ->label('صورة الدورة')
-                            ->image()
                             ->directory('courses')
                             ->imageEditor(),
                         Toggle::make('is_published')
