@@ -3,7 +3,9 @@
 namespace App\Filament\Pages;
 
 use App\Models\Setting;
+use App\Support\HeicConverter;
 use BackedEnum;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -11,6 +13,7 @@ use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\HtmlString;
 use UnitEnum;
 
 class ManageSettings extends Page
@@ -109,6 +112,19 @@ class ManageSettings extends Page
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
+
+                Section::make('تحويل صور الآيفون (HEIC)')
+                    ->description('صور HEIC تُحوَّل إلى JPG داخل المتصفح عند الرفع؛ وهذه محرّكات التحويل الاحتياطية على الخادم نفسه.')
+                    ->collapsed()
+                    ->schema([
+                        Placeholder::make('heic_backends')
+                            ->label('حالة المحرّكات')
+                            ->content(fn (): HtmlString => new HtmlString(
+                                collect(HeicConverter::backends())
+                                    ->map(fn (string $status, string $backend): string => e($backend).': '.e($status))
+                                    ->implode('<br>')
+                            )),
+                    ]),
 
                 Section::make('وسائل التواصل الاجتماعي')
                     ->description('اترك الحقل فارغاً لإخفاء الأيقونة.')
