@@ -1,7 +1,8 @@
-{{-- Store links live in لوحة التحكم → إعدادات الموقع → تطبيق النقابة.
-     A link that was cleared simply drops out instead of leading nowhere. --}}
-@php($android = setting('app_android_url'))
-@php($ios = setting('app_ios_url'))
+{{-- Store links live in لوحة التحكم → إعدادات الموقع → تطبيق النقابة, and fall
+     back to the official listings in config/site.php when a row is empty, so
+     the buttons render even on a database that was never seeded. --}}
+@php($android = setting('app_android_url', config('site.app_android_url')))
+@php($ios = setting('app_ios_url', config('site.app_ios_url')))
 
 @if ($android || $ios)
     <div class="apply-stores">
