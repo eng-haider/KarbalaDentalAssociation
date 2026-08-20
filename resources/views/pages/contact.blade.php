@@ -5,7 +5,7 @@
         subtitle="للتواصل مع نقابة أطباء الأسنان – فرع كربلاء المقدسة." />
 
     <div class="page-body">
-        <x-site.contact :heading="false" />
+        <x-site.contact :heading="false" :form="false" />
         <x-site.social :heading="false" />
     </div>
 </x-layouts.site>

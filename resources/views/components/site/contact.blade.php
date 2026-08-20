@@ -1,4 +1,12 @@
-@props(['heading' => true])
+@props(['heading' => true, 'form' => true])
+
+@php
+    use App\Support\MapLocation;
+
+    $address = MapLocation::address();
+    $hours = setting('working_hours', 'الأحد – الخميس: ٩:٠٠ ص – ٣:٠٠ م');
+@endphp
+
 <section class="section bg-light-2" id="contact">
     <div class="container">
         @if ($heading)
@@ -14,7 +22,7 @@
                 <div class="card p-4 h-100">
                     <div class="contact-info-item">
                         <div class="ico"><i class="bi bi-geo-alt-fill"></i></div>
-                        <div><h4>العنوان</h4><p>{{ setting('address', 'كربلاء المقدسة – حي الحسين') }}</p></div>
+                        <div><h4>العنوان</h4><p>{{ $address }}</p></div>
                     </div>
                     <div class="contact-info-item">
                         <div class="ico"><i class="bi bi-telephone-fill"></i></div>
@@ -26,21 +34,19 @@
                     </div>
                     <div class="contact-info-item">
                         <div class="ico"><i class="bi bi-clock-fill"></i></div>
-                        <div><h4>أوقات الدوام</h4><p>الأحد – الخميس: ٩:٠٠ ص – ٣:٠٠ م</p></div>
+                        <div><h4>أوقات الدوام</h4><p>{{ $hours }}</p></div>
                     </div>
+                    @if ($form)
                     <div class="map-embed mt-3">
-                        <div class="map-placeholder">
-                            <div>
-                                <i class="bi bi-geo-alt-fill fs-1"></i>
-                                <p class="mb-0 fw-bold mt-2">موقع النقابة على الخريطة</p>
-                                <small class="text-muted-2">{{ setting('address', 'كربلاء المقدسة – حي الحسين') }}</small>
-                            </div>
-                        </div>
+                        <iframe src="{{ MapLocation::embedUrl() }}" title="موقع مقر النقابة على الخريطة"
+                                loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                     </div>
+                    @endif
                 </div>
             </div>
 
             <div class="col-lg-7 reveal delay-1">
+                @if ($form)
                 <div class="card p-4 p-md-5 h-100">
                     <h3 class="mb-4">أرسل رسالة</h3>
                     <form id="contactForm" novalidate>
@@ -78,6 +84,26 @@
                         </div>
                     </form>
                 </div>
+                @else
+                <div class="card h-100 location-card">
+                    <div class="map-frame">
+                        <iframe src="{{ MapLocation::embedUrl() }}" title="موقع مقر النقابة على الخريطة"
+                                loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                    <div class="p-4 p-md-5">
+                        <h3 class="mb-2">مقرّ النقابة</h3>
+                        <p class="text-muted-2 mb-4">{{ $address }}</p>
+                        <div class="location-actions">
+                            <a href="{{ MapLocation::directionsUrl() }}" target="_blank" rel="noopener" class="btn btn-gov">
+                                <i class="bi bi-signpost-split-fill"></i> احصل على الاتجاهات
+                            </a>
+                            <a href="{{ MapLocation::linkUrl() }}" target="_blank" rel="noopener" class="btn btn-outline-gov">
+                                <i class="bi bi-map-fill"></i> فتح في الخرائط
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>

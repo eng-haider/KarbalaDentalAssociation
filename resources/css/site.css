@@ -1379,7 +1379,9 @@ a.ad-card:hover .ad-bg { transform: scale(1.04); }
 .reg-list { margin: 0; padding: 0; list-style: none; counter-reset: reg; }
 .reg-list li {
     counter-increment: reg; position: relative;
-    padding: .7rem 2.5rem .7rem 0; font-size: .95rem; line-height: 1.8;
+    /* Reserve the gutter on the same side the ::before badge is pinned to. */
+    padding-block: .7rem; padding-inline: 2.5rem 0;
+    font-size: .95rem; line-height: 1.8;
     border-bottom: 1px dashed var(--border);
 }
 .reg-list li:last-child { border-bottom: 0; padding-bottom: 0; }
@@ -1396,7 +1398,7 @@ a.ad-card:hover .ad-bg { transform: scale(1.04); }
     .reg-panel { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
     .reg-panel-head { display: none; }
     .reg-panel-body { padding: 1.1rem; }
-    .reg-list li { padding-inline-end: 2.2rem; padding-inline-start: 0; }
+    .reg-list li { padding-inline: 2.2rem 0; }
     #regPanelsCol:empty, #regPanels:empty { display: none; }
 }
 
@@ -1444,11 +1446,16 @@ a.ad-card:hover .ad-bg { transform: scale(1.04); }
 .contact-info-item h4 { font-size: 1rem; margin-bottom: .1rem; }
 .contact-info-item p { margin: 0; color: var(--muted); font-size: .92rem; }
 .map-embed { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); min-height: 260px; }
-.map-placeholder {
-    height: 100%; min-height: 260px;
-    background:
-        repeating-linear-gradient(45deg, #eef2f8, #eef2f8 14px, #e8edf5 14px, #e8edf5 28px);
-    display: grid; place-items: center; color: var(--primary); text-align: center;
+.map-embed iframe { display: block; width: 100%; height: 260px; border: 0; }
+
+/* Contact page: map panel that replaces the message form */
+.location-card { overflow: hidden; display: flex; flex-direction: column; }
+.map-frame { position: relative; border-block-end: 1px solid var(--border); background: var(--light); }
+.map-frame iframe { display: block; width: 100%; height: 380px; border: 0; }
+.location-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+@media (max-width: 575.98px) {
+    .map-frame iframe { height: 280px; }
+    .location-actions .btn { width: 100%; }
 }
 .form-control, .form-select {
     border-radius: 12px; border: 1.5px solid var(--border); padding: .7rem .9rem; background: var(--light);

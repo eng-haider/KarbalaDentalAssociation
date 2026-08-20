@@ -91,6 +91,7 @@ class ManageSettings extends Page
                             ->label('رابط الخريطة')
                             ->url()
                             ->placeholder('https://maps.app.goo.gl/...')
+                            ->helperText('الصق رابط المشاركة من خرائط جوجل؛ يُستخرج منه موقع المقر ويظهر على خريطة صفحة "اتصل بنا".')
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
