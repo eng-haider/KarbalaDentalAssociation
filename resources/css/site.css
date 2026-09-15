@@ -1424,8 +1424,6 @@ a.ad-card:hover .ad-bg { transform: scale(1.04); }
 .social-card { padding: 1.7rem 1.5rem; text-align: center; height: 100%; color: #fff; border: 0; }
 .social-card i.brand-ico { font-size: 2.4rem; }
 .social-card h3 { color: #fff; font-size: 1.15rem; margin-top: .8rem; }
-.social-card .count { font-size: 1.5rem; font-weight: 900; color: #fff; }
-.social-card small { color: rgba(255, 255, 255, .85); }
 .social-facebook { background: #1877F2; }
 .social-instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
 .social-telegram { background: #229ED9; }
