@@ -29,13 +29,20 @@ class SiteData
                 ['day' => 'السبت',          'time' => '٩:٠٠ ص – ١:٠٠ م'],
                 ['day' => 'الجمعة',         'time' => 'عطلة رسمية'],
             ],
-            'socials'     => [
-                ['name' => 'فيسبوك',   'icon' => 'facebook',  'url' => '#'],
-                ['name' => 'تيليجرام', 'icon' => 'telegram',  'url' => '#'],
-                ['name' => 'إنستغرام', 'icon' => 'instagram', 'url' => '#'],
-                ['name' => 'يوتيوب',   'icon' => 'youtube',   'url' => '#'],
-            ],
+            'socials'     => static::socials(),
         ];
+    }
+
+    /** Social profiles from the dashboard settings; platforms with no URL are omitted. */
+    public static function socials(): array
+    {
+        return array_values(array_filter([
+            ['name' => 'فيسبوك',   'icon' => 'facebook',  'url' => setting('facebook_url')],
+            ['name' => 'إنستغرام', 'icon' => 'instagram', 'url' => setting('instagram_url')],
+            ['name' => 'تيليجرام', 'icon' => 'telegram',  'url' => setting('telegram_url')],
+            ['name' => 'يوتيوب',   'icon' => 'youtube',   'url' => setting('youtube_url')],
+            ['name' => 'واتساب',   'icon' => 'whatsapp',  'url' => setting('whatsapp_url')],
+        ], fn (array $s): bool => filled($s['url'])));
     }
 
     /** Primary navigation links (anchor-based on the single landing page). */

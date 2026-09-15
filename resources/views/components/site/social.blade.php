@@ -1,4 +1,13 @@
 @props(['heading' => true])
+@php($platforms = array_values(array_filter([
+    ['key' => 'facebook',  'url' => setting('facebook_url'),  'icon' => 'bi-facebook',  'name' => 'فيسبوك',   'count' => '٤٥٬٠٠٠', 'unit' => 'متابع', 'cta' => 'زيارة الصفحة'],
+    ['key' => 'instagram', 'url' => setting('instagram_url'), 'icon' => 'bi-instagram', 'name' => 'انستغرام', 'count' => '٣٢٬٠٠٠', 'unit' => 'متابع', 'cta' => 'زيارة الحساب'],
+    ['key' => 'telegram',  'url' => setting('telegram_url'),  'icon' => 'bi-telegram',  'name' => 'تلغرام',   'count' => '١٨٬٠٠٠', 'unit' => 'مشترك', 'cta' => 'انضم للقناة'],
+    ['key' => 'youtube',   'url' => setting('youtube_url'),   'icon' => 'bi-youtube',   'name' => 'يوتيوب',   'count' => '١٢٬٠٠٠', 'unit' => 'مشترك', 'cta' => 'زيارة القناة'],
+    ['key' => 'whatsapp',  'url' => setting('whatsapp_url'),  'icon' => 'bi-whatsapp',  'name' => 'واتساب',   'count' => null,     'unit' => null,    'cta' => 'تواصل معنا'],
+], fn ($p) => filled($p['url']))))
+
+@if (count($platforms))
 <section class="section" id="social">
     <div class="container">
         @if ($heading)
@@ -9,43 +18,22 @@
         </div>
         @endif
 
-        <div class="row g-4">
-            <div class="col-sm-6 col-lg-3 reveal">
-                <div class="card social-card social-facebook hover-lift">
-                    <i class="bi bi-facebook brand-ico"></i>
-                    <h3>فيسبوك</h3>
-                    <div class="count">٤٥٬٠٠٠</div>
-                    <small>متابع</small>
-                    <a href="#" class="btn btn-sm w-100">زيارة الصفحة</a>
-                </div>
+        <div class="row g-4 justify-content-center">
+            @foreach ($platforms as $i => $p)
+            <div class="col-sm-6 col-lg-3 reveal {{ $i ? 'delay-'.min($i, 3) : '' }}">
+                <a href="{{ $p['url'] }}" target="_blank" rel="noopener" aria-label="{{ $p['name'] }}"
+                   class="card social-card social-{{ $p['key'] }} hover-lift text-decoration-none d-block">
+                    <i class="bi {{ $p['icon'] }} brand-ico"></i>
+                    <h3>{{ $p['name'] }}</h3>
+                    @if ($p['count'])
+                        <div class="count">{{ $p['count'] }}</div>
+                        <small>{{ $p['unit'] }}</small>
+                    @endif
+                    <span class="btn btn-sm w-100">{{ $p['cta'] }}</span>
+                </a>
             </div>
-            <div class="col-sm-6 col-lg-3 reveal delay-1">
-                <div class="card social-card social-instagram hover-lift">
-                    <i class="bi bi-instagram brand-ico"></i>
-                    <h3>انستغرام</h3>
-                    <div class="count">٣٢٬٠٠٠</div>
-                    <small>متابع</small>
-                    <a href="#" class="btn btn-sm w-100">زيارة الحساب</a>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3 reveal delay-2">
-                <div class="card social-card social-telegram hover-lift">
-                    <i class="bi bi-telegram brand-ico"></i>
-                    <h3>تلغرام</h3>
-                    <div class="count">١٨٬٠٠٠</div>
-                    <small>مشترك</small>
-                    <a href="#" class="btn btn-sm w-100">انضم للقناة</a>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3 reveal delay-3">
-                <div class="card social-card social-youtube hover-lift">
-                    <i class="bi bi-youtube brand-ico"></i>
-                    <h3>يوتيوب</h3>
-                    <div class="count">١٢٬٠٠٠</div>
-                    <small>مشترك</small>
-                    <a href="#" class="btn btn-sm w-100">زيارة القناة</a>
-                </div>
-            </div>
+            @endforeach
         </div>
     </div>
 </section>
+@endif

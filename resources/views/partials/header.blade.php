@@ -23,7 +23,7 @@
                 <span class="h-3 w-px bg-white/15"></span>
                 <div class="flex items-center gap-3">
                     @foreach($org['socials'] as $s)
-                        <a href="{{ $s['url'] }}" aria-label="{{ $s['name'] }}" class="transition-colors hover:text-white">
+                        <a href="{{ $s['url'] }}" target="_blank" rel="noopener" aria-label="{{ $s['name'] }}" class="transition-colors hover:text-white">
                             <x-icon :name="$s['icon']" class="size-3.5" />
                         </a>
                     @endforeach
@@ -149,7 +149,7 @@
                 </a>
                 <div class="mt-4 flex items-center justify-center gap-3">
                     @foreach($org['socials'] as $s)
-                        <a href="{{ $s['url'] }}" aria-label="{{ $s['name'] }}" class="grid size-9 place-items-center rounded-sm text-brand-500 ring-1 ring-cloud transition-colors hover:bg-brand-50 hover:text-brand-700">
+                        <a href="{{ $s['url'] }}" target="_blank" rel="noopener" aria-label="{{ $s['name'] }}" class="grid size-9 place-items-center rounded-sm text-brand-500 ring-1 ring-cloud transition-colors hover:bg-brand-50 hover:text-brand-700">
                             <x-icon :name="$s['icon']" class="size-4" />
                         </a>
                     @endforeach

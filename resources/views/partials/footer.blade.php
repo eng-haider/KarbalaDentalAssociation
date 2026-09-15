@@ -41,7 +41,7 @@
                 </p>
                 <div class="mt-6 flex items-center gap-3">
                     @foreach($org['socials'] as $s)
-                        <a href="{{ $s['url'] }}" aria-label="{{ $s['name'] }}"
+                        <a href="{{ $s['url'] }}" target="_blank" rel="noopener" aria-label="{{ $s['name'] }}"
                            class="grid size-10 place-items-center rounded-sm bg-white/5 text-slate-300 ring-1 ring-white/10 transition-colors hover:bg-gov-gold hover:text-brand-900">
                             <x-icon :name="$s['icon']" class="size-4" />
                         </a>

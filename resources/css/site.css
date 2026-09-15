@@ -1430,8 +1430,9 @@ a.ad-card:hover .ad-bg { transform: scale(1.04); }
 .social-instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
 .social-telegram { background: #229ED9; }
 .social-youtube { background: #FF0000; }
+.social-whatsapp { background: #25D366; }
 .social-card .btn { margin-top: 1rem; background: rgba(255,255,255,.16); color: #fff; border: 1px solid rgba(255,255,255,.4); }
-.social-card .btn:hover { background: #fff; color: #111; }
+.social-card:hover .btn { background: #fff; color: #111; }
 
 /* ==========================================================================
    Contact
