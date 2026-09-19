@@ -814,10 +814,11 @@ a { text-decoration: none; }
 
 .ad-list { display: grid; gap: 1.5rem; max-width: 1120px; margin-inline: auto; }
 
-/* ---- Ad banner: image + title, nothing else ---- */
+/* ---- Ad banner: image + title, nothing else ----
+   The card takes the image's own shape so nothing is cropped; only the
+   icon fallback (no image uploaded) uses a fixed banner ratio. */
 .ad-card {
     position: relative; display: block; overflow: hidden;
-    aspect-ratio: 21 / 9;
     border-radius: var(--radius-lg);
     background: var(--primary-900);
     box-shadow: var(--shadow);
@@ -827,12 +828,13 @@ a { text-decoration: none; }
 a.ad-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
 
 .ad-bg {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%; object-fit: cover;
+    display: block; width: 100%; height: auto;
+    max-height: 640px; object-fit: contain; /* very tall images letterbox instead of stretching the page */
     transition: transform .6s ease;
 }
 a.ad-card:hover .ad-bg { transform: scale(1.04); }
 .ad-bg--fallback {
+    aspect-ratio: 21 / 9;
     display: grid; place-items: center; font-size: 4.5rem; color: rgba(200, 154, 43, .55);
     background:
         radial-gradient(circle at 75% 20%, rgba(200, 154, 43, .30), transparent 55%),
@@ -854,7 +856,7 @@ a.ad-card:hover .ad-bg { transform: scale(1.04); }
 }
 
 @media (max-width: 767.98px) {
-    .ad-card { aspect-ratio: 16 / 9; }
+    .ad-bg--fallback { aspect-ratio: 16 / 9; }
     .ad-title { padding: 1.15rem 1.15rem; }
 }
 

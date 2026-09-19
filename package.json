@@ -4,7 +4,9 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "launch-video": "npm --prefix tools/website-launch-video run launch-video",
+        "render-launch-video": "npm --prefix tools/website-launch-video run render"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

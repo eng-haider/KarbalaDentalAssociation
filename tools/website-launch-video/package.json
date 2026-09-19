@@ -1,0 +1,24 @@
+{
+  "name": "karbala-website-launch-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test browser-image.test.mjs",
+    "capture": "node capture.mjs",
+    "render": "node render.mjs && node verify.mjs",
+    "verify": "node verify.mjs",
+    "launch-video": "node capture.mjs && node render.mjs && node verify.mjs"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.352",
+    "@remotion/renderer": "4.0.352",
+    "ffmpeg-static": "5.2.0",
+    "jsqr": "1.4.0",
+    "playwright": "1.55.0",
+    "pngjs": "5.0.0",
+    "qrcode": "1.5.4",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "remotion": "4.0.352"
+  }
+}
