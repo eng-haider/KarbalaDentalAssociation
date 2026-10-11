@@ -1,11 +1,20 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-CZZ-jvjt.css",
+    "file": "assets/app-D6OXBIf_.css",
     "name": "app",
     "names": [
       "app.css"
     ],
     "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/css/osif.css": {
+    "file": "assets/osif-C_xt7Xky.css",
+    "name": "osif",
+    "names": [
+      "osif.css"
+    ],
+    "src": "resources/css/osif.css",
     "isEntry": true
   },
   "resources/css/site.css": {
@@ -21,6 +30,18 @@
     "file": "assets/app-BbzKHjiw.js",
     "name": "app",
     "src": "resources/js/app.js",
+    "isEntry": true
+  },
+  "resources/js/osif-invitation.js": {
+    "file": "assets/osif-invitation-BS4Xi4rs.js",
+    "name": "osif-invitation",
+    "src": "resources/js/osif-invitation.js",
+    "isEntry": true
+  },
+  "resources/js/osif.js": {
+    "file": "assets/osif-DfYc1tva.js",
+    "name": "osif",
+    "src": "resources/js/osif.js",
     "isEntry": true
   },
   "resources/js/site.js": {

@@ -93,6 +93,7 @@
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">الرئيسية</a></li>
                     {{-- <li class="nav-item"><a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">عن النقابة</a></li> --}}
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('news.*') ? 'active' : '' }}" href="{{ route('news.index') }}">النشاطات</a></li>
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('osif') ? 'active' : '' }}" href="{{ route('osif') }}">OSIF 2026</a></li>
                      <li class="nav-item"><a class="nav-link {{ request()->routeIs('transaction-search') ? 'active' : '' }}" href="{{ route('transaction-search') }}">البحث عن معاملة</a></li>
                     {{-- <li class="nav-item"><a class="nav-link {{ request()->routeIs('events.*') ? 'active' : '' }}" href="{{ route('events.index') }}">الفعاليات</a></li> --}}
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('courses.*') ? 'active' : '' }}" href="{{ route('courses.index') }}">الدورات التدريبية</a></li>
@@ -145,6 +146,7 @@
                     <a href="{{ route('news.index') }}"><i class="bi bi-chevron-left"></i>النشاطات</a>
                     <a href="{{ route('courses.index') }}"><i class="bi bi-chevron-left"></i>الدورات التدريبية</a>
                     <a href="{{ route('events.index') }}"><i class="bi bi-chevron-left"></i>الفعاليات</a>
+                    <a href="{{ route('osif') }}"><i class="bi bi-chevron-left"></i>OSIF 2026</a>
                 </div>
             </div>
 

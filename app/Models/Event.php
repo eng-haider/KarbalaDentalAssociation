@@ -8,9 +8,20 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Event extends Model
 {
+    public const OSIF_SLUG = 'osif-karbala-2026';
+
+    /** Used until the choices are edited from the dashboard. */
+    public const DEFAULT_PROFESSIONAL_TITLES = [
+        'طبيب أسنان اختصاص',
+        'طبيب أسنان مقيم أقدم',
+        'طبيب أسنان تدرج',
+        'طبيب أسنان مقيم',
+        'طبيب أسنان خريج جديد',
+    ];
+
     protected $fillable = [
-        'title', 'description', 'location', 'starts_at', 'ends_at',
-        'is_featured', 'registration_open',
+        'title', 'slug', 'description', 'location', 'starts_at', 'ends_at',
+        'is_featured', 'registration_open', 'professional_titles',
     ];
 
     protected function casts(): array
@@ -20,12 +31,29 @@ class Event extends Model
             'ends_at' => 'datetime',
             'is_featured' => 'boolean',
             'registration_open' => 'boolean',
+            'professional_titles' => 'array',
         ];
     }
 
     public function registrations(): HasMany
     {
         return $this->hasMany(EventRegistration::class);
+    }
+
+    public function isOsif(): bool
+    {
+        return $this->slug === self::OSIF_SLUG;
+    }
+
+    /** @return list<string> */
+    public function professionalTitleOptions(): array
+    {
+        $titles = array_values(array_filter(
+            array_map(fn ($title) => trim((string) $title), $this->professional_titles ?? []),
+            'filled',
+        ));
+
+        return $titles ?: self::DEFAULT_PROFESSIONAL_TITLES;
     }
 
     public function scopeUpcoming(Builder $query): Builder

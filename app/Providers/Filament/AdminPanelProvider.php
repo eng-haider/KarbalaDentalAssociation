@@ -17,6 +17,7 @@ use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Foundation\Vite;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
@@ -29,6 +30,12 @@ class AdminPanelProvider extends PanelProvider
         FilamentView::registerRenderHook(
             PanelsRenderHook::HEAD_END,
             fn (): string => view('filament.heic-upload')->render(),
+        );
+
+        // Draws OSIF invitation cards for the "إرسال الدعوة" action (both panels).
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::BODY_END,
+            fn () => app(Vite::class)('resources/js/osif-invitation.js'),
         );
     }
 

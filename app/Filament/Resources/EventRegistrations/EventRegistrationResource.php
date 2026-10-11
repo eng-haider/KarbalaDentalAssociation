@@ -8,10 +8,12 @@ use App\Filament\Resources\EventRegistrations\Schemas\EventRegistrationForm;
 use App\Filament\Resources\EventRegistrations\Tables\EventRegistrationsTable;
 use App\Models\EventRegistration;
 use BackedEnum;
+use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class EventRegistrationResource extends Resource
@@ -38,9 +40,35 @@ class EventRegistrationResource extends Resource
         return EventRegistrationsTable::configure($table);
     }
 
+    public static function getPluralModelLabel(): string
+    {
+        return static::inOsifPanel() ? 'المسجّلون' : 'تسجيلات الفعاليات';
+    }
+
+    public static function getModelLabel(): string
+    {
+        return static::inOsifPanel() ? 'مسجّل' : 'تسجيل';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return static::inOsifPanel() ? null : 'الوارد';
+    }
+
+    private static function inOsifPanel(): bool
+    {
+        return Filament::getCurrentPanel()?->getId() === 'osif';
+    }
+
     public static function getNavigationBadge(): ?string
     {
-        return (string) (EventRegistration::where('is_handled', false)->count() ?: '');
+        $query = EventRegistration::query()->where('is_handled', false);
+
+        if (Filament::getCurrentPanel()?->getId() === 'osif') {
+            $query->whereHas('event', fn ($event) => $event->where('slug', \App\Models\Event::OSIF_SLUG));
+        }
+
+        return (string) ($query->count() ?: '');
     }
 
     public static function getNavigationBadgeColor(): ?string
@@ -48,9 +76,32 @@ class EventRegistrationResource extends Resource
         return 'warning';
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        // The OSIF panel is deliberately narrow: coordinators only see the
+        // people registered for this forum, never association submissions.
+        if (Filament::getCurrentPanel()?->getId() === 'osif') {
+            $query->whereHas('event', fn ($event) => $event->where('slug', \App\Models\Event::OSIF_SLUG));
+        }
+
+        return $query;
+    }
+
     public static function canCreate(): bool
     {
         return false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
     }
 
     public static function getRelations(): array

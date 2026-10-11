@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
         $this->boardMembers();
         $this->news();
         $this->events();
+        $this->call(OsifEventSeeder::class);
         $this->courses();
         $this->call(CourseCategorySeeder::class);
         $this->call(HomeSectionSeeder::class);

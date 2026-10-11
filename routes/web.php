@@ -8,6 +8,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\MarketplaceController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\OsifController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +46,11 @@ Route::get('/jobs', [JobController::class, 'index'])->name('jobs.index');
 // Events
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
+
+// OSIF is intentionally a stand-alone event experience while sharing the
+// association's registration and administration infrastructure.
+Route::get('/osif', OsifController::class)->name('osif');
+Route::get('/osif/register', [OsifController::class, 'registration'])->name('osif.register');
 
 // Public form submissions
 Route::post('/complaints', [ComplaintController::class, 'store'])

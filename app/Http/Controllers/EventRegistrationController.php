@@ -18,7 +18,7 @@ class EventRegistrationController extends Controller
         $event->registrations()->create($request->validated());
 
         return redirect()
-            ->to(url('/').'#featured-event')
+            ->to($event->isOsif() ? route('osif.register') : route('events.show', $event).'#registration')
             ->with('registration_ok', true);
     }
 }

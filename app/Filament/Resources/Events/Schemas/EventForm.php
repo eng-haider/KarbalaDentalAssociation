@@ -22,6 +22,12 @@ class EventForm
                             ->required()
                             ->maxLength(255)
                             ->columnSpanFull(),
+                        TextInput::make('slug')
+                            ->label('المعرّف الخاص للرابط')
+                            ->helperText('اتركه فارغاً للفعاليات العادية. لا تغيّر osif-karbala-2026 لأنه يربط موقع الملتقى وتسجيلاته.')
+                            ->unique(ignoreRecord: true)
+                            ->maxLength(255)
+                            ->columnSpanFull(),
                         Textarea::make('description')
                             ->label('الوصف')
                             ->rows(3)
