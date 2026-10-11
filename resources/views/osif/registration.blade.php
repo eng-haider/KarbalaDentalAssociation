@@ -23,6 +23,7 @@
                 </ul>
             </header>
 
+            {{-- Hidden for now: the heading and event facts. Remove this comment to show them again.
             <section class="osif-registration-copy" aria-labelledby="osif-registration-title">
                 <div class="osif-copy-head">
                     <div class="osif-registration-status">
@@ -55,6 +56,7 @@
                     </li>
                 </ul>
             </section>
+            --}}
 
             @include('osif.partials.registration-form', ['event' => $event])
 
