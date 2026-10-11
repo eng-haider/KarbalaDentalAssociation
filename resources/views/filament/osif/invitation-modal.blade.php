@@ -47,7 +47,7 @@
     <div style="display: grid; gap: .75rem;">
         @if ($payload['chatUrl'])
             <div class="osif-invite__panel">
-                <strong>إرسال الدعوة كصورة إلى {{ $record->name }}</strong>
+                <strong>إرسال الدعوة كملف PDF إلى {{ $record->name }}</strong>
 
                 {{-- Phones: open the chat first so it is at the top of WhatsApp's share list. --}}
                 <ol class="osif-invite__steps" x-show="onPhone" x-cloak>
@@ -63,36 +63,29 @@
                     <li class="osif-invite__step">
                         <span class="osif-invite__num">2</span>
                         <div>
-                            <p>اختر واتساب ثم المحادثة نفسها من أعلى القائمة، فتصل البطاقة كصورة.</p>
-                            <x-filament::button type="button" color="success" icon="heroicon-m-share" x-on:click="share()" x-bind:disabled="! file">
-                                مشاركة الصورة
+                            <p>اختر واتساب ثم المحادثة نفسها من أعلى القائمة، فيصل ملف الدعوة.</p>
+                            <x-filament::button type="button" color="success" icon="heroicon-m-document-arrow-up" x-on:click="share()" x-bind:disabled="! pdf">
+                                إرسال ملف الدعوة (PDF)
                             </x-filament::button>
                         </div>
                     </li>
                 </ol>
 
-                {{-- Computers: copy the card, then paste it into the chat. --}}
+                {{-- Computers: download the PDF, then drop it into the chat. --}}
                 <ol class="osif-invite__steps" x-show="! onPhone">
                     <li class="osif-invite__step">
                         <span class="osif-invite__num">1</span>
                         <div>
-                            <p x-text="canCopy ? 'انسخ صورة البطاقة.' : 'نزّل صورة البطاقة.'">انسخ صورة البطاقة.</p>
-                            <div x-show="canCopy">
-                                <x-filament::button type="button" color="success" icon="heroicon-m-clipboard-document" x-on:click="copy()" x-bind:disabled="! blob">
-                                    <span x-text="copied ? 'تم النسخ ✓' : 'نسخ الصورة'">نسخ الصورة</span>
-                                </x-filament::button>
-                            </div>
-                            <div x-show="! canCopy" x-cloak>
-                                <x-filament::button type="button" color="success" icon="heroicon-m-arrow-down-tray" x-on:click="download()" x-bind:disabled="! blob">
-                                    تنزيل الصورة
-                                </x-filament::button>
-                            </div>
+                            <p>نزّل ملف الدعوة.</p>
+                            <x-filament::button type="button" color="success" icon="heroicon-m-arrow-down-tray" x-on:click="downloadPdf()" x-bind:disabled="! pdf">
+                                تنزيل ملف الدعوة (PDF)
+                            </x-filament::button>
                         </div>
                     </li>
                     <li class="osif-invite__step">
                         <span class="osif-invite__num">2</span>
                         <div>
-                            <p x-text="canCopy ? 'افتح المحادثة، الصق الصورة بـ Ctrl+V (أو ⌘V على ماك) ثم أرسل.' : 'افتح المحادثة وأرفق الصورة التي نزّلتها ثم أرسل.'">افتح المحادثة والصق الصورة ثم أرسل.</p>
+                            <p>افتح المحادثة وأرسل رسالة الترحيب، ثم اسحب الملف إلى المحادثة (أو أرفقه من 📎 ← مستند) وأرسل.</p>
                             <x-filament::button tag="a" :href="$payload['imageChatUrl']" target="_blank" color="gray" icon="heroicon-m-chat-bubble-left-right">
                                 فتح واتساب
                             </x-filament::button>
@@ -102,7 +95,7 @@
             </div>
 
             <div class="osif-invite__alt">
-                <p>أو أرسل <strong>رابط الدعوة</strong> بدلاً من الصورة، ويعرض واتساب البطاقة كمعاينة للرابط.</p>
+                <p>أو أرسل <strong>رابط الدعوة</strong> بدلاً من الملف، ويعرض واتساب البطاقة كمعاينة للرابط.</p>
                 <div class="osif-invite__status" x-bind:class="{ 'is-ready': status === 'ready' && ! uploadFailed, 'is-warning': uploadFailed }">
                     <span x-show="status === 'loading' || status === 'uploading'">جارٍ رفع البطاقة لمعاينة الرابط…</span>
                     <span x-show="status === 'ready' && ! uploadFailed" x-cloak>✓ معاينة الرابط جاهزة</span>

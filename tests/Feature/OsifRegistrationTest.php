@@ -229,21 +229,24 @@ class OsifRegistrationTest extends TestCase
         $registration = $this->osifRegistration();
         $this->actingAsCoordinator();
 
-        $this->post(route('osif.invitation.images', $registration), [
+        $this->post(route('osif.invitation.files', $registration), [
             'card' => UploadedFile::fake()->image('card.png', 1080, 1350),
             'preview' => UploadedFile::fake()->image('preview.jpg', 1200, 630),
-        ])->assertOk()->assertJsonStructure(['card', 'preview']);
+            'pdf' => UploadedFile::fake()->createWithContent('invitation.pdf', "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n"),
+        ])->assertOk()->assertJsonStructure(['card', 'preview', 'pdf']);
 
-        Storage::disk('public')->assertExists($registration->invitationImagePath('card.png'));
-        Storage::disk('public')->assertExists($registration->invitationImagePath('preview.jpg'));
+        Storage::disk('public')->assertExists($registration->invitationFilePath('card.png'));
+        Storage::disk('public')->assertExists($registration->invitationFilePath('preview.jpg'));
+        Storage::disk('public')->assertExists($registration->invitationFilePath('invitation.pdf'));
 
         $this->get($registration->invitationUrl())
             ->assertOk()
-            ->assertSee('<meta property="og:image" content="'.url('/storage/'.$registration->invitationImagePath('preview.jpg')), false)
-            ->assertSee('تنزيل البطاقة', false);
+            ->assertSee('<meta property="og:image" content="'.url('/storage/'.$registration->invitationFilePath('preview.jpg')), false)
+            ->assertSee('تنزيل الدعوة (PDF)', false)
+            ->assertSee('تنزيل كصورة', false);
 
         $registration->delete();
-        Storage::disk('public')->assertMissing($registration->invitationImagePath('card.png'));
+        Storage::disk('public')->assertMissing($registration->invitationFilePath('card.png'));
     }
 
     public function test_only_osif_managers_can_upload_cards(): void
@@ -255,11 +258,11 @@ class OsifRegistrationTest extends TestCase
             'preview' => UploadedFile::fake()->image('preview.jpg'),
         ];
 
-        $this->postJson(route('osif.invitation.images', $registration), $files())->assertUnauthorized();
+        $this->postJson(route('osif.invitation.files', $registration), $files())->assertUnauthorized();
 
         $this->actingAs(User::factory()->create(['role' => 'member']));
-        $this->postJson(route('osif.invitation.images', $registration), $files())->assertForbidden();
+        $this->postJson(route('osif.invitation.files', $registration), $files())->assertForbidden();
 
-        Storage::disk('public')->assertMissing($registration->invitationImagePath('card.png'));
+        Storage::disk('public')->assertMissing($registration->invitationFilePath('card.png'));
     }
 }

@@ -28,13 +28,14 @@ class OsifInvitationController extends Controller
         return response()->view('osif.invitation', [
             'registration' => $registration,
             'event' => $registration->event,
-            'card' => OsifInvitation::imageUrl($registration, OsifInvitation::CARD),
-            'preview' => OsifInvitation::imageUrl($registration, OsifInvitation::PREVIEW),
+            'card' => OsifInvitation::fileUrl($registration, OsifInvitation::CARD),
+            'preview' => OsifInvitation::fileUrl($registration, OsifInvitation::PREVIEW),
+            'pdf' => OsifInvitation::fileUrl($registration, OsifInvitation::PDF),
         ]);
     }
 
-    /** The dashboard uploads the cards it draws so the page and WhatsApp preview can show them. */
-    public function storeImages(Request $request, EventRegistration $registration): JsonResponse
+    /** The dashboard uploads the card, its PDF and the link preview it draws. */
+    public function storeFiles(Request $request, EventRegistration $registration): JsonResponse
     {
         // Checked here rather than with the auth middleware: the app has no generic login route.
         abort_unless($request->user(), 401);
@@ -43,15 +44,20 @@ class OsifInvitationController extends Controller
         $request->validate([
             'card' => ['required', 'file', 'mimetypes:image/png', 'max:4096'],
             'preview' => ['required', 'file', 'mimetypes:image/jpeg', 'max:2048'],
+            'pdf' => ['nullable', 'file', 'mimetypes:application/pdf', 'max:8192'],
         ]);
 
-        $directory = dirname($registration->invitationImagePath(OsifInvitation::CARD));
-        Storage::disk('public')->putFileAs($directory, $request->file('card'), OsifInvitation::CARD);
-        Storage::disk('public')->putFileAs($directory, $request->file('preview'), OsifInvitation::PREVIEW);
+        $directory = dirname($registration->invitationFilePath(OsifInvitation::CARD));
+        $files = [OsifInvitation::CARD => 'card', OsifInvitation::PREVIEW => 'preview', OsifInvitation::PDF => 'pdf'];
 
-        return response()->json([
-            'card' => OsifInvitation::imageUrl($registration, OsifInvitation::CARD),
-            'preview' => OsifInvitation::imageUrl($registration, OsifInvitation::PREVIEW),
-        ]);
+        foreach ($files as $name => $field) {
+            if ($request->hasFile($field)) {
+                Storage::disk('public')->putFileAs($directory, $request->file($field), $name);
+            }
+        }
+
+        return response()->json(collect($files)
+            ->mapWithKeys(fn (string $field, string $name) => [$field => OsifInvitation::fileUrl($registration, $name)])
+            ->all());
     }
 }

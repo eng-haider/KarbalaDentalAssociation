@@ -17,6 +17,8 @@ class OsifInvitation
 
     public const PREVIEW = 'preview.jpg';
 
+    public const PDF = 'invitation.pdf';
+
     /** @return array<string, mixed> */
     public static function payload(EventRegistration $registration): array
     {
@@ -37,12 +39,13 @@ class OsifInvitation
             // Encoded in the card's QR code.
             'url' => $registration->invitationUrl(),
             'filename' => 'osif-invitation-'.$registration->getKey().'.png',
+            'pdfName' => 'osif-invitation-'.$registration->getKey().'.pdf',
             'message' => $message,
             // Sent before the card image itself, so it carries no link.
             'imageChatUrl' => $chat(static::message($registration, withLink: false)),
             // A link whose preview WhatsApp shows as the card.
             'chatUrl' => $chat($message),
-            'uploadUrl' => route('osif.invitation.images', $registration, absolute: false),
+            'uploadUrl' => route('osif.invitation.files', $registration, absolute: false),
             // Same-origin paths keep the canvas exportable even when APP_URL
             // differs from the host the dashboard is opened on.
             'font' => static::path('fonts/cairo/cairo.css'),
@@ -74,11 +77,11 @@ class OsifInvitation
         ], fn (?string $line) => $line !== null));
     }
 
-    /** Absolute URL of an uploaded card image, or null before the dashboard has made one. */
-    public static function imageUrl(EventRegistration $registration, string $file): ?string
+    /** Absolute URL of an uploaded card file, or null before the dashboard has made one. */
+    public static function fileUrl(EventRegistration $registration, string $file): ?string
     {
         $disk = Storage::disk('public');
-        $path = $registration->invitationImagePath($file);
+        $path = $registration->invitationFilePath($file);
 
         if (! $disk->exists($path)) {
             return null;

@@ -42,9 +42,14 @@
                 </dl>
 
                 <div class="osif-pass-actions">
+                    @if ($pdf)
+                        <a class="osif-pass-button" href="{{ $pdf }}" download="osif-invitation-{{ $registration->getKey() }}.pdf">
+                            <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> تنزيل الدعوة (PDF)
+                        </a>
+                    @endif
                     @if ($card)
-                        <a class="osif-pass-button" href="{{ $card }}" download="osif-invitation-{{ $registration->getKey() }}.png">
-                            <i class="bi bi-download" aria-hidden="true"></i> تنزيل البطاقة
+                        <a @class(['osif-pass-button', 'is-ghost' => $pdf]) href="{{ $card }}" download="osif-invitation-{{ $registration->getKey() }}.png">
+                            <i class="bi bi-image" aria-hidden="true"></i> تنزيل كصورة
                         </a>
                     @endif
                     <a class="osif-pass-button is-ghost" href="{{ route('osif') }}">عن الملتقى</a>

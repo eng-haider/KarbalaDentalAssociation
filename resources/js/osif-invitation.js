@@ -1,6 +1,6 @@
-// Draws an attendee's OSIF invitation (a badge-style card with a QR code, plus
-// a wide preview for WhatsApp's link preview) in the browser and uploads both,
-// so the invitation page and the WhatsApp message can show them. Canvas text is
+// Draws an attendee's OSIF invitation (a badge-style card with a QR code, the
+// same card as a PDF, and a wide preview for WhatsApp's link preview) in the
+// browser and uploads them, so the invitation page and WhatsApp can use them. Canvas text is
 // shaped by the browser, so Arabic renders correctly without a headless Chrome
 // on the server. Used by the "إرسال الدعوة" modal
 // (resources/views/filament/osif/invitation-modal.blade.php).
@@ -201,23 +201,24 @@ function drawQr(ctx, value, x, y, size) {
     }
 }
 
-function canvas(width, height) {
+function canvas(width, height, scale = 1) {
     const element = document.createElement('canvas');
-    element.width = width;
-    element.height = height;
+    element.width = width * scale;
+    element.height = height * scale;
 
     const ctx = element.getContext('2d');
+    ctx.scale(scale, scale);
     ctx.direction = 'rtl';
     ctx.textBaseline = 'alphabetic';
 
     return [element, ctx];
 }
 
-/** The invitation itself: 1080×1350, shown in WhatsApp and on the invitation page. */
-function drawCard(data, logos) {
+/** The invitation itself: 1080×1350 (×scale for print), shown in WhatsApp and on the invitation page. */
+function drawCard(data, logos, scale = 1) {
     const WIDTH = 1080;
     const HEIGHT = 1350;
-    const [element, ctx] = canvas(WIDTH, HEIGHT);
+    const [element, ctx] = canvas(WIDTH, HEIGHT, scale);
 
     backdrop(ctx, WIDTH, HEIGHT, 860, 120);
 
@@ -244,8 +245,9 @@ function drawCard(data, logos) {
 
     ctx.save();
     ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
-    ctx.shadowBlur = 40;
-    ctx.shadowOffsetY = 18;
+    // Shadows are measured in device pixels, so they follow the scale by hand.
+    ctx.shadowBlur = 40 * scale;
+    ctx.shadowOffsetY = 18 * scale;
     roundRect(ctx, badge.x, badge.y, badge.width, badge.height, 32);
     ctx.fillStyle = COLOR.white;
     ctx.fill();
@@ -352,6 +354,57 @@ function drawPreview(data, logos) {
     return element;
 }
 
+/** UTF-16BE hex string, the PDF way to store Arabic metadata. */
+const pdfText = (value) => `<FEFF${[...Array(value.length)].map((_, i) => value.charCodeAt(i).toString(16).padStart(4, '0')).join('')}>`;
+
+/**
+ * A one-page PDF holding the card as a JPEG. Small, prints at 6×7.5 inches,
+ * and opens in WhatsApp's document viewer — no PDF library needed.
+ */
+async function pdfFrom(jpeg, pixelWidth, pixelHeight, title) {
+    const image = new Uint8Array(await jpeg.arrayBuffer());
+    const encoder = new TextEncoder();
+    const chunks = [];
+    const offsets = [];
+    let length = 0;
+
+    const push = (part) => {
+        const bytes = typeof part === 'string' ? encoder.encode(part) : part;
+        chunks.push(bytes);
+        length += bytes.length;
+    };
+    const object = (body, stream) => {
+        offsets.push(length);
+        push(`${offsets.length} 0 obj\n${body}\n`);
+        if (stream) {
+            push('stream\n');
+            push(stream);
+            push('\nendstream\n');
+        }
+        push('endobj\n');
+    };
+
+    const width = 432;
+    const height = Math.round((width * pixelHeight) / pixelWidth);
+    const draw = encoder.encode(`q ${width} 0 0 ${height} 0 0 cm /Card Do Q`);
+
+    push('%PDF-1.4\n');
+    push(new Uint8Array([0x25, 0xe2, 0xe3, 0xcf, 0xd3, 0x0a]));
+    object('<< /Type /Catalog /Pages 2 0 R >>');
+    object('<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    object(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}] /Resources << /XObject << /Card 4 0 R >> >> /Contents 5 0 R >>`);
+    object(`<< /Type /XObject /Subtype /Image /Width ${pixelWidth} /Height ${pixelHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${image.length} >>`, image);
+    object(`<< /Length ${draw.length} >>`, draw);
+    object(`<< /Title ${pdfText(title)} /Producer (OSIF KARBALA) >>`);
+
+    const xref = length;
+    push(`xref\n0 ${offsets.length + 1}\n0000000000 65535 f \n`);
+    offsets.forEach((offset) => push(`${String(offset).padStart(10, '0')} 00000 n \n`));
+    push(`trailer\n<< /Size ${offsets.length + 1} /Root 1 0 R /Info ${offsets.length} 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+
+    return new Blob(chunks, { type: 'application/pdf' });
+}
+
 const toBlob = (element, type, quality) => new Promise((resolve, reject) => {
     element.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Could not export the card.'))), type, quality);
 });
@@ -362,10 +415,8 @@ window.osifInvitation = (data) => ({
     uploadFailed: false,
     previewUrl: null,
     blob: null,
-    file: null,
-    canCopy: false,
+    pdf: null,
     onPhone: false,
-    copied: false,
 
     async init() {
         try {
@@ -378,11 +429,14 @@ window.osifInvitation = (data) => ({
             const logos = { osif, syndicate, university };
 
             this.blob = await toBlob(drawCard(this.data, logos), 'image/png');
-            this.file = new File([this.blob], this.data.filename, { type: 'image/png' });
             this.previewUrl = URL.createObjectURL(this.blob);
-            this.canCopy = Boolean(navigator.clipboard?.write && window.ClipboardItem);
-            // Desktop browsers can share files too, but WhatsApp Web is reached by pasting.
-            this.onPhone = Boolean(navigator.canShare?.({ files: [this.file] }))
+
+            // The PDF is drawn at twice the size so it stays sharp when printed.
+            const print = await toBlob(drawCard(this.data, logos, 2), 'image/jpeg', 0.9);
+            const pdf = await pdfFrom(print, 2160, 2700, `دعوة حضور — ${this.data.name}`);
+            this.pdf = new File([pdf], this.data.pdfName, { type: 'application/pdf' });
+            // Desktop browsers can share files too, but WhatsApp Web takes a dragged file.
+            this.onPhone = Boolean(navigator.canShare?.({ files: [this.pdf] }))
                 && window.matchMedia('(pointer: coarse)').matches;
             this.status = 'uploading';
 
@@ -406,6 +460,7 @@ window.osifInvitation = (data) => ({
         const body = new FormData();
         body.append('card', this.blob, 'card.png');
         body.append('preview', preview, 'preview.jpg');
+        body.append('pdf', this.pdf, 'invitation.pdf');
 
         const response = await fetch(this.data.uploadUrl, {
             method: 'POST',
@@ -422,32 +477,31 @@ window.osifInvitation = (data) => ({
         }
     },
 
-    /** Sends the card itself (not a link) through the phone's share sheet. */
+    /** Sends the PDF itself (not a link) through the phone's share sheet. */
     async share() {
         try {
-            await navigator.share({ files: [this.file] });
+            await navigator.share({ files: [this.pdf] });
         } catch (error) {
             if (error?.name !== 'AbortError') {
-                this.download();
+                this.downloadPdf();
             }
         }
     },
 
-    /** Copies the card so it can be pasted straight into WhatsApp Web or Desktop. */
-    async copy() {
-        try {
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': this.blob })]);
-            this.copied = true;
-            setTimeout(() => (this.copied = false), 4000);
-        } catch {
-            this.download();
-        }
+    downloadPdf() {
+        const url = URL.createObjectURL(this.pdf);
+        this.save(url, this.data.pdfName);
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
     },
 
     download() {
+        this.save(this.previewUrl, this.data.filename);
+    },
+
+    save(href, filename) {
         const link = document.createElement('a');
-        link.href = this.previewUrl;
-        link.download = this.data.filename;
+        link.href = href;
+        link.download = filename;
         document.body.append(link);
         link.click();
         link.remove();

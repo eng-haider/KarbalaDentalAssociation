@@ -53,12 +53,12 @@ Route::get('/events/{event}', [EventController::class, 'show'])->name('events.sh
 Route::get('/osif', OsifController::class)->name('osif');
 Route::get('/osif/register', [OsifController::class, 'registration'])->name('osif.register');
 
-// The page an invitation's QR code opens, and the dashboard upload of its card images.
+// The page an invitation's QR code opens, and the dashboard upload of its card files.
 Route::get('/osif/invitation/{token}', [OsifInvitationController::class, 'show'])
     ->where('token', '[A-Za-z0-9]{20,64}')
     ->name('osif.invitation');
-Route::post('/osif/invitations/{registration}/images', [OsifInvitationController::class, 'storeImages'])
-    ->name('osif.invitation.images');
+Route::post('/osif/invitations/{registration}/files', [OsifInvitationController::class, 'storeFiles'])
+    ->name('osif.invitation.files');
 
 // Public form submissions
 Route::post('/complaints', [ComplaintController::class, 'store'])

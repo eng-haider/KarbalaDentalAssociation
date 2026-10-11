@@ -43,7 +43,7 @@ class EventRegistration extends Model
             $registration->invitation_token ??= Str::random(40);
         });
 
-        // Card images uploaded from the dashboard go with the registration.
+        // Card files uploaded from the dashboard go with the registration.
         static::deleted(function (self $registration): void {
             if (filled($registration->invitation_token)) {
                 Storage::disk('public')->deleteDirectory('osif-invitations/'.$registration->invitation_token);
@@ -76,8 +76,8 @@ class EventRegistration extends Model
         return route('osif.invitation', $this->invitationToken());
     }
 
-    /** Where the dashboard stores this attendee's card images on the public disk. */
-    public function invitationImagePath(string $file): string
+    /** Where the dashboard stores this attendee's card files on the public disk. */
+    public function invitationFilePath(string $file): string
     {
         return 'osif-invitations/'.$this->invitationToken().'/'.$file;
     }
