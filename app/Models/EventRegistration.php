@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class EventRegistration extends Model
 {
@@ -35,9 +37,49 @@ class EventRegistration extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $registration): void {
+            $registration->invitation_token ??= Str::random(40);
+        });
+
+        // Card images uploaded from the dashboard go with the registration.
+        static::deleted(function (self $registration): void {
+            if (filled($registration->invitation_token)) {
+                Storage::disk('public')->deleteDirectory('osif-invitations/'.$registration->invitation_token);
+            }
+        });
+    }
+
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
+    }
+
+    /** Registrations made before tokens existed get one on first use; the first writer wins. */
+    public function invitationToken(): string
+    {
+        if (blank($this->invitation_token)) {
+            static::query()->whereKey($this->getKey())->whereNull('invitation_token')
+                ->update(['invitation_token' => Str::random(40)]);
+
+            $this->invitation_token = static::query()->whereKey($this->getKey())->value('invitation_token');
+            $this->syncOriginalAttribute('invitation_token');
+        }
+
+        return $this->invitation_token;
+    }
+
+    /** The attendee's invitation page — what the card's QR code opens. */
+    public function invitationUrl(): string
+    {
+        return route('osif.invitation', $this->invitationToken());
+    }
+
+    /** Where the dashboard stores this attendee's card images on the public disk. */
+    public function invitationImagePath(string $file): string
+    {
+        return 'osif-invitations/'.$this->invitationToken().'/'.$file;
     }
 
     /**

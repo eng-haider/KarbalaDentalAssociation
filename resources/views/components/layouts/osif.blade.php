@@ -11,6 +11,7 @@
     <meta property="og:type" content="website">
     <meta property="og:locale" content="ar_IQ">
     <meta property="og:title" content="{{ $title ?? 'OSIF KARBALA 2026' }}">
+    {{ $head ?? '' }}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">

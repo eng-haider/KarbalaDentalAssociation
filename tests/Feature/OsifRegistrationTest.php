@@ -11,6 +11,8 @@ use App\Models\User;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -167,6 +169,7 @@ class OsifRegistrationTest extends TestCase
             ->assertCanSeeTableRecords([$registration])
             ->mountAction(TestAction::make('sendInvitation')->table($registration))
             ->assertMountedActionModalSeeHtml('https://wa.me/9647801234567?text=')
+            ->assertMountedActionModalSeeHtml(route('osif.invitation', $registration->fresh()->invitation_token))
             ->assertMountedActionModalSee('OSIF-'.str_pad((string) $registration->id, 4, '0', STR_PAD_LEFT))
             ->callMountedAction()
             ->assertHasNoErrors();
@@ -174,5 +177,80 @@ class OsifRegistrationTest extends TestCase
         $registration->refresh();
         $this->assertNotNull($registration->invitation_sent_at);
         $this->assertTrue($registration->is_handled);
+    }
+
+    private function osifRegistration(): EventRegistration
+    {
+        return $this->osifEvent()->registrations()->create([
+            'name' => 'حيدر عبد عون كاظم',
+            'phone' => '07801234567',
+            'whatsapp_phone' => '07801234567',
+            'professional_title' => 'طبيب أسنان اختصاص',
+            'owns_clinic' => true,
+        ]);
+    }
+
+    public function test_scanning_the_qr_code_opens_the_attendees_invitation(): void
+    {
+        $registration = $this->osifRegistration();
+
+        $this->get($registration->invitationUrl())
+            ->assertOk()
+            ->assertSee('دعوة صالحة', false)
+            ->assertSee('حيدر عبد عون كاظم', false)
+            ->assertSee('طبيب أسنان اختصاص', false)
+            ->assertSee($registration->invitationCode(), false)
+            ->assertSee('noindex', false);
+
+        $this->assertMatchesRegularExpression('/^[A-Za-z0-9]{40}$/', $registration->invitation_token);
+    }
+
+    public function test_unknown_invitation_codes_say_so_instead_of_a_bare_404(): void
+    {
+        $this->osifRegistration();
+
+        $this->get(route('osif.invitation', str_repeat('x', 40)))
+            ->assertNotFound()
+            ->assertSee('دعوة غير صالحة', false);
+    }
+
+    public function test_uploaded_cards_become_the_whatsapp_link_preview(): void
+    {
+        Storage::fake('public');
+        $registration = $this->osifRegistration();
+        $this->actingAsCoordinator();
+
+        $this->post(route('osif.invitation.images', $registration), [
+            'card' => UploadedFile::fake()->image('card.png', 1080, 1350),
+            'preview' => UploadedFile::fake()->image('preview.jpg', 1200, 630),
+        ])->assertOk()->assertJsonStructure(['card', 'preview']);
+
+        Storage::disk('public')->assertExists($registration->invitationImagePath('card.png'));
+        Storage::disk('public')->assertExists($registration->invitationImagePath('preview.jpg'));
+
+        $this->get($registration->invitationUrl())
+            ->assertOk()
+            ->assertSee('<meta property="og:image" content="'.url('/storage/'.$registration->invitationImagePath('preview.jpg')), false)
+            ->assertSee('تنزيل البطاقة', false);
+
+        $registration->delete();
+        Storage::disk('public')->assertMissing($registration->invitationImagePath('card.png'));
+    }
+
+    public function test_only_osif_managers_can_upload_cards(): void
+    {
+        Storage::fake('public');
+        $registration = $this->osifRegistration();
+        $files = fn () => [
+            'card' => UploadedFile::fake()->image('card.png'),
+            'preview' => UploadedFile::fake()->image('preview.jpg'),
+        ];
+
+        $this->postJson(route('osif.invitation.images', $registration), $files())->assertUnauthorized();
+
+        $this->actingAs(User::factory()->create(['role' => 'member']));
+        $this->postJson(route('osif.invitation.images', $registration), $files())->assertForbidden();
+
+        Storage::disk('public')->assertMissing($registration->invitationImagePath('card.png'));
     }
 }
