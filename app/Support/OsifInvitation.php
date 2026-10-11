@@ -23,6 +23,7 @@ class OsifInvitation
         $event = $registration->event;
         $number = $registration->whatsappNumber();
         $message = static::message($registration);
+        $chat = fn (string $text): ?string => $number ? 'https://wa.me/'.$number.'?text='.rawurlencode($text) : null;
 
         return [
             'name' => $registration->name,
@@ -37,7 +38,10 @@ class OsifInvitation
             'url' => $registration->invitationUrl(),
             'filename' => 'osif-invitation-'.$registration->getKey().'.png',
             'message' => $message,
-            'chatUrl' => $number ? 'https://wa.me/'.$number.'?text='.rawurlencode($message) : null,
+            // Sent before the card image itself, so it carries no link.
+            'imageChatUrl' => $chat(static::message($registration, withLink: false)),
+            // A link whose preview WhatsApp shows as the card.
+            'chatUrl' => $chat($message),
             'uploadUrl' => route('osif.invitation.images', $registration, absolute: false),
             // Same-origin paths keep the canvas exportable even when APP_URL
             // differs from the host the dashboard is opened on.
@@ -50,8 +54,11 @@ class OsifInvitation
         ];
     }
 
-    /** The WhatsApp message; its link makes WhatsApp show the card as a preview. */
-    public static function message(EventRegistration $registration): string
+    /**
+     * The WhatsApp message. With the link, WhatsApp shows the card as its
+     * preview; without it, the message just introduces the card image.
+     */
+    public static function message(EventRegistration $registration, bool $withLink = true): string
     {
         $event = $registration->event;
 
@@ -61,8 +68,9 @@ class OsifInvitation
             $event->starts_at ? 'الموعد: '.static::date($registration).' – الساعة '.static::time($registration) : null,
             $event->location ? 'المكان: '.$event->location : null,
             '',
-            'بطاقة الدعوة الخاصة بك ورمز الدخول (QR):',
-            $registration->invitationUrl(),
+            ...($withLink
+                ? ['بطاقة الدعوة الخاصة بك ورمز الدخول (QR):', $registration->invitationUrl()]
+                : ['بطاقة الدعوة الخاصة بك مرفقة، يرجى إبراز رمز QR عند الحضور.']),
         ], fn (?string $line) => $line !== null));
     }
 

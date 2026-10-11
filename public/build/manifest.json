@@ -1,6 +1,6 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-D6OXBIf_.css",
+    "file": "assets/app-D1vZI06D.css",
     "name": "app",
     "names": [
       "app.css"
@@ -33,7 +33,7 @@
     "isEntry": true
   },
   "resources/js/osif-invitation.js": {
-    "file": "assets/osif-invitation-SfdKDZqg.js",
+    "file": "assets/osif-invitation-C0HbZt8_.js",
     "name": "osif-invitation",
     "src": "resources/js/osif-invitation.js",
     "isEntry": true

@@ -17,6 +17,14 @@
         .osif-invite__status { display: flex; align-items: center; gap: .5rem; color: var(--gray-600); font-size: .8rem; font-weight: 600; }
         .osif-invite__status.is-ready { color: rgb(22 163 74); }
         .osif-invite__status.is-warning { color: rgb(217 119 6); }
+        .osif-invite__steps { display: grid; gap: .75rem; margin: 0; padding: 0; list-style: none; }
+        .osif-invite__step { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .75rem; align-items: start; }
+        .osif-invite__num { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 999px; color: #fff; background: var(--primary-600); font-size: .8rem; font-weight: 700; }
+        .osif-invite__step > div { display: grid; gap: .5rem; justify-items: start; }
+        .osif-invite__alt { display: grid; gap: .5rem; justify-items: start; padding: .875rem 1rem; border: 1px dashed var(--gray-300); border-radius: .75rem; }
+        .osif-invite__alt p { margin: 0; color: var(--gray-600); font-size: .8rem; line-height: 1.7; }
+        .dark .osif-invite__alt { border-color: var(--gray-700); }
+        .dark .osif-invite__alt p { color: var(--gray-400); }
         .osif-invite__links { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; color: var(--gray-500); font-size: .8rem; }
         .osif-invite__links a, .osif-invite__links button { color: var(--primary-600); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
         .osif-invite__notice { margin: 0; padding: .75rem .875rem; border-radius: .75rem; color: var(--gray-700); background: var(--gray-50); font-size: .8rem; }
@@ -39,18 +47,70 @@
     <div style="display: grid; gap: .75rem;">
         @if ($payload['chatUrl'])
             <div class="osif-invite__panel">
-                <strong>إرسال الدعوة إلى {{ $record->name }}</strong>
-                <p>تُفتح محادثته على واتساب برسالة فيها رابط دعوته، ويعرض واتساب بطاقة الدعوة كصورة معاينة. اضغط «إرسال» في واتساب، ثم «تم الإرسال» هنا.</p>
+                <strong>إرسال الدعوة كصورة إلى {{ $record->name }}</strong>
 
+                {{-- Phones: open the chat first so it is at the top of WhatsApp's share list. --}}
+                <ol class="osif-invite__steps" x-show="onPhone" x-cloak>
+                    <li class="osif-invite__step">
+                        <span class="osif-invite__num">1</span>
+                        <div>
+                            <p>افتح المحادثة وأرسل رسالة الترحيب الجاهزة، ثم عُد إلى هنا.</p>
+                            <x-filament::button tag="a" :href="$payload['imageChatUrl']" target="_blank" color="gray" icon="heroicon-m-chat-bubble-left-right">
+                                فتح المحادثة
+                            </x-filament::button>
+                        </div>
+                    </li>
+                    <li class="osif-invite__step">
+                        <span class="osif-invite__num">2</span>
+                        <div>
+                            <p>اختر واتساب ثم المحادثة نفسها من أعلى القائمة، فتصل البطاقة كصورة.</p>
+                            <x-filament::button type="button" color="success" icon="heroicon-m-share" x-on:click="share()" x-bind:disabled="! file">
+                                مشاركة الصورة
+                            </x-filament::button>
+                        </div>
+                    </li>
+                </ol>
+
+                {{-- Computers: copy the card, then paste it into the chat. --}}
+                <ol class="osif-invite__steps" x-show="! onPhone">
+                    <li class="osif-invite__step">
+                        <span class="osif-invite__num">1</span>
+                        <div>
+                            <p x-text="canCopy ? 'انسخ صورة البطاقة.' : 'نزّل صورة البطاقة.'">انسخ صورة البطاقة.</p>
+                            <div x-show="canCopy">
+                                <x-filament::button type="button" color="success" icon="heroicon-m-clipboard-document" x-on:click="copy()" x-bind:disabled="! blob">
+                                    <span x-text="copied ? 'تم النسخ ✓' : 'نسخ الصورة'">نسخ الصورة</span>
+                                </x-filament::button>
+                            </div>
+                            <div x-show="! canCopy" x-cloak>
+                                <x-filament::button type="button" color="success" icon="heroicon-m-arrow-down-tray" x-on:click="download()" x-bind:disabled="! blob">
+                                    تنزيل الصورة
+                                </x-filament::button>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="osif-invite__step">
+                        <span class="osif-invite__num">2</span>
+                        <div>
+                            <p x-text="canCopy ? 'افتح المحادثة، الصق الصورة بـ Ctrl+V (أو ⌘V على ماك) ثم أرسل.' : 'افتح المحادثة وأرفق الصورة التي نزّلتها ثم أرسل.'">افتح المحادثة والصق الصورة ثم أرسل.</p>
+                            <x-filament::button tag="a" :href="$payload['imageChatUrl']" target="_blank" color="gray" icon="heroicon-m-chat-bubble-left-right">
+                                فتح واتساب
+                            </x-filament::button>
+                        </div>
+                    </li>
+                </ol>
+            </div>
+
+            <div class="osif-invite__alt">
+                <p>أو أرسل <strong>رابط الدعوة</strong> بدلاً من الصورة، ويعرض واتساب البطاقة كمعاينة للرابط.</p>
                 <div class="osif-invite__status" x-bind:class="{ 'is-ready': status === 'ready' && ! uploadFailed, 'is-warning': uploadFailed }">
-                    <span x-show="status === 'loading' || status === 'uploading'">جارٍ تجهيز البطاقة ورفعها…</span>
-                    <span x-show="status === 'ready' && ! uploadFailed" x-cloak>✓ البطاقة جاهزة للمعاينة في واتساب</span>
-                    <span x-show="uploadFailed" x-cloak>تعذّر رفع البطاقة؛ سيصل الرابط دون صورة معاينة. يمكنك تنزيل الصورة وإرفاقها.</span>
+                    <span x-show="status === 'loading' || status === 'uploading'">جارٍ رفع البطاقة لمعاينة الرابط…</span>
+                    <span x-show="status === 'ready' && ! uploadFailed" x-cloak>✓ معاينة الرابط جاهزة</span>
+                    <span x-show="uploadFailed" x-cloak>تعذّر رفع البطاقة؛ سيصل الرابط دون صورة معاينة.</span>
                 </div>
-
                 <div x-bind:style="status === 'ready' ? '' : 'pointer-events: none; opacity: .5'">
-                    <x-filament::button tag="a" :href="$payload['chatUrl']" target="_blank" color="success" size="lg" icon="heroicon-m-chat-bubble-left-right">
-                        إرسال عبر واتساب
+                    <x-filament::button tag="a" :href="$payload['chatUrl']" target="_blank" color="gray" size="sm" outlined icon="heroicon-m-link">
+                        إرسال الرابط عبر واتساب
                     </x-filament::button>
                 </div>
             </div>

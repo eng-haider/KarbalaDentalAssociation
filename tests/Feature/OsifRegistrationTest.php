@@ -8,6 +8,7 @@ use App\Filament\Resources\EventRegistrations\Pages\ListEventRegistrations;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Models\User;
+use App\Support\OsifInvitation;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -165,10 +166,18 @@ class OsifRegistrationTest extends TestCase
             ->assertSee('زينب علي حسن', false)
             ->assertSee('بانتظار الدعوة', false);
 
+        // The card goes out as an image after a link-free greeting; the link message is the alternative.
+        $payload = OsifInvitation::payload($registration);
+        $link = rawurlencode($registration->invitationUrl());
+        $this->assertStringNotContainsString($link, $payload['imageChatUrl']);
+        $this->assertStringContainsString($link, $payload['chatUrl']);
+
         Livewire::test(ListEventRegistrations::class)
             ->assertCanSeeTableRecords([$registration])
             ->mountAction(TestAction::make('sendInvitation')->table($registration))
             ->assertMountedActionModalSeeHtml('https://wa.me/9647801234567?text=')
+            ->assertMountedActionModalSeeHtml($payload['imageChatUrl'])
+            ->assertMountedActionModalSeeHtml($payload['chatUrl'])
             ->assertMountedActionModalSeeHtml(route('osif.invitation', $registration->fresh()->invitation_token))
             ->assertMountedActionModalSee('OSIF-'.str_pad((string) $registration->id, 4, '0', STR_PAD_LEFT))
             ->callMountedAction()

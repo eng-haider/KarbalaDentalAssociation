@@ -362,6 +362,10 @@ window.osifInvitation = (data) => ({
     uploadFailed: false,
     previewUrl: null,
     blob: null,
+    file: null,
+    canCopy: false,
+    onPhone: false,
+    copied: false,
 
     async init() {
         try {
@@ -374,7 +378,12 @@ window.osifInvitation = (data) => ({
             const logos = { osif, syndicate, university };
 
             this.blob = await toBlob(drawCard(this.data, logos), 'image/png');
+            this.file = new File([this.blob], this.data.filename, { type: 'image/png' });
             this.previewUrl = URL.createObjectURL(this.blob);
+            this.canCopy = Boolean(navigator.clipboard?.write && window.ClipboardItem);
+            // Desktop browsers can share files too, but WhatsApp Web is reached by pasting.
+            this.onPhone = Boolean(navigator.canShare?.({ files: [this.file] }))
+                && window.matchMedia('(pointer: coarse)').matches;
             this.status = 'uploading';
 
             const preview = await toBlob(drawPreview(this.data, logos), 'image/jpeg', 0.88);
@@ -410,6 +419,28 @@ window.osifInvitation = (data) => ({
 
         if (! response.ok) {
             throw new Error(`Upload failed with ${response.status}`);
+        }
+    },
+
+    /** Sends the card itself (not a link) through the phone's share sheet. */
+    async share() {
+        try {
+            await navigator.share({ files: [this.file] });
+        } catch (error) {
+            if (error?.name !== 'AbortError') {
+                this.download();
+            }
+        }
+    },
+
+    /** Copies the card so it can be pasted straight into WhatsApp Web or Desktop. */
+    async copy() {
+        try {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': this.blob })]);
+            this.copied = true;
+            setTimeout(() => (this.copied = false), 4000);
+        } catch {
+            this.download();
         }
     },
 
