@@ -45,53 +45,29 @@
     </div>
 
     <div style="display: grid; gap: .75rem;">
-        @if ($payload['imageChatUrl'])
+        @if ($payload['chatUrl'])
             <div class="osif-invite__panel">
-                <strong>إرسال الدعوة كصورة إلى {{ $record->name }}</strong>
-
-                {{-- The operating system attaches the generated PNG itself, not a link. --}}
-                <ol class="osif-invite__steps" x-show="canShareCard" x-cloak>
-                    <li class="osif-invite__step">
-                        <span class="osif-invite__num">1</span>
-                        <div>
-                            <p>اضغط الزر، ثم اختر واتساب ومحادثة المسجّل من قائمة المشاركة. ستصل البطاقة كصورة مع نص الدعوة، من دون رابط.</p>
-                            <x-filament::button type="button" color="success" icon="heroicon-m-photo" x-on:click="shareCard()" x-bind:disabled="! card">
-                                إرسال صورة الدعوة
-                            </x-filament::button>
-                        </div>
-                    </li>
-                </ol>
-
-                {{-- Fallback only for browsers without native file sharing. --}}
-                <ol class="osif-invite__steps" x-show="! canShareCard">
-                    <li class="osif-invite__step">
-                        <span class="osif-invite__num">1</span>
-                        <div>
-                            <p>لا يدعم هذا المتصفح مشاركة الصورة مباشرةً؛ نزّلها ثم أرفقها في واتساب.</p>
-                            <x-filament::button type="button" color="success" icon="heroicon-m-arrow-down-tray" x-on:click="download()" x-bind:disabled="! card">
-                                تنزيل صورة الدعوة
-                            </x-filament::button>
-                        </div>
-                    </li>
-                    <li class="osif-invite__step">
-                        <span class="osif-invite__num">2</span>
-                        <div>
-                            <p>افتح المحادثة، ثم أرفق الصورة من 📎 ← صور وأرسلها. النص يُفتح جاهزاً من دون رابط.</p>
-                            <x-filament::button tag="a" :href="$payload['imageChatUrl']" target="_blank" color="gray" icon="heroicon-m-chat-bubble-left-right">
-                                فتح واتساب
-                            </x-filament::button>
-                        </div>
-                    </li>
-                </ol>
+                <strong>إرسال رابط الدعوة إلى {{ $record->name }}</strong>
+                <p>يفتح واتساب بالنص ورابط الدعوة، ثم يعرض البطاقة كصورة معاينة داخل الرسالة.</p>
+                <div class="osif-invite__status" x-bind:class="{ 'is-ready': status === 'ready' && ! uploadFailed, 'is-warning': uploadFailed }">
+                    <span x-show="status === 'loading' || status === 'uploading'">جارٍ تجهيز معاينة البطاقة…</span>
+                    <span x-show="status === 'ready' && ! uploadFailed" x-cloak>✓ البطاقة جاهزة للمعاينة في واتساب</span>
+                    <span x-show="uploadFailed" x-cloak>تعذّر رفع البطاقة؛ أعد فتح النافذة وحاول مرة أخرى.</span>
+                </div>
+                <div x-bind:style="status === 'ready' && ! uploadFailed ? '' : 'pointer-events: none; opacity: .5'">
+                    <x-filament::button tag="a" :href="$payload['chatUrl']" target="_blank" color="success" icon="heroicon-m-link">
+                        إرسال الرابط عبر واتساب
+                    </x-filament::button>
+                </div>
             </div>
         @else
-            <p class="osif-invite__notice">لا يوجد رقم صالح لهذا المسجّل، يمكنك تنزيل صورة البطاقة وإرسالها يدوياً.</p>
+            <p class="osif-invite__notice">لا يوجد رقم صالح لهذا المسجّل، يمكنك نسخ رابط صفحة الدعوة وإرساله يدوياً.</p>
         @endif
 
         <div class="osif-invite__links">
             <span>{{ $payload['code'] }} · {{ $record->phone }}</span>
             <a href="{{ $payload['url'] }}" target="_blank">صفحة الدعوة</a>
-            <button type="button" x-on:click="download()" x-bind:disabled="! card">تنزيل الصورة</button>
+            <button type="button" x-on:click="download()" x-bind:disabled="! previewUrl">تنزيل الصورة</button>
         </div>
 
         @if ($record->invitation_sent_at)

@@ -24,9 +24,7 @@ class OsifInvitation
     {
         $event = $registration->event;
         $number = $registration->whatsappNumber();
-        // This is used as the WhatsApp caption / prepared chat text. Keep it
-        // link-free: the primary delivery is the invitation image itself.
-        $message = static::message($registration, withLink: false);
+        $message = static::message($registration);
         $chat = fn (string $text): ?string => $number ? 'https://wa.me/'.$number.'?text='.rawurlencode($text) : null;
 
         return [
@@ -43,8 +41,9 @@ class OsifInvitation
             'filename' => 'osif-invitation-'.$registration->getKey().'.png',
             'pdfName' => 'osif-invitation-'.$registration->getKey().'.pdf',
             'message' => $message,
-            // Used by desktop coordinators before they attach the image.
-            'imageChatUrl' => $chat(static::message($registration, withLink: false)),
+            // WhatsApp fetches the Open Graph image from this page and shows
+            // the invitation card as a rich preview.
+            'chatUrl' => $chat($message),
             'uploadUrl' => route('osif.invitation.files', $registration, absolute: false),
             // Same-origin paths keep the canvas exportable even when APP_URL
             // differs from the host the dashboard is opened on.
@@ -59,7 +58,7 @@ class OsifInvitation
 
     /**
      * The WhatsApp message. With the link, the guest opens the invitation
-     * card page; without it, the message just introduces the card image.
+     * page and WhatsApp shows its card preview.
      */
     public static function message(EventRegistration $registration, bool $withLink = true): string
     {
@@ -72,29 +71,9 @@ class OsifInvitation
             $event->location ? 'المكان: '.$event->location : null,
             '',
             ...($withLink
-                ? ['بطاقة الدعوة الخاصة بك ورمز الدخول (QR):', static::cardMessageUrl($registration)]
+                ? ['بطاقة الدعوة الخاصة بك ورمز الدخول (QR):', $registration->invitationShareUrl()]
                 : ['بطاقة الدعوة الخاصة بك مرفقة، يرجى إبراز رمز QR عند الحضور.']),
         ], fn (?string $line) => $line !== null));
-    }
-
-    /**
-     * The /card address placed in WhatsApp. It is an HTML wrapper with Open
-     * Graph data (not a raw PNG), which is what makes WhatsApp show the image.
-     * Before the dashboard's first upload completes, use a fresh harmless
-     * version query; after that, use the card's modification time.
-     */
-    public static function cardMessageUrl(EventRegistration $registration): string
-    {
-        $disk = Storage::disk('public');
-        $path = $registration->invitationFilePath(static::CARD);
-        $version = $disk->exists($path)
-            ? $disk->lastModified($path)
-            : ($registration->created_at?->timestamp ?? time());
-
-        // `share=card` is deliberately distinct from the former raw-PNG URL,
-        // so WhatsApp discards its old "card"-only preview and fetches the
-        // Open Graph page after deployment.
-        return route('osif.invitation.card', $registration->invitationToken()).'?v='.$version.'&share=card';
     }
 
     /**

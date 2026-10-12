@@ -167,18 +167,18 @@ class OsifRegistrationTest extends TestCase
             ->assertSee('زينب علي حسن', false)
             ->assertSee('بانتظار الدعوة', false);
 
-        // The primary WhatsApp delivery is the PNG card; its prepared text has no URL.
+        // WhatsApp receives the invitation page link and renders its card preview.
         $payload = OsifInvitation::payload($registration);
-        $this->assertStringNotContainsString('https://', $payload['message']);
-        $this->assertStringContainsString(rawurlencode($payload['message']), $payload['imageChatUrl']);
+        $link = rawurlencode($registration->invitationShareUrl());
+        $this->assertStringContainsString($link, $payload['chatUrl']);
 
         Livewire::test(ListEventRegistrations::class)
             ->assertCanSeeTableRecords([$registration])
             ->mountAction(TestAction::make('sendInvitation')->table($registration))
             ->assertMountedActionModalSeeHtml('https://wa.me/9647801234567?text=')
-            ->assertMountedActionModalSeeHtml($payload['imageChatUrl'])
+            ->assertMountedActionModalSeeHtml($payload['chatUrl'])
             ->assertMountedActionModalSeeHtml(route('osif.invitation', $registration->fresh()->invitation_token))
-            ->assertMountedActionModalSee('إرسال صورة الدعوة')
+            ->assertMountedActionModalSee('إرسال رابط الدعوة')
             ->assertMountedActionModalSee('OSIF-'.str_pad((string) $registration->id, 4, '0', STR_PAD_LEFT))
             ->callMountedAction()
             ->assertHasNoErrors();

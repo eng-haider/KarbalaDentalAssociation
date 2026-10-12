@@ -413,28 +413,13 @@ const toBlob = (element, type, quality) => new Promise((resolve, reject) => {
     element.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Could not export the card.'))), type, quality);
 });
 
-/** Browser/OS file sharing is available on many phones and desktop browsers. */
-function canShareFiles(files) {
-    if (window.isSecureContext === false || typeof navigator.share !== 'function' || typeof navigator.canShare !== 'function') {
-        return false;
-    }
-
-    try {
-        return navigator.canShare({ files });
-    } catch {
-        return false;
-    }
-}
-
 window.osifInvitation = (data) => ({
     data,
     status: 'loading', // loading → uploading → ready | error
     uploadFailed: false,
     previewUrl: null,
     blob: null,
-    card: null,
     pdf: null,
-    canShareCard: false,
 
     async init() {
         try {
@@ -448,15 +433,11 @@ window.osifInvitation = (data) => ({
 
             this.blob = await toBlob(drawCard(this.data, logos), 'image/png');
             this.previewUrl = URL.createObjectURL(this.blob);
-            this.card = new File([this.blob], this.data.filename, { type: 'image/png' });
 
             // The PDF is drawn at twice the size so it stays sharp when printed.
             const print = await toBlob(drawCard(this.data, logos, 2), 'image/jpeg', 0.9);
             const pdf = await pdfFrom(print, 2160, 2700, `دعوة حضور — ${this.data.name}`);
             this.pdf = new File([pdf], this.data.pdfName, { type: 'application/pdf' });
-            // Use the operating system's share panel on phones and compatible
-            // desktops, so coordinators do not have to download first.
-            this.canShareCard = canShareFiles([this.card]);
             this.status = 'uploading';
 
             const preview = await toBlob(drawPreview(this.data, logos), 'image/jpeg', 0.88);
@@ -466,7 +447,7 @@ window.osifInvitation = (data) => ({
             this.uploadFailed = Boolean(this.blob);
         }
 
-        this.status = this.blob ? 'ready' : 'error';
+        this.status = this.blob && ! this.uploadFailed ? 'ready' : 'error';
     },
 
     destroy() {
@@ -493,31 +474,6 @@ window.osifInvitation = (data) => ({
 
         if (! response.ok) {
             throw new Error(`Upload failed with ${response.status}`);
-        }
-    },
-
-    /** Sends the PNG invitation itself (not a link) through the native share sheet. */
-    async shareCard() {
-        if (! this.card) {
-            return;
-        }
-
-        if (! this.canShareCard) {
-            return;
-        }
-
-        try {
-            await navigator.share({
-                files: [this.card],
-                title: 'دعوة OSIF KARBALA',
-                text: this.data.message,
-            });
-        } catch (error) {
-            if (error?.name !== 'AbortError') {
-                // Fall back to the visible manual route instead of silently
-                // downloading a file the coordinator did not ask for.
-                this.canShareCard = false;
-            }
         }
     },
 
