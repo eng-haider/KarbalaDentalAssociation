@@ -172,6 +172,8 @@ class OsifRegistrationTest extends TestCase
         $link = rawurlencode($registration->invitationShareUrl());
         $this->assertStringContainsString($link, $payload['chatUrl']);
         $this->assertStringContainsString('تشمل الدعوة وجبة غداء', $payload['message']);
+        $this->assertStringContainsString('يرجى إبراز رمز QR لاستلام وجبة الغداء', $payload['message']);
+        $this->assertStringContainsString('يرجى إبراز الدعوة للدخول من البوابة الرئيسية', OsifInvitation::message($registration, false));
 
         Livewire::test(ListEventRegistrations::class)
             ->assertCanSeeTableRecords([$registration])

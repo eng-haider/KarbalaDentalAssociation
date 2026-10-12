@@ -289,22 +289,32 @@ function drawCard(data, logos, scale = 1) {
 
     // When and where.
     const rows = [
-        ['الموعد', [data.date, data.time].filter(Boolean).join(' – ')],
-        ['المكان', data.location],
-        ['الضيافة', 'تشمل الدعوة وجبة غداء'],
-    ].filter(([, value]) => value);
+        { label: 'الموعد', value: [data.date, data.time].filter(Boolean).join(' – ') },
+        { label: 'المكان', value: data.location },
+        {
+            label: 'الضيافة',
+            value: 'تشمل الدعوة وجبة غداء',
+            note: 'يرجى إبراز رمز QR لاستلام وجبة الغداء',
+        },
+    ].filter(({ value }) => value);
 
-    let rowY = 1104;
-    for (const [label, value] of rows) {
+    let rowY = 1072;
+    for (const { label, value, note } of rows) {
         text(ctx, label, 990, rowY, { weight: 700, size: 24, color: COLOR.amber, align: 'right' });
         const size = fit(ctx, value, 700, 30, 780, 22);
         text(ctx, value, 880, rowY, { weight: 700, size, align: 'right' });
-        rowY += 64;
+
+        if (note) {
+            const noteSize = fit(ctx, note, 600, 20, 780, 16);
+            text(ctx, note, 880, rowY + 32, { weight: 600, size: noteSize, color: COLOR.muted, align: 'right' });
+        }
+
+        rowY += note ? 72 : 56;
     }
 
     ctx.fillStyle = COLOR.faint;
     ctx.fillRect(150, 1264, WIDTH - 300, 2);
-    text(ctx, 'يرجى إبراز رمز QR عند الدخول', WIDTH / 2, 1318, { weight: 600, size: 22, color: COLOR.soft });
+    text(ctx, 'يرجى إبراز الدعوة للدخول من البوابة الرئيسية', WIDTH / 2, 1318, { weight: 600, size: 22, color: COLOR.soft });
 
     return element;
 }

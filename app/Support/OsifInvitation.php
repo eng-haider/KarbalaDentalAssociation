@@ -70,10 +70,11 @@ class OsifInvitation
             $event->starts_at ? 'الموعد: '.static::date($registration).' – الساعة '.static::time($registration) : null,
             $event->location ? 'المكان: '.$event->location : null,
             'تشمل الدعوة وجبة غداء.',
+            'يرجى إبراز رمز QR لاستلام وجبة الغداء.',
             '',
             ...($withLink
                 ? ['بطاقة الدعوة الخاصة بك ورمز الدخول (QR):', $registration->invitationShareUrl()]
-                : ['بطاقة الدعوة الخاصة بك مرفقة، يرجى إبراز رمز QR عند الحضور.']),
+                : ['بطاقة الدعوة الخاصة بك مرفقة، يرجى إبراز الدعوة للدخول من البوابة الرئيسية، ورمز QR لاستلام وجبة الغداء.']),
         ], fn (?string $line) => $line !== null));
     }
 
