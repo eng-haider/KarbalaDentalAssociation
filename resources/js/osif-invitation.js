@@ -413,6 +413,19 @@ const toBlob = (element, type, quality) => new Promise((resolve, reject) => {
     element.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Could not export the card.'))), type, quality);
 });
 
+/** Browser/OS file sharing is available on many phones and desktop browsers. */
+function canShareFiles(files) {
+    if (window.isSecureContext === false || typeof navigator.share !== 'function' || typeof navigator.canShare !== 'function') {
+        return false;
+    }
+
+    try {
+        return navigator.canShare({ files });
+    } catch {
+        return false;
+    }
+}
+
 window.osifInvitation = (data) => ({
     data,
     status: 'loading', // loading → uploading → ready | error
@@ -421,7 +434,7 @@ window.osifInvitation = (data) => ({
     blob: null,
     card: null,
     pdf: null,
-    onPhone: false,
+    canShareCard: false,
 
     async init() {
         try {
@@ -441,9 +454,9 @@ window.osifInvitation = (data) => ({
             const print = await toBlob(drawCard(this.data, logos, 2), 'image/jpeg', 0.9);
             const pdf = await pdfFrom(print, 2160, 2700, `دعوة حضور — ${this.data.name}`);
             this.pdf = new File([pdf], this.data.pdfName, { type: 'application/pdf' });
-            // Desktop browsers can share files too, but WhatsApp Web takes a dragged file.
-            this.onPhone = Boolean(navigator.canShare?.({ files: [this.card] }))
-                && window.matchMedia('(pointer: coarse)').matches;
+            // Use the operating system's share panel on phones and compatible
+            // desktops, so coordinators do not have to download first.
+            this.canShareCard = canShareFiles([this.card]);
             this.status = 'uploading';
 
             const preview = await toBlob(drawPreview(this.data, logos), 'image/jpeg', 0.88);
@@ -483,14 +496,13 @@ window.osifInvitation = (data) => ({
         }
     },
 
-    /** Sends the PNG invitation itself (not a link) through the phone's share sheet. */
+    /** Sends the PNG invitation itself (not a link) through the native share sheet. */
     async shareCard() {
         if (! this.card) {
             return;
         }
 
-        if (! navigator.share) {
-            this.download();
+        if (! this.canShareCard) {
             return;
         }
 
@@ -502,7 +514,9 @@ window.osifInvitation = (data) => ({
             });
         } catch (error) {
             if (error?.name !== 'AbortError') {
-                this.download();
+                // Fall back to the visible manual route instead of silently
+                // downloading a file the coordinator did not ask for.
+                this.canShareCard = false;
             }
         }
     },

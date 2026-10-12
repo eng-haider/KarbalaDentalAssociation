@@ -49,12 +49,12 @@
             <div class="osif-invite__panel">
                 <strong>إرسال الدعوة كصورة إلى {{ $record->name }}</strong>
 
-                {{-- Phones: Web Share attaches the generated PNG itself, not a link. --}}
-                <ol class="osif-invite__steps" x-show="onPhone" x-cloak>
+                {{-- The operating system attaches the generated PNG itself, not a link. --}}
+                <ol class="osif-invite__steps" x-show="canShareCard" x-cloak>
                     <li class="osif-invite__step">
                         <span class="osif-invite__num">1</span>
                         <div>
-                            <p>اضغط الزر، ثم اختر واتساب ومحادثة المسجّل. ستصل البطاقة كصورة مع نص الدعوة، من دون رابط.</p>
+                            <p>اضغط الزر، ثم اختر واتساب ومحادثة المسجّل من قائمة المشاركة. ستصل البطاقة كصورة مع نص الدعوة، من دون رابط.</p>
                             <x-filament::button type="button" color="success" icon="heroicon-m-photo" x-on:click="shareCard()" x-bind:disabled="! card">
                                 إرسال صورة الدعوة
                             </x-filament::button>
@@ -62,12 +62,12 @@
                     </li>
                 </ol>
 
-                {{-- Computers: the browser downloads the PNG, then it can be attached in WhatsApp Web. --}}
-                <ol class="osif-invite__steps" x-show="! onPhone">
+                {{-- Fallback only for browsers without native file sharing. --}}
+                <ol class="osif-invite__steps" x-show="! canShareCard">
                     <li class="osif-invite__step">
                         <span class="osif-invite__num">1</span>
                         <div>
-                            <p>نزّل صورة الدعوة.</p>
+                            <p>لا يدعم هذا المتصفح مشاركة الصورة مباشرةً؛ نزّلها ثم أرفقها في واتساب.</p>
                             <x-filament::button type="button" color="success" icon="heroicon-m-arrow-down-tray" x-on:click="download()" x-bind:disabled="! card">
                                 تنزيل صورة الدعوة
                             </x-filament::button>
