@@ -67,7 +67,7 @@ class OsifRegistrationTest extends TestCase
         $this->assertSame(0, EventRegistration::count());
     }
 
-    public function test_fields_removed_from_the_form_are_not_stored(): void
+    public function test_optional_email_is_stored_while_removed_fields_are_not(): void
     {
         $event = $this->osifEvent();
 
@@ -86,7 +86,7 @@ class OsifRegistrationTest extends TestCase
         $this->assertFalse($registration->owns_clinic);
         $this->assertNull($registration->workplace);
         $this->assertNull($registration->city);
-        $this->assertNull($registration->email);
+        $this->assertSame('ali@example.com', $registration->email);
         $this->assertNull($registration->attendance_type);
     }
 

@@ -102,27 +102,49 @@ class PublicSiteTest extends TestCase
             ->assertDontSee('name="workplace"', false)
             ->assertDontSee('name="city"', false)
             ->assertDontSee('name="attendance_type"', false)
-            ->assertDontSee('name="email"', false)
+            ->assertSee('name="email"', false)
             ->assertDontSee('name="whatsapp_consent"', false);
 
         $this->post(route('events.register', $event), [
             'name' => 'علي حسين محمد',
             'phone' => '07801234567',
+            'email' => 'ali@example.com',
             'professional_title' => 'طبيب أسنان مقيم',
             'owns_clinic' => '1',
         ])->assertRedirect(route('osif.register').'#osif-form');
 
         $this->get(route('osif.register'))
             ->assertSee('تم التسجيل بنجاح', false)
-            ->assertSee('سوف نقوم بمراجعة البيانات وإرسال دعوة الحضور', false)
+            ->assertSee('سوف نقوم بمراجعة البيانات وإرسال دعوة الحضور إليك عبر واتساب والبريد الإلكتروني.', false)
             ->assertDontSee('name="professional_title"', false);
 
         $this->assertDatabaseHas('event_registrations', [
             'event_id' => $event->id,
             'whatsapp_phone' => '07801234567',
+            'email' => 'ali@example.com',
             'professional_title' => 'طبيب أسنان مقيم',
             'owns_clinic' => true,
         ]);
+    }
+
+    public function test_osif_email_is_optional_but_must_be_valid_when_provided(): void
+    {
+        $event = Event::create([
+            'title' => 'ملتقى OSIF',
+            'slug' => Event::OSIF_SLUG,
+            'starts_at' => now()->addMonth(),
+            'registration_open' => true,
+        ]);
+
+        $this->post(route('events.register', $event), [
+            'name' => 'علي حسين محمد',
+            'phone' => '07801234567',
+            'email' => 'not-an-email',
+            'professional_title' => 'طبيب أسنان مقيم',
+            'owns_clinic' => '1',
+        ])->assertSessionHasErrors('email');
+
+        $this->assertSame(0, EventRegistration::count());
     }
 
     public function test_osif_registration_uses_one_phone_number_and_prevents_duplicates(): void
@@ -142,6 +164,11 @@ class PublicSiteTest extends TestCase
         ];
 
         $this->post(route('events.register', $event), $payload)->assertSessionHasNoErrors();
+
+        $this->get(route('osif.register'))
+            ->assertSee('سوف نقوم بمراجعة البيانات وإرسال دعوة الحضور إليك عبر واتساب.', false)
+            ->assertDontSee('إليك عبر واتساب والبريد الإلكتروني.', false);
+
         $this->post(route('events.register', $event), $payload)->assertSessionHasErrors('phone');
         $this->assertSame(1, EventRegistration::count());
     }

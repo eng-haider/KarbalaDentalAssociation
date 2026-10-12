@@ -5,7 +5,11 @@
         <div class="osif-done" role="status">
             <span class="osif-done-icon" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
             <h1>تم التسجيل بنجاح</h1>
-            <p>سوف نقوم بمراجعة البيانات وإرسال دعوة الحضور إليك على واتساب.</p>
+            @if (session('registration_has_email'))
+                <p>سوف نقوم بمراجعة البيانات وإرسال دعوة الحضور إليك عبر واتساب والبريد الإلكتروني.</p>
+            @else
+                <p>سوف نقوم بمراجعة البيانات وإرسال دعوة الحضور إليك عبر واتساب.</p>
+            @endif
             <a href="{{ route('osif.register') }}#osif-form">تسجيل شخص آخر</a>
         </div>
     @elseif ($event->registration_open)
@@ -26,6 +30,11 @@
                     <span>رقم الموبايل <small>(رقم يحتوي على واتساب)</small> <b>*</b></span>
                     <input type="tel" name="phone" value="{{ old('phone') }}" dir="ltr" inputmode="tel" autocomplete="tel" required class="@error('phone') is-invalid @enderror" placeholder="07XXXXXXXXX">
                     @error('phone')<small class="osif-error">{{ $message }}</small>@enderror
+                </label>
+                <label class="osif-field osif-full">
+                    <span>البريد الإلكتروني <small>(اختياري)</small></span>
+                    <input type="email" name="email" value="{{ old('email') }}" dir="ltr" inputmode="email" autocomplete="email" class="@error('email') is-invalid @enderror" placeholder="name@example.com">
+                    @error('email')<small class="osif-error">{{ $message }}</small>@enderror
                 </label>
                 <label class="osif-field">
                     <span>الصفة المهنية أو الأكاديمية <b>*</b></span>

@@ -15,10 +15,13 @@ class EventRegistrationController extends Controller
             throw new NotFoundHttpException('التسجيل في هذه الفعالية مغلق.');
         }
 
-        $event->registrations()->create($request->validated());
+        $registration = $event->registrations()->create($request->validated());
 
         return redirect()
             ->to($event->isOsif() ? route('osif.register').'#osif-form' : route('events.show', $event).'#registration')
-            ->with('registration_ok', true);
+            ->with([
+                'registration_ok' => true,
+                'registration_has_email' => $event->isOsif() && filled($registration->email),
+            ]);
     }
 }

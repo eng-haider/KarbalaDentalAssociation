@@ -3,8 +3,8 @@
 namespace App\Http\Requests;
 
 use App\Models\Event;
-use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreEventRegistrationRequest extends FormRequest
 {
@@ -26,7 +26,7 @@ class StoreEventRegistrationRequest extends FormRequest
         $event = $this->route('event');
         $isOsif = $event?->isOsif() ?? false;
 
-        return [
+        $rules = [
             'name' => ['required', 'string', 'min:5', 'max:255'],
             'phone' => [
                 'required', 'string', 'regex:/^[0-9+\s\-]{10,}$/',
@@ -40,6 +40,12 @@ class StoreEventRegistrationRequest extends FormRequest
             'owns_clinic' => [$isOsif ? 'required' : 'nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
+
+        if ($isOsif) {
+            $rules['email'] = ['nullable', 'string', 'email', 'max:255'];
+        }
+
+        return $rules;
     }
 
     public function messages(): array
@@ -52,6 +58,7 @@ class StoreEventRegistrationRequest extends FormRequest
             'phone.unique' => 'هذا الرقم مسجّل مسبقاً في هذه الفعالية.',
             'whatsapp_phone.required' => 'يرجى كتابة رقم الواتساب.',
             'whatsapp_phone.regex' => 'يرجى كتابة رقم واتساب صحيح.',
+            'email.email' => 'يرجى كتابة بريد إلكتروني صحيح.',
             'professional_title.required' => 'يرجى اختيار الصفة المهنية أو الأكاديمية.',
             'professional_title.in' => 'يرجى اختيار الصفة من القائمة.',
             'owns_clinic.required' => 'يرجى الإجابة: هل تمتلك عيادة؟',
