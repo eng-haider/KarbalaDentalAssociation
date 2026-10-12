@@ -293,23 +293,16 @@ function drawCard(data, logos, scale = 1) {
         { label: 'المكان', value: data.location },
         {
             label: 'الضيافة',
-            value: 'تشمل الدعوة وجبة غداء',
-            note: 'يرجى إبراز رمز QR لاستلام وجبة الغداء',
+            value: 'تشمل الدعوة وجبة غداء — يرجى إبراز رمز QR لاستلام وجبة الغداء',
         },
     ].filter(({ value }) => value);
 
-    let rowY = 1072;
-    for (const { label, value, note } of rows) {
+    let rowY = 1104;
+    for (const { label, value } of rows) {
         text(ctx, label, 990, rowY, { weight: 700, size: 24, color: COLOR.amber, align: 'right' });
-        const size = fit(ctx, value, 700, 30, 780, 22);
+        const size = fit(ctx, value, 700, 30, 780, label === 'الضيافة' ? 18 : 22);
         text(ctx, value, 880, rowY, { weight: 700, size, align: 'right' });
-
-        if (note) {
-            const noteSize = fit(ctx, note, 600, 20, 780, 16);
-            text(ctx, note, 880, rowY + 32, { weight: 600, size: noteSize, color: COLOR.muted, align: 'right' });
-        }
-
-        rowY += note ? 72 : 56;
+        rowY += 64;
     }
 
     ctx.fillStyle = COLOR.faint;
