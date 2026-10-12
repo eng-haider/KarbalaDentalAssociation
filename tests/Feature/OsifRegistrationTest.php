@@ -167,9 +167,9 @@ class OsifRegistrationTest extends TestCase
             ->assertSee('زينب علي حسن', false)
             ->assertSee('بانتظار الدعوة', false);
 
-        // The card goes out as an image after a link-free greeting; the link message is the alternative.
+        // The card goes out as an image after a link-free greeting; the link message opens the same card.
         $payload = OsifInvitation::payload($registration);
-        $link = rawurlencode($registration->invitationShareUrl());
+        $link = rawurlencode(OsifInvitation::cardMessageUrl($registration));
         $this->assertStringNotContainsString($link, $payload['imageChatUrl']);
         $this->assertStringContainsString($link, $payload['chatUrl']);
 

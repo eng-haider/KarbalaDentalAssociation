@@ -43,7 +43,8 @@ class OsifInvitation
             'message' => $message,
             // Sent before the card image itself, so it carries no link.
             'imageChatUrl' => $chat(static::message($registration, withLink: false)),
-            // A link whose preview WhatsApp shows as the card.
+            // The card image itself is the WhatsApp link, so it opens as a
+            // saveable invitation photo for the guest.
             'chatUrl' => $chat($message),
             'uploadUrl' => route('osif.invitation.files', $registration, absolute: false),
             // Same-origin paths keep the canvas exportable even when APP_URL
@@ -58,8 +59,8 @@ class OsifInvitation
     }
 
     /**
-     * The WhatsApp message. With the link, WhatsApp shows the card as its
-     * preview; without it, the message just introduces the card image.
+     * The WhatsApp message. With the link, the guest opens the invitation
+     * card itself; without it, the message just introduces the card image.
      */
     public static function message(EventRegistration $registration, bool $withLink = true): string
     {
@@ -72,9 +73,21 @@ class OsifInvitation
             $event->location ? 'المكان: '.$event->location : null,
             '',
             ...($withLink
-                ? ['بطاقة الدعوة الخاصة بك ورمز الدخول (QR):', $registration->invitationShareUrl()]
+                ? ['بطاقة الدعوة الخاصة بك ورمز الدخول (QR):', static::cardMessageUrl($registration)]
                 : ['بطاقة الدعوة الخاصة بك مرفقة، يرجى إبراز رمز QR عند الحضور.']),
         ], fn (?string $line) => $line !== null));
+    }
+
+    /**
+     * The direct image address placed in WhatsApp. Before the dashboard's
+     * first upload completes, use a fresh harmless version query; when a card
+     * is already stored, use its actual modification time for cache busting.
+     */
+    public static function cardMessageUrl(EventRegistration $registration): string
+    {
+        return static::fileUrl($registration, static::CARD)
+            ?? route('osif.invitation.card', $registration->invitationToken())
+                .'?v='.($registration->created_at?->timestamp ?? time());
     }
 
     /**
