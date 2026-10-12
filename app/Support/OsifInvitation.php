@@ -24,7 +24,9 @@ class OsifInvitation
     {
         $event = $registration->event;
         $number = $registration->whatsappNumber();
-        $message = static::message($registration);
+        // This is used as the WhatsApp caption / prepared chat text. Keep it
+        // link-free: the primary delivery is the invitation image itself.
+        $message = static::message($registration, withLink: false);
         $chat = fn (string $text): ?string => $number ? 'https://wa.me/'.$number.'?text='.rawurlencode($text) : null;
 
         return [
@@ -41,11 +43,8 @@ class OsifInvitation
             'filename' => 'osif-invitation-'.$registration->getKey().'.png',
             'pdfName' => 'osif-invitation-'.$registration->getKey().'.pdf',
             'message' => $message,
-            // Sent before the card image itself, so it carries no link.
+            // Used by desktop coordinators before they attach the image.
             'imageChatUrl' => $chat(static::message($registration, withLink: false)),
-            // The WhatsApp-friendly card page opens the image and carries its
-            // Open Graph preview.
-            'chatUrl' => $chat($message),
             'uploadUrl' => route('osif.invitation.files', $registration, absolute: false),
             // Same-origin paths keep the canvas exportable even when APP_URL
             // differs from the host the dashboard is opened on.

@@ -167,24 +167,18 @@ class OsifRegistrationTest extends TestCase
             ->assertSee('زينب علي حسن', false)
             ->assertSee('بانتظار الدعوة', false);
 
-        // The card goes out as an image after a link-free greeting; the link message opens the same card.
+        // The primary WhatsApp delivery is the PNG card; its prepared text has no URL.
         $payload = OsifInvitation::payload($registration);
-        $this->assertStringStartsWith(
-            route('osif.invitation.card', $registration->invitation_token).'?',
-            OsifInvitation::cardMessageUrl($registration),
-        );
-        $this->assertStringEndsWith('&share=card', OsifInvitation::cardMessageUrl($registration));
-        $link = rawurlencode(OsifInvitation::cardMessageUrl($registration));
-        $this->assertStringNotContainsString($link, $payload['imageChatUrl']);
-        $this->assertStringContainsString($link, $payload['chatUrl']);
+        $this->assertStringNotContainsString('https://', $payload['message']);
+        $this->assertStringContainsString(rawurlencode($payload['message']), $payload['imageChatUrl']);
 
         Livewire::test(ListEventRegistrations::class)
             ->assertCanSeeTableRecords([$registration])
             ->mountAction(TestAction::make('sendInvitation')->table($registration))
             ->assertMountedActionModalSeeHtml('https://wa.me/9647801234567?text=')
             ->assertMountedActionModalSeeHtml($payload['imageChatUrl'])
-            ->assertMountedActionModalSeeHtml($payload['chatUrl'])
             ->assertMountedActionModalSeeHtml(route('osif.invitation', $registration->fresh()->invitation_token))
+            ->assertMountedActionModalSee('إرسال صورة الدعوة')
             ->assertMountedActionModalSee('OSIF-'.str_pad((string) $registration->id, 4, '0', STR_PAD_LEFT))
             ->callMountedAction()
             ->assertHasNoErrors();

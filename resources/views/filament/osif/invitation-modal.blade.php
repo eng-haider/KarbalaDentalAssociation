@@ -45,47 +45,38 @@
     </div>
 
     <div style="display: grid; gap: .75rem;">
-        @if ($payload['chatUrl'])
+        @if ($payload['imageChatUrl'])
             <div class="osif-invite__panel">
-                <strong>إرسال الدعوة كملف PDF إلى {{ $record->name }}</strong>
+                <strong>إرسال الدعوة كصورة إلى {{ $record->name }}</strong>
 
-                {{-- Phones: open the chat first so it is at the top of WhatsApp's share list. --}}
+                {{-- Phones: Web Share attaches the generated PNG itself, not a link. --}}
                 <ol class="osif-invite__steps" x-show="onPhone" x-cloak>
                     <li class="osif-invite__step">
                         <span class="osif-invite__num">1</span>
                         <div>
-                            <p>افتح المحادثة وأرسل رسالة الترحيب الجاهزة، ثم عُد إلى هنا.</p>
-                            <x-filament::button tag="a" :href="$payload['imageChatUrl']" target="_blank" color="gray" icon="heroicon-m-chat-bubble-left-right">
-                                فتح المحادثة
-                            </x-filament::button>
-                        </div>
-                    </li>
-                    <li class="osif-invite__step">
-                        <span class="osif-invite__num">2</span>
-                        <div>
-                            <p>اختر واتساب ثم المحادثة نفسها من أعلى القائمة، فيصل ملف الدعوة.</p>
-                            <x-filament::button type="button" color="success" icon="heroicon-m-document-arrow-up" x-on:click="share()" x-bind:disabled="! pdf">
-                                إرسال ملف الدعوة (PDF)
+                            <p>اضغط الزر، ثم اختر واتساب ومحادثة المسجّل. ستصل البطاقة كصورة مع نص الدعوة، من دون رابط.</p>
+                            <x-filament::button type="button" color="success" icon="heroicon-m-photo" x-on:click="shareCard()" x-bind:disabled="! card">
+                                إرسال صورة الدعوة
                             </x-filament::button>
                         </div>
                     </li>
                 </ol>
 
-                {{-- Computers: download the PDF, then drop it into the chat. --}}
+                {{-- Computers: the browser downloads the PNG, then it can be attached in WhatsApp Web. --}}
                 <ol class="osif-invite__steps" x-show="! onPhone">
                     <li class="osif-invite__step">
                         <span class="osif-invite__num">1</span>
                         <div>
-                            <p>نزّل ملف الدعوة.</p>
-                            <x-filament::button type="button" color="success" icon="heroicon-m-arrow-down-tray" x-on:click="downloadPdf()" x-bind:disabled="! pdf">
-                                تنزيل ملف الدعوة (PDF)
+                            <p>نزّل صورة الدعوة.</p>
+                            <x-filament::button type="button" color="success" icon="heroicon-m-arrow-down-tray" x-on:click="download()" x-bind:disabled="! card">
+                                تنزيل صورة الدعوة
                             </x-filament::button>
                         </div>
                     </li>
                     <li class="osif-invite__step">
                         <span class="osif-invite__num">2</span>
                         <div>
-                            <p>افتح المحادثة وأرسل رسالة الترحيب، ثم اسحب الملف إلى المحادثة (أو أرفقه من 📎 ← مستند) وأرسل.</p>
+                            <p>افتح المحادثة، ثم أرفق الصورة من 📎 ← صور وأرسلها. النص يُفتح جاهزاً من دون رابط.</p>
                             <x-filament::button tag="a" :href="$payload['imageChatUrl']" target="_blank" color="gray" icon="heroicon-m-chat-bubble-left-right">
                                 فتح واتساب
                             </x-filament::button>
@@ -93,28 +84,14 @@
                     </li>
                 </ol>
             </div>
-
-            <div class="osif-invite__alt">
-                <p>أو أرسل <strong>رابط الدعوة</strong> بدلاً من الملف، ويعرض واتساب البطاقة كمعاينة للرابط.</p>
-                <div class="osif-invite__status" x-bind:class="{ 'is-ready': status === 'ready' && ! uploadFailed, 'is-warning': uploadFailed }">
-                    <span x-show="status === 'loading' || status === 'uploading'">جارٍ رفع البطاقة لمعاينة الرابط…</span>
-                    <span x-show="status === 'ready' && ! uploadFailed" x-cloak>✓ معاينة الرابط جاهزة</span>
-                    <span x-show="uploadFailed" x-cloak>تعذّر رفع البطاقة؛ سيصل الرابط دون صورة معاينة.</span>
-                </div>
-                <div x-bind:style="status === 'ready' ? '' : 'pointer-events: none; opacity: .5'">
-                    <x-filament::button tag="a" :href="$payload['chatUrl']" target="_blank" color="gray" size="sm" outlined icon="heroicon-m-link">
-                        إرسال الرابط عبر واتساب
-                    </x-filament::button>
-                </div>
-            </div>
         @else
-            <p class="osif-invite__notice">لا يوجد رقم صالح لهذا المسجّل، يمكنك تنزيل البطاقة وإرسالها يدوياً.</p>
+            <p class="osif-invite__notice">لا يوجد رقم صالح لهذا المسجّل، يمكنك تنزيل صورة البطاقة وإرسالها يدوياً.</p>
         @endif
 
         <div class="osif-invite__links">
             <span>{{ $payload['code'] }} · {{ $record->phone }}</span>
             <a href="{{ $payload['url'] }}" target="_blank">صفحة الدعوة</a>
-            <button type="button" x-on:click="download()" x-bind:disabled="! previewUrl">تنزيل الصورة</button>
+            <button type="button" x-on:click="download()" x-bind:disabled="! card">تنزيل الصورة</button>
         </div>
 
         @if ($record->invitation_sent_at)

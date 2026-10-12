@@ -291,6 +291,7 @@ function drawCard(data, logos, scale = 1) {
     const rows = [
         ['الموعد', [data.date, data.time].filter(Boolean).join(' – ')],
         ['المكان', data.location],
+        ['الضيافة', 'تشمل الدعوة وجبة غداء'],
     ].filter(([, value]) => value);
 
     let rowY = 1104;
@@ -302,8 +303,8 @@ function drawCard(data, logos, scale = 1) {
     }
 
     ctx.fillStyle = COLOR.faint;
-    ctx.fillRect(150, 1236, WIDTH - 300, 2);
-    text(ctx, 'يرجى إبراز رمز QR عند الدخول', WIDTH / 2, 1290, { weight: 600, size: 22, color: COLOR.soft });
+    ctx.fillRect(150, 1264, WIDTH - 300, 2);
+    text(ctx, 'يرجى إبراز رمز QR عند الدخول', WIDTH / 2, 1318, { weight: 600, size: 22, color: COLOR.soft });
 
     return element;
 }
@@ -350,6 +351,9 @@ function drawPreview(data, logos) {
         y += 50;
         text(ctx, data.location, right, y, { size: fit(ctx, data.location, 400, 26, column, 20), color: COLOR.soft, align: 'right' });
     }
+
+    // A clear benefit note that remains visible in WhatsApp's wide preview.
+    pill(ctx, 'تشمل الدعوة وجبة غداء', right, 548, { size: 20 });
 
     return element;
 }
@@ -415,6 +419,7 @@ window.osifInvitation = (data) => ({
     uploadFailed: false,
     previewUrl: null,
     blob: null,
+    card: null,
     pdf: null,
     onPhone: false,
 
@@ -430,13 +435,14 @@ window.osifInvitation = (data) => ({
 
             this.blob = await toBlob(drawCard(this.data, logos), 'image/png');
             this.previewUrl = URL.createObjectURL(this.blob);
+            this.card = new File([this.blob], this.data.filename, { type: 'image/png' });
 
             // The PDF is drawn at twice the size so it stays sharp when printed.
             const print = await toBlob(drawCard(this.data, logos, 2), 'image/jpeg', 0.9);
             const pdf = await pdfFrom(print, 2160, 2700, `دعوة حضور — ${this.data.name}`);
             this.pdf = new File([pdf], this.data.pdfName, { type: 'application/pdf' });
             // Desktop browsers can share files too, but WhatsApp Web takes a dragged file.
-            this.onPhone = Boolean(navigator.canShare?.({ files: [this.pdf] }))
+            this.onPhone = Boolean(navigator.canShare?.({ files: [this.card] }))
                 && window.matchMedia('(pointer: coarse)').matches;
             this.status = 'uploading';
 
@@ -477,13 +483,26 @@ window.osifInvitation = (data) => ({
         }
     },
 
-    /** Sends the PDF itself (not a link) through the phone's share sheet. */
-    async share() {
+    /** Sends the PNG invitation itself (not a link) through the phone's share sheet. */
+    async shareCard() {
+        if (! this.card) {
+            return;
+        }
+
+        if (! navigator.share) {
+            this.download();
+            return;
+        }
+
         try {
-            await navigator.share({ files: [this.pdf] });
+            await navigator.share({
+                files: [this.card],
+                title: 'دعوة OSIF KARBALA',
+                text: this.data.message,
+            });
         } catch (error) {
             if (error?.name !== 'AbortError') {
-                this.downloadPdf();
+                this.download();
             }
         }
     },
