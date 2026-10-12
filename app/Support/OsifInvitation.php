@@ -28,7 +28,7 @@ class OsifInvitation
         $chat = fn (string $text): ?string => $number ? 'https://wa.me/'.$number.'?text='.rawurlencode($text) : null;
 
         return [
-            'name' => $registration->name,
+            'name' => static::guestName($registration),
             'title' => $registration->professional_title,
             'event' => $event->title,
             'brand' => trim('OSIF KARBALA '.$event->starts_at?->year),
@@ -66,7 +66,7 @@ class OsifInvitation
         $event = $registration->event;
 
         return implode("\n", array_filter([
-            'مرحباً '.$registration->name.'،',
+            'مرحباً '.static::guestName($registration).'،',
             'يسعدنا تأكيد تسجيلك في '.$event->title.' (OSIF KARBALA).',
             $event->starts_at ? 'الموعد: '.static::date($registration).' – الساعة '.static::time($registration) : null,
             $event->location ? 'المكان: '.$event->location : null,
@@ -75,6 +75,21 @@ class OsifInvitation
                 ? ['بطاقة الدعوة الخاصة بك ورمز الدخول (QR):', $registration->invitationUrl()]
                 : ['بطاقة الدعوة الخاصة بك مرفقة، يرجى إبراز رمز QR عند الحضور.']),
         ], fn (?string $line) => $line !== null));
+    }
+
+    /**
+     * The name as the invitation addresses the guest: «د.» first, unless they
+     * already typed a title themselves (د. / د / دكتور / الدكتور / Dr).
+     */
+    public static function guestName(EventRegistration $registration): string
+    {
+        $name = trim($registration->name);
+
+        if (preg_match('/^(?:د\s*[.\/]|د\s|(?:ال)?دكتور|dr\b)/iu', $name)) {
+            return $name;
+        }
+
+        return 'د. '.$name;
     }
 
     /** Absolute URL of an uploaded card file, or null before the dashboard has made one. */

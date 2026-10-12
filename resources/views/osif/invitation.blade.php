@@ -3,9 +3,10 @@
     $date = \App\Support\OsifInvitation::date($registration);
     $time = \App\Support\OsifInvitation::time($registration);
     $summary = collect([$event->title, $date])->filter()->implode(' · ');
+    $guest = \App\Support\OsifInvitation::guestName($registration);
 @endphp
 
-<x-layouts.osif :title="'دعوة حضور — '.$registration->name" :description="$summary">
+<x-layouts.osif :title="'دعوة حضور — '.$guest" :description="$summary">
     <x-slot:head>
         <meta name="robots" content="noindex, nofollow">
         <meta property="og:url" content="{{ $registration->invitationUrl() }}">
@@ -16,7 +17,7 @@
             <meta property="og:image:type" content="image/jpeg">
             <meta property="og:image:width" content="1200">
             <meta property="og:image:height" content="630">
-            <meta property="og:image:alt" content="بطاقة دعوة {{ $registration->name }}">
+            <meta property="og:image:alt" content="بطاقة دعوة {{ $guest }}">
             <meta name="twitter:card" content="summary_large_image">
         @endif
     </x-slot:head>
@@ -26,7 +27,7 @@
             <section class="osif-pass-info" aria-labelledby="osif-pass-name">
                 <p class="osif-pass-valid"><i class="bi bi-patch-check-fill" aria-hidden="true"></i> دعوة صالحة</p>
                 <p class="osif-pass-kicker">دعوة حضور · {{ $registration->invitationCode() }}</p>
-                <h1 id="osif-pass-name">{{ $registration->name }}</h1>
+                <h1 id="osif-pass-name">{{ $guest }}</h1>
                 @if ($registration->professional_title)
                     <p class="osif-pass-title">{{ $registration->professional_title }}</p>
                 @endif
@@ -58,7 +59,7 @@
 
             @if ($card)
                 <figure class="osif-pass-card">
-                    <img src="{{ $card }}" alt="بطاقة دعوة {{ $registration->name }}" width="1080" height="1350">
+                    <img src="{{ $card }}" alt="بطاقة دعوة {{ $guest }}" width="1080" height="1350">
                 </figure>
             @endif
         </div>

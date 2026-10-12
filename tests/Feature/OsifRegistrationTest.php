@@ -206,7 +206,7 @@ class OsifRegistrationTest extends TestCase
         $this->get($registration->invitationUrl())
             ->assertOk()
             ->assertSee('دعوة صالحة', false)
-            ->assertSee('حيدر عبد عون كاظم', false)
+            ->assertSee('د. حيدر عبد عون كاظم', false)
             ->assertSee('طبيب أسنان اختصاص', false)
             ->assertSee($registration->invitationCode(), false)
             ->assertSee('noindex', false);
@@ -264,5 +264,19 @@ class OsifRegistrationTest extends TestCase
         $this->postJson(route('osif.invitation.files', $registration), $files())->assertForbidden();
 
         Storage::disk('public')->assertMissing($registration->invitationFilePath('card.png'));
+    }
+
+    public function test_invitations_address_guests_as_doctors_without_doubling_a_title(): void
+    {
+        $guest = fn (string $name) => OsifInvitation::guestName(new EventRegistration(['name' => $name]));
+
+        $this->assertSame('د. زينب علي حسن', $guest('زينب علي حسن'));
+        $this->assertSame('د. داود سلمان', $guest('داود سلمان'));
+        $this->assertSame('د. علي حسين', $guest('د. علي حسين'));
+        $this->assertSame('د.علي حسين', $guest('د.علي حسين'));
+        $this->assertSame('د علي حسين', $guest('د علي حسين'));
+        $this->assertSame('الدكتورة زينب علي', $guest('الدكتورة زينب علي'));
+        $this->assertSame('دكتور علي حسين', $guest('دكتور علي حسين'));
+        $this->assertSame('Dr. Ali Hussein', $guest('Dr. Ali Hussein'));
     }
 }
