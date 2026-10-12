@@ -72,7 +72,7 @@ class OsifInvitation
             $event->location ? 'المكان: '.$event->location : null,
             '',
             ...($withLink
-                ? ['بطاقة الدعوة الخاصة بك ورمز الدخول (QR):', $registration->invitationUrl()]
+                ? ['بطاقة الدعوة الخاصة بك ورمز الدخول (QR):', $registration->invitationShareUrl()]
                 : ['بطاقة الدعوة الخاصة بك مرفقة، يرجى إبراز رمز QR عند الحضور.']),
         ], fn (?string $line) => $line !== null));
     }
@@ -92,7 +92,11 @@ class OsifInvitation
         return 'د. '.$name;
     }
 
-    /** Absolute URL of an uploaded card file, or null before the dashboard has made one. */
+    /**
+     * Absolute URL of an uploaded invitation file, or null before the
+     * dashboard has made one. Files are streamed by Laravel rather than by
+     * /storage so they keep working on hosts that block storage symlinks.
+     */
     public static function fileUrl(EventRegistration $registration, string $file): ?string
     {
         $disk = Storage::disk('public');
@@ -102,7 +106,33 @@ class OsifInvitation
             return null;
         }
 
-        return url($disk->url($path)).'?v='.$disk->lastModified($path);
+        return route(static::routeName($file), $registration->invitationToken())
+            .'?v='.$disk->lastModified($path);
+    }
+
+    /** A forced download is clearer and more reliable than a browser download attribute on mobile. */
+    public static function downloadUrl(EventRegistration $registration, string $file): ?string
+    {
+        $path = $registration->invitationFilePath($file);
+
+        if (! Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        return match ($file) {
+            static::CARD => route('osif.invitation.card.download', $registration->invitationToken()),
+            static::PDF => route('osif.invitation.pdf.download', $registration->invitationToken()),
+            default => throw new \InvalidArgumentException("Invitation file [{$file}] cannot be downloaded."),
+        };
+    }
+
+    public static function downloadFilename(EventRegistration $registration, string $file): string
+    {
+        return match ($file) {
+            static::CARD => 'osif-invitation-'.$registration->getKey().'.png',
+            static::PDF => 'osif-invitation-'.$registration->getKey().'.pdf',
+            default => throw new \InvalidArgumentException("Invitation file [{$file}] cannot be downloaded."),
+        };
     }
 
     public static function date(EventRegistration $registration): ?string
@@ -124,5 +154,15 @@ class OsifInvitation
     private static function path(string $asset): string
     {
         return parse_url(asset($asset), PHP_URL_PATH) ?: '/'.$asset;
+    }
+
+    private static function routeName(string $file): string
+    {
+        return match ($file) {
+            static::CARD => 'osif.invitation.card',
+            static::PREVIEW => 'osif.invitation.preview',
+            static::PDF => 'osif.invitation.pdf',
+            default => throw new \InvalidArgumentException("Unknown invitation file [{$file}]."),
+        };
     }
 }

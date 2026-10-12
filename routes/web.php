@@ -57,6 +57,21 @@ Route::get('/osif/register', [OsifController::class, 'registration'])->name('osi
 Route::get('/osif/invitation/{token}', [OsifInvitationController::class, 'show'])
     ->where('token', '[A-Za-z0-9]{20,64}')
     ->name('osif.invitation');
+Route::get('/osif/invitation/{token}/card', [OsifInvitationController::class, 'card'])
+    ->where('token', '[A-Za-z0-9]{20,64}')
+    ->name('osif.invitation.card');
+Route::get('/osif/invitation/{token}/preview', [OsifInvitationController::class, 'preview'])
+    ->where('token', '[A-Za-z0-9]{20,64}')
+    ->name('osif.invitation.preview');
+Route::get('/osif/invitation/{token}/pdf', [OsifInvitationController::class, 'pdf'])
+    ->where('token', '[A-Za-z0-9]{20,64}')
+    ->name('osif.invitation.pdf');
+Route::get('/osif/invitation/{token}/card/download', [OsifInvitationController::class, 'downloadCard'])
+    ->where('token', '[A-Za-z0-9]{20,64}')
+    ->name('osif.invitation.card.download');
+Route::get('/osif/invitation/{token}/pdf/download', [OsifInvitationController::class, 'downloadPdf'])
+    ->where('token', '[A-Za-z0-9]{20,64}')
+    ->name('osif.invitation.pdf.download');
 Route::post('/osif/invitations/{registration}/files', [OsifInvitationController::class, 'storeFiles'])
     ->name('osif.invitation.files');
 

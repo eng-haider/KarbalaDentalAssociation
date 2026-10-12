@@ -76,6 +76,16 @@ class EventRegistration extends Model
         return route('osif.invitation', $this->invitationToken());
     }
 
+    /**
+     * WhatsApp may keep an earlier failed preview for the bare invitation URL.
+     * Its shared version is a distinct, stable URL while the QR code remains
+     * short and clean.
+     */
+    public function invitationShareUrl(): string
+    {
+        return $this->invitationUrl().'?share=1';
+    }
+
     /** Where the dashboard stores this attendee's card files on the public disk. */
     public function invitationFilePath(string $file): string
     {

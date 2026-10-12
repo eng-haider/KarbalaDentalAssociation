@@ -9,7 +9,8 @@
 <x-layouts.osif :title="'دعوة حضور — '.$guest" :description="$summary">
     <x-slot:head>
         <meta name="robots" content="noindex, nofollow">
-        <meta property="og:url" content="{{ $registration->invitationUrl() }}">
+        {{-- Keep the shared ?share=1 URL so WhatsApp can fetch a fresh preview. --}}
+        <meta property="og:url" content="{{ request()->fullUrl() }}">
         <meta property="og:description" content="{{ $summary }}">
         @if ($preview)
             {{-- What WhatsApp shows as the large preview of the invitation link. --}}
@@ -43,13 +44,13 @@
                 </dl>
 
                 <div class="osif-pass-actions">
-                    @if ($pdf)
-                        <a class="osif-pass-button" href="{{ $pdf }}" download="osif-invitation-{{ $registration->getKey() }}.pdf">
+                    @if ($pdfDownload)
+                        <a class="osif-pass-button" href="{{ $pdfDownload }}">
                             <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> تنزيل الدعوة (PDF)
                         </a>
                     @endif
-                    @if ($card)
-                        <a @class(['osif-pass-button', 'is-ghost' => $pdf]) href="{{ $card }}" download="osif-invitation-{{ $registration->getKey() }}.png">
+                    @if ($cardDownload)
+                        <a @class(['osif-pass-button', 'is-ghost' => $pdfDownload]) href="{{ $cardDownload }}">
                             <i class="bi bi-image" aria-hidden="true"></i> تنزيل كصورة
                         </a>
                     @endif

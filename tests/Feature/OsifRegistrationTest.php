@@ -169,7 +169,7 @@ class OsifRegistrationTest extends TestCase
 
         // The card goes out as an image after a link-free greeting; the link message is the alternative.
         $payload = OsifInvitation::payload($registration);
-        $link = rawurlencode($registration->invitationUrl());
+        $link = rawurlencode($registration->invitationShareUrl());
         $this->assertStringNotContainsString($link, $payload['imageChatUrl']);
         $this->assertStringContainsString($link, $payload['chatUrl']);
 
@@ -242,9 +242,25 @@ class OsifRegistrationTest extends TestCase
 
         $this->get($registration->invitationUrl())
             ->assertOk()
-            ->assertSee('<meta property="og:image" content="'.url('/storage/'.$registration->invitationFilePath('preview.jpg')), false)
+            ->assertSee('<meta property="og:image" content="'.route('osif.invitation.preview', $registration->invitation_token), false)
             ->assertSee('تنزيل الدعوة (PDF)', false)
             ->assertSee('تنزيل كصورة', false);
+
+        $this->get($registration->invitationShareUrl())
+            ->assertOk()
+            ->assertSee('<meta property="og:url" content="'.$registration->invitationShareUrl().'">', false);
+
+        $this->get(route('osif.invitation.card', $registration->invitation_token))
+            ->assertOk()
+            ->assertHeader('content-type', 'image/png');
+
+        $this->get(route('osif.invitation.card.download', $registration->invitation_token))
+            ->assertOk()
+            ->assertHeader('content-disposition', 'attachment; filename=osif-invitation-'.$registration->id.'.png');
+
+        $this->get(route('osif.invitation.pdf.download', $registration->invitation_token))
+            ->assertOk()
+            ->assertHeader('content-disposition', 'attachment; filename=osif-invitation-'.$registration->id.'.pdf');
 
         $registration->delete();
         Storage::disk('public')->assertMissing($registration->invitationFilePath('card.png'));
