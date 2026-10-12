@@ -145,7 +145,7 @@ class OsifRegistrationTest extends TestCase
 
         $this->get(OsifRegistrationSettings::getUrl(panel: 'admin'))
             ->assertOk()
-            ->assertSee('خيارات «الصفة المهنية»', false);
+            ->assertSee('خيارات «الصفة المهنية أو الأكاديمية»', false);
     }
 
     public function test_the_dashboard_lists_registrations_and_records_sent_invitations(): void

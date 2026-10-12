@@ -1,7 +1,7 @@
 @props(['heading' => true])
 <section class="section" id="about">
     <div class="container">
-        <div class="row g-5 align-items-center">
+        <div class="row g-4 g-lg-5 align-items-center">
             <div class="col-lg-6 reveal">
                 <div class="about-img-wrap">
                     <img src="{{ asset('images/ss.jpg') }}"  alt="مقر نقابة أطباء الأسنان في كربلاء" class="about-img">

@@ -39,7 +39,7 @@ class EventRegistrationsTable
                             ->searchable()
                             ->sortable(),
                         TextColumn::make('professional_title')
-                            ->label('الصفة المهنية')
+                            ->label('الصفة المهنية أو الأكاديمية')
                             ->badge()
                             ->color('primary'),
                     ])->space(2),
@@ -104,7 +104,7 @@ class EventRegistrationsTable
             ->searchPlaceholder('ابحث بالاسم أو الرقم')
             ->filters([
                 SelectFilter::make('professional_title')
-                    ->label('الصفة المهنية')
+                    ->label('الصفة المهنية أو الأكاديمية')
                     ->options(fn (): array => static::professionalTitleOptions()),
                 TernaryFilter::make('owns_clinic')
                     ->label('يمتلك عيادة')

@@ -38,7 +38,7 @@ class EventRegistrationForm
                             ->disabled()
                             ->visible(fn (?EventRegistration $record): bool => filled($record?->whatsapp_phone) && $record->whatsapp_phone !== $record->phone),
                         TextInput::make('professional_title')
-                            ->label('الصفة المهنية')
+                            ->label('الصفة المهنية أو الأكاديمية')
                             ->disabled()
                             ->visible($filled('professional_title')),
                         ToggleButtons::make('owns_clinic')

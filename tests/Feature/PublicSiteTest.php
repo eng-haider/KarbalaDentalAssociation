@@ -140,4 +140,45 @@ class PublicSiteTest extends TestCase
         $this->post(route('events.register', $event), $payload)->assertSessionHasErrors('phone');
         $this->assertSame(1, EventRegistration::count());
     }
+
+    public function test_register_now_leads_to_a_registration_page_not_a_dialog(): void
+    {
+        Event::create([
+            'title' => 'ملتقى OSIF',
+            'slug' => Event::OSIF_SLUG,
+            'starts_at' => now()->addMonth(),
+            'registration_open' => true,
+        ]);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('href="'.route('osif.register').'"', false)
+            ->assertSee('التسجيل مجاني بالكامل', false)
+            ->assertDontSee('eventRegModal', false);
+
+        // Association events register in a section on their own page instead.
+        $event = Event::create([
+            'title' => 'ندوة علمية',
+            'starts_at' => now()->addWeek(),
+            'registration_open' => true,
+        ]);
+
+        $this->get(route('home'))
+            ->assertSee('href="'.route('events.show', $event).'#registration"', false);
+
+        $this->get(route('events.show', $event))
+            ->assertOk()
+            ->assertSee('id="registration"', false)
+            ->assertSee('action="'.route('events.register', $event).'"', false)
+            ->assertDontSee('eventRegModal', false);
+
+        $this->followingRedirects()
+            ->post(route('events.register', $event), [
+                'name' => 'علي حسين محمد',
+                'phone' => '07801234567',
+                'membership_number' => 'KRB-1',
+            ])
+            ->assertOk()
+            ->assertSee('تم استلام طلب التسجيل', false);
+    }
 }

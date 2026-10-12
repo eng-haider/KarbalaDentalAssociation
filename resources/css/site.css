@@ -297,10 +297,21 @@ a { text-decoration: none; }
     .navbar-gov .nav-featured-inline i { font-size: .7rem; }
 }
 @media (max-width: 389.98px) {
-    /* Below this the label no longer fits beside the brand, so show the star
-       alone rather than letting the navbar wrap to two rows. */
-    .navbar-gov .nav-featured-inline { padding-inline: .55rem; font-size: 0; gap: 0; }
-    .navbar-gov .nav-featured-inline i { font-size: .95rem; }
+    /* Narrow phones: tighten the brand and toggler so the pill keeps its
+       «الخصومات» label and the row still doesn't wrap. */
+    .navbar-gov .brand-emblem { width: 50px; height: 50px; }
+    .navbar-gov .brand-divider { height: 38px; margin-inline: .35rem; }
+    .navbar-gov .brand-name { font-size: .9rem; }
+    .navbar-gov .brand-country { font-size: .56rem; }
+    .navbar-gov .brand-branch { font-size: .66rem; }
+    .navbar-gov .nav-featured-inline { padding-inline: .5rem; font-size: .72rem; gap: .25rem; }
+    .navbar-gov .navbar-toggler { padding-inline: .3rem; }
+}
+@media (max-width: 349.98px) {
+    /* The smallest phones (320–349px) drop the divider to make the last bit of room. */
+    .navbar-gov .brand-divider { display: none; }
+    .navbar-gov .brand-emblem { width: 42px; height: 42px; margin-inline-end: .4rem; }
+    .navbar-gov .brand-name { font-size: .84rem; }
 }
 
 /* ==========================================================================
@@ -985,22 +996,12 @@ a.ad-card:hover .ad-bg { transform: scale(1.04); }
 }
 .fe-seats i { color: var(--secondary); }
 
-/* ---- Registration modal ---- */
-.fe-modal { border: 0; border-radius: var(--radius); border-top: 4px solid var(--secondary); }
-.fe-modal .modal-header { border-bottom: 1px solid var(--border); padding: 1.1rem 1.35rem; }
-.fe-modal .modal-title { font-size: 1.1rem; font-weight: 800; color: var(--primary); }
-.fe-modal .modal-body { padding: 1.35rem; }
-.fe-modal .modal-footer { border-top: 1px solid var(--border); padding: .9rem 1.35rem; }
-.fe-modal .form-label { font-size: .88rem; font-weight: 700; color: var(--ink); margin-bottom: .35rem; }
-.fe-modal .form-control { border-radius: var(--radius-sm); border: 1.5px solid var(--border); padding: .65rem .9rem; }
-.fe-modal .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(12, 45, 107, .1); }
-.fe-modal-event {
-    display: flex; align-items: center; gap: .5rem;
-    padding: .7rem .9rem; margin-bottom: 1.15rem; border-radius: var(--radius-sm);
-    background: var(--light); border: 1px solid var(--border);
-    font-size: .88rem; font-weight: 700; color: var(--primary);
-}
-.fe-modal-event i { color: var(--secondary); }
+/* ---- Registration form (on the event page) ---- */
+.fe-form { border: 0; border-radius: var(--radius); border-top: 4px solid var(--secondary); padding: 1.5rem; box-shadow: var(--shadow); }
+.fe-form .form-label { font-size: .88rem; font-weight: 700; color: var(--ink); margin-bottom: .35rem; }
+.fe-form .form-control { border-radius: var(--radius-sm); border: 1.5px solid var(--border); padding: .65rem .9rem; }
+.fe-form .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(12, 45, 107, .1); }
+.fe-form-foot { display: flex; justify-content: flex-end; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
 
 @media (max-width: 991.98px) {
     .featured-event { padding-block: 3rem; }

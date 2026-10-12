@@ -63,8 +63,8 @@ class OsifRegistrationSettings extends Page
                             ->helperText('عند الإغلاق يختفي نموذج التسجيل من صفحة الملتقى.'),
                     ]),
 
-                Section::make('خيارات «الصفة المهنية»')
-                    ->description('تظهر في قائمة الصفة المهنية بنموذج التسجيل بهذا الترتيب، ويمكن سحبها لتغيير الترتيب. تعديلها لا يغيّر التسجيلات السابقة.')
+                Section::make('خيارات «الصفة المهنية أو الأكاديمية»')
+                    ->description('تظهر في قائمة «الصفة المهنية أو الأكاديمية» بنموذج التسجيل بهذا الترتيب، ويمكن سحبها لتغيير الترتيب. تعديلها لا يغيّر التسجيلات السابقة.')
                     ->schema([
                         Repeater::make('professional_titles')
                             ->hiddenLabel()
@@ -77,7 +77,7 @@ class OsifRegistrationSettings extends Page
                             )
                             ->minItems(1)
                             ->reorderable()
-                            ->addActionLabel('إضافة صفة مهنية'),
+                            ->addActionLabel('إضافة صفة'),
                     ]),
             ])
             ->statePath('data');

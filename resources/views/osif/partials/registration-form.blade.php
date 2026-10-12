@@ -28,9 +28,9 @@
                     @error('phone')<small class="osif-error">{{ $message }}</small>@enderror
                 </label>
                 <label class="osif-field">
-                    <span>الصفة المهنية <b>*</b></span>
+                    <span>الصفة المهنية أو الأكاديمية <b>*</b></span>
                     <select name="professional_title" required class="@error('professional_title') is-invalid @enderror">
-                        <option value="" disabled @selected(blank(old('professional_title')))>اختر صفتك المهنية</option>
+                        <option value="" disabled @selected(blank(old('professional_title')))>اختر صفتك المهنية أو الأكاديمية</option>
                         @foreach ($event->professionalTitleOptions() as $title)
                             <option value="{{ $title }}" @selected(old('professional_title') === $title)>{{ $title }}</option>
                         @endforeach
