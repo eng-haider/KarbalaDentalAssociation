@@ -60,7 +60,7 @@
 
             @include('osif.partials.registration-form', ['event' => $event])
 
-            @if ($event->registration_open)
+            @if ($event->registration_open && ! $event->isFullyBooked())
                 <section class="osif-registration-steps" aria-labelledby="osif-steps-title">
                     <h3 id="osif-steps-title">ماذا يحدث بعد التسجيل؟</h3>
                     <ol>

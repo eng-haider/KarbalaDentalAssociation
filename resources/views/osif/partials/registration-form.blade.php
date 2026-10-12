@@ -1,5 +1,10 @@
 @props(['event'])
 
+@php
+    $titles = $event->professionalTitleOptions();
+    $fullTitles = $event->fullProfessionalTitles();
+@endphp
+
 <div class="osif-registration-card" id="osif-form">
     @if (session('registration_ok'))
         <div class="osif-done" role="status">
@@ -11,6 +16,12 @@
                 <p>سوف نقوم بمراجعة البيانات وإرسال دعوة الحضور إليك عبر واتساب.</p>
             @endif
             <a href="{{ route('osif.register') }}#osif-form">تسجيل شخص آخر</a>
+        </div>
+    @elseif ($event->registration_open && $event->isFullyBooked())
+        <div class="osif-closed">
+            <i class="bi bi-people"></i>
+            <h1>اكتمل العدد</h1>
+            <p>نعتذر، اكتمل العدد المخصص للتسجيل في جميع الفئات. تابع صفحة OSIF على إنستغرام لمعرفة آخر التحديثات.</p>
         </div>
     @elseif ($event->registration_open)
         <div class="osif-form-head">
@@ -40,8 +51,12 @@
                     <span>الصفة المهنية أو الأكاديمية <b>*</b></span>
                     <select name="professional_title" required class="@error('professional_title') is-invalid @enderror">
                         <option value="" disabled @selected(blank(old('professional_title')))>اختر صفتك المهنية أو الأكاديمية</option>
-                        @foreach ($event->professionalTitleOptions() as $title)
-                            <option value="{{ $title }}" @selected(old('professional_title') === $title)>{{ $title }}</option>
+                        @foreach ($titles as $title)
+                            @if (in_array($title, $fullTitles, true))
+                                <option value="{{ $title }}" disabled>{{ $title }} — اكتمل العدد</option>
+                            @else
+                                <option value="{{ $title }}" @selected(old('professional_title') === $title)>{{ $title }}</option>
+                            @endif
                         @endforeach
                     </select>
                     @error('professional_title')<small class="osif-error">{{ $message }}</small>@enderror

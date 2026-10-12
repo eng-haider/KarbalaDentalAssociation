@@ -433,4 +433,100 @@ class OsifRegistrationTest extends TestCase
             'owns_clinic' => true,
         ]);
     }
+
+    private function registerAs(Event $event, string $title, string $phone = '07801234567'): EventRegistration
+    {
+        return $event->registrations()->create([
+            'name' => 'زينب علي حسن',
+            'phone' => $phone,
+            'professional_title' => $title,
+        ]);
+    }
+
+    public function test_coordinators_set_seats_for_each_title_or_leave_it_open(): void
+    {
+        $event = $this->osifEvent();
+        $this->registerAs($event, 'طبيب أسنان خريج جديد');
+        $this->actingAsCoordinator();
+
+        Livewire::test(OsifRegistrationSettings::class)
+            ->assertSee('مسجّل حالياً: 1')
+            ->fillForm([
+                'professional_titles' => [
+                    ['title' => 'طبيب أسنان اختصاص', 'limit' => ''],
+                    ['title' => 'طبيب أسنان خريج جديد', 'limit' => '40'],
+                ],
+            ])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $event->refresh();
+        $this->assertSame(['طبيب أسنان اختصاص', 'طبيب أسنان خريج جديد'], $event->professionalTitleOptions());
+        $this->assertSame(['طبيب أسنان خريج جديد' => 40], $event->professionalTitleLimits());
+    }
+
+    public function test_a_title_whose_seats_are_taken_is_shown_as_full_and_refused(): void
+    {
+        $event = $this->osifEvent(['professional_title_limits' => ['طبيب أسنان خريج جديد' => 1]]);
+        $this->registerAs($event, 'طبيب أسنان خريج جديد');
+
+        $this->get(route('osif.register'))
+            ->assertOk()
+            ->assertSee('<option value="طبيب أسنان خريج جديد" disabled>طبيب أسنان خريج جديد — اكتمل العدد</option>', false)
+            ->assertSee('إرسال طلب التسجيل');
+
+        $registration = ['name' => 'علي حسين محمد', 'phone' => '07801234568', 'owns_clinic' => '0'];
+
+        $this->post(route('events.register', $event), [...$registration, 'professional_title' => 'طبيب أسنان خريج جديد'])
+            ->assertSessionHasErrors(['professional_title' => 'نعتذر، اكتمل العدد المخصص لهذه الصفة.']);
+        $this->assertSame(1, $event->registrations()->count());
+
+        $this->post(route('events.register', $event), [...$registration, 'professional_title' => 'طبيب أسنان اختصاص'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(2, $event->registrations()->count());
+    }
+
+    public function test_registration_closes_once_every_title_is_full(): void
+    {
+        $event = $this->osifEvent([
+            'professional_titles' => ['طبيب أسنان خريج جديد'],
+            'professional_title_limits' => ['طبيب أسنان خريج جديد' => 1],
+        ]);
+        $this->registerAs($event, 'طبيب أسنان خريج جديد');
+
+        $this->get(route('osif.register'))
+            ->assertOk()
+            ->assertSee('اكتمل العدد المخصص للتسجيل في جميع الفئات')
+            ->assertDontSee('إرسال طلب التسجيل')
+            ->assertDontSee('ماذا يحدث بعد التسجيل؟');
+    }
+
+    public function test_the_dashboard_shows_the_seats_left_for_each_title(): void
+    {
+        $event = $this->osifEvent([
+            'professional_titles' => ['طبيب أسنان اختصاص', 'طبيب أسنان خريج جديد'],
+            'professional_title_limits' => ['طبيب أسنان اختصاص' => 3, 'طبيب أسنان خريج جديد' => 1],
+        ]);
+        $this->registerAs($event, 'طبيب أسنان اختصاص');
+        $this->registerAs($event, 'طبيب أسنان خريج جديد', '07801234568');
+        $this->actingAsCoordinator();
+
+        Livewire::test(OsifProfessionalTitleCountsWidget::class)
+            ->assertSee('من أصل 3 · متبقٍ 2')
+            ->assertSee('اكتمل العدد (1)');
+    }
+
+    public function test_organisers_can_still_add_someone_to_a_full_title_from_the_dashboard(): void
+    {
+        $event = $this->osifEvent(['professional_title_limits' => ['طبيب أسنان خريج جديد' => 1]]);
+        $this->registerAs($event, 'طبيب أسنان خريج جديد');
+        $this->actingAsCoordinator();
+
+        Livewire::test(CreateEventRegistration::class)
+            ->fillForm(['name' => 'ضيف الملتقى', 'professional_title' => 'طبيب أسنان خريج جديد'])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame(2, $event->registrations()->where('professional_title', 'طبيب أسنان خريج جديد')->count());
+    }
 }

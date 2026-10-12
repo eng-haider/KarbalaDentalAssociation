@@ -6,11 +6,13 @@ use App\Models\Event;
 use BackedEnum;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use UnitEnum;
@@ -45,15 +47,21 @@ class OsifRegistrationSettings extends Page
     public function mount(): void
     {
         $event = $this->event();
+        $limits = $event->professionalTitleLimits();
 
         $this->form->fill([
             'registration_open' => $event->registration_open,
-            'professional_titles' => $event->professionalTitleOptions(),
+            'professional_titles' => array_map(
+                fn (string $title) => ['title' => $title, 'limit' => $limits[$title] ?? null],
+                $event->professionalTitleOptions(),
+            ),
         ]);
     }
 
     public function form(Schema $schema): Schema
     {
+        $counts = $this->event()->professionalTitleCounts();
+
         return $schema
             ->components([
                 Section::make('حالة التسجيل')
@@ -63,18 +71,29 @@ class OsifRegistrationSettings extends Page
                             ->helperText('عند الإغلاق يختفي نموذج التسجيل من صفحة الملتقى.'),
                     ]),
 
-                Section::make('خيارات «الصفة المهنية أو الأكاديمية»')
-                    ->description('تظهر في قائمة «الصفة المهنية أو الأكاديمية» بنموذج التسجيل بهذا الترتيب، ويمكن سحبها لتغيير الترتيب. تعديلها لا يغيّر التسجيلات السابقة.')
+                Section::make('خيارات «الصفة المهنية أو الأكاديمية» وعدد المقاعد')
+                    ->description('تظهر في قائمة «الصفة المهنية أو الأكاديمية» بنموذج التسجيل بهذا الترتيب، ويمكن سحبها لتغيير الترتيب. تعديلها لا يغيّر التسجيلات السابقة. حدّد عدد المقاعد لكل صفة، أو اتركه فارغاً ليبقى التسجيل فيها مفتوحاً؛ وعند اكتمال العدد تظهر الصفة في النموذج بعبارة «اكتمل العدد» ولا يمكن اختيارها.')
                     ->schema([
                         Repeater::make('professional_titles')
                             ->hiddenLabel()
-                            ->simple(
+                            ->table([
+                                TableColumn::make('الصفة')->markAsRequired(),
+                                TableColumn::make('عدد المقاعد'),
+                            ])
+                            ->schema([
                                 TextInput::make('title')
+                                    ->label('الصفة')
                                     ->placeholder('مثال: طبيب أسنان اختصاص')
                                     ->required()
                                     ->maxLength(120)
                                     ->distinct(),
-                            )
+                                TextInput::make('limit')
+                                    ->label('عدد المقاعد')
+                                    ->integer()
+                                    ->minValue(0)
+                                    ->placeholder('مفتوح')
+                                    ->helperText(fn (Get $get): string => 'مسجّل حالياً: '.($counts[trim((string) $get('title'))] ?? 0)),
+                            ])
                             ->minItems(1)
                             ->reorderable()
                             ->addActionLabel('إضافة صفة'),
@@ -86,13 +105,17 @@ class OsifRegistrationSettings extends Page
     public function save(): void
     {
         $state = $this->form->getState();
+        $titles = collect($state['professional_titles'] ?? [])
+            ->map(fn (array $row) => ['title' => trim((string) $row['title']), 'limit' => $row['limit'] ?? null])
+            ->values();
 
         $this->event()->update([
             'registration_open' => (bool) $state['registration_open'],
-            'professional_titles' => array_values(array_map(
-                fn ($title) => trim((string) $title),
-                $state['professional_titles'] ?? [],
-            )),
+            'professional_titles' => $titles->pluck('title')->all(),
+            'professional_title_limits' => $titles
+                ->filter(fn (array $row) => filled($row['limit']))
+                ->mapWithKeys(fn (array $row) => [$row['title'] => (int) $row['limit']])
+                ->all() ?: null,
         ]);
 
         Notification::make()

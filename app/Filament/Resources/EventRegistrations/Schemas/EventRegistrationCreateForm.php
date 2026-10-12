@@ -80,8 +80,12 @@ class EventRegistrationCreateForm
     /** @return array<string, string> */
     private static function titles(mixed $eventId): array
     {
-        $titles = Event::query()->find($eventId)?->professionalTitleOptions() ?? Event::DEFAULT_PROFESSIONAL_TITLES;
+        $event = Event::query()->find($eventId);
+        $full = $event?->fullProfessionalTitles() ?? [];
 
-        return array_combine($titles, $titles);
+        // Full titles stay selectable here: organisers may add someone beyond the seats.
+        return collect($event?->professionalTitleOptions() ?? Event::DEFAULT_PROFESSIONAL_TITLES)
+            ->mapWithKeys(fn (string $title) => [$title => in_array($title, $full, true) ? $title.' — اكتمل العدد' : $title])
+            ->all();
     }
 }

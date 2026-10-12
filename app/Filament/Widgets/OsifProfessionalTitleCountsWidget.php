@@ -33,6 +33,8 @@ class OsifProfessionalTitleCountsWidget extends BaseWidget
             ->groupBy('professional_title')
             ->pluck('total', 'professional_title');
 
+        $limits = $event->professionalTitleLimits();
+
         return collect($event->professionalTitleOptions())
             // Keep a visible count for historic titles that were later removed
             // from the public registration choices.
@@ -41,11 +43,23 @@ class OsifProfessionalTitleCountsWidget extends BaseWidget
             ->filter()
             ->unique()
             ->values()
-            ->map(function (string $title) use ($counts): Stat {
+            ->map(function (string $title) use ($counts, $limits): Stat {
                 $total = (int) $counts->get($title, 0);
+                $limit = $limits[$title] ?? null;
+
+                if ($limit !== null && $total >= $limit) {
+                    return Stat::make($title, $total)
+                        ->description('اكتمل العدد ('.$limit.')')
+                        ->descriptionIcon('heroicon-m-lock-closed')
+                        ->color('danger');
+                }
 
                 return Stat::make($title, $total)
-                    ->description($total ? 'مسجّل بهذه الصفة' : 'لا توجد تسجيلات بهذه الصفة')
+                    ->description(match (true) {
+                        $limit !== null => 'من أصل '.$limit.' · متبقٍ '.($limit - $total),
+                        $total > 0 => 'مسجّل بهذه الصفة',
+                        default => 'لا توجد تسجيلات بهذه الصفة',
+                    })
                     ->descriptionIcon('heroicon-m-user-group')
                     ->color($total ? 'primary' : 'gray');
             })

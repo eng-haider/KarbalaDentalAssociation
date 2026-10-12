@@ -21,7 +21,7 @@ class Event extends Model
 
     protected $fillable = [
         'title', 'slug', 'description', 'location', 'starts_at', 'ends_at',
-        'is_featured', 'registration_open', 'professional_titles',
+        'is_featured', 'registration_open', 'professional_titles', 'professional_title_limits',
     ];
 
     protected function casts(): array
@@ -32,6 +32,7 @@ class Event extends Model
             'is_featured' => 'boolean',
             'registration_open' => 'boolean',
             'professional_titles' => 'array',
+            'professional_title_limits' => 'array',
         ];
     }
 
@@ -54,6 +55,62 @@ class Event extends Model
         ));
 
         return $titles ?: self::DEFAULT_PROFESSIONAL_TITLES;
+    }
+
+    /**
+     * Seats for each professional title, set from the dashboard. A title
+     * without a number stays open.
+     *
+     * @return array<string, int>
+     */
+    public function professionalTitleLimits(): array
+    {
+        $limits = [];
+
+        foreach ($this->professional_title_limits ?? [] as $title => $limit) {
+            if (is_numeric($limit) && $limit >= 0) {
+                $limits[trim((string) $title)] = (int) $limit;
+            }
+        }
+
+        return $limits;
+    }
+
+    /** @return array<string, int> Registrations so far for each professional title. */
+    public function professionalTitleCounts(): array
+    {
+        return $this->registrations()
+            ->whereNotNull('professional_title')
+            ->selectRaw('professional_title, COUNT(*) as total')
+            ->groupBy('professional_title')
+            ->pluck('total', 'professional_title')
+            ->map(fn ($total) => (int) $total)
+            ->all();
+    }
+
+    /** @return list<string> Titles whose seats are all taken. */
+    public function fullProfessionalTitles(): array
+    {
+        $counts = $this->professionalTitleCounts();
+
+        return collect($this->professionalTitleLimits())
+            ->filter(fn (int $limit, string $title) => ($counts[$title] ?? 0) >= $limit)
+            ->keys()
+            ->all();
+    }
+
+    /** Every professional title has used up its seats, so there is nothing left to register for. */
+    public function isFullyBooked(): bool
+    {
+        return array_diff($this->professionalTitleOptions(), $this->fullProfessionalTitles()) === [];
+    }
+
+    public function isProfessionalTitleFull(?string $title): bool
+    {
+        $limit = $this->professionalTitleLimits()[$title ?? ''] ?? null;
+
+        return $limit !== null
+            && $this->registrations()->where('professional_title', $title)->count() >= $limit;
     }
 
     public function scopeUpcoming(Builder $query): Builder
