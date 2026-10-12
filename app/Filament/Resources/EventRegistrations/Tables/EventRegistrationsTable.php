@@ -69,7 +69,7 @@ class EventRegistrationsTable
                             })
                             ->badge()
                             ->formatStateUsing(fn (string $state): string => [
-                                'sent' => 'أُرسلت الدعوة',
+                                'sent' => 'تم إرسال الدعوة — تمت المعالجة',
                                 'pending' => 'بانتظار الدعوة',
                                 'handled' => 'تمت المعالجة',
                                 'new' => 'قيد المتابعة',

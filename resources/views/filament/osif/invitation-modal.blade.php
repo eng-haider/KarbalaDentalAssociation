@@ -48,14 +48,14 @@
         @if ($payload['chatUrl'])
             <div class="osif-invite__panel">
                 <strong>إرسال رابط الدعوة إلى {{ $record->name }}</strong>
-                <p>يفتح واتساب بالنص ورابط الدعوة، ثم يعرض البطاقة كصورة معاينة داخل الرسالة.</p>
+                <p>يفتح واتساب بالنص ورابط الدعوة، ثم يعرض البطاقة كصورة معاينة داخل الرسالة ويسجّل الإرسال تلقائياً.</p>
                 <div class="osif-invite__status" x-bind:class="{ 'is-ready': status === 'ready' && ! uploadFailed, 'is-warning': uploadFailed }">
                     <span x-show="status === 'loading' || status === 'uploading'">جارٍ تجهيز معاينة البطاقة…</span>
                     <span x-show="status === 'ready' && ! uploadFailed" x-cloak>✓ البطاقة جاهزة للمعاينة في واتساب</span>
                     <span x-show="uploadFailed" x-cloak>تعذّر رفع البطاقة؛ أعد فتح النافذة وحاول مرة أخرى.</span>
                 </div>
                 <div x-bind:style="status === 'ready' && ! uploadFailed ? '' : 'pointer-events: none; opacity: .5'">
-                    <x-filament::button tag="a" :href="$payload['chatUrl']" target="_blank" color="success" icon="heroicon-m-link">
+                    <x-filament::button tag="a" :href="$payload['chatUrl']" target="_blank" color="success" icon="heroicon-m-link" x-on:click.once="$wire.callMountedAction()">
                         إرسال الرابط عبر واتساب
                     </x-filament::button>
                 </div>

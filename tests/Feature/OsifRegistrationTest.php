@@ -6,6 +6,7 @@ use App\Filament\Pages\OsifRegistrationSettings;
 use App\Filament\Resources\EventRegistrations\EventRegistrationResource;
 use App\Filament\Resources\EventRegistrations\Pages\CreateEventRegistration;
 use App\Filament\Resources\EventRegistrations\Pages\ListEventRegistrations;
+use App\Filament\Widgets\OsifProfessionalTitleCountsWidget;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Models\User;
@@ -123,6 +124,48 @@ class OsifRegistrationTest extends TestCase
         );
     }
 
+    public function test_the_dashboard_counts_osif_registrations_for_each_professional_title(): void
+    {
+        $event = $this->osifEvent([
+            'professional_titles' => [
+                'طبيب أسنان اختصاص',
+                'طبيب أسنان مقيم',
+                'طبيب أسنان تدرج',
+            ],
+        ]);
+
+        foreach ([
+            ['حيدر علي حسن', '07801234561', 'طبيب أسنان اختصاص'],
+            ['مهدي عامر قاسم', '07801234562', 'طبيب أسنان اختصاص'],
+            ['زينب محمد كريم', '07801234563', 'طبيب أسنان مقيم'],
+        ] as [$name, $phone, $title]) {
+            $event->registrations()->create([
+                'name' => $name,
+                'phone' => $phone,
+                'professional_title' => $title,
+            ]);
+        }
+
+        Event::create(['title' => 'ندوة علمية', 'starts_at' => now()->addWeek()])
+            ->registrations()
+            ->create([
+                'name' => 'مسجّل في فعالية أخرى',
+                'phone' => '07801234564',
+                'professional_title' => 'طبيب أسنان اختصاص',
+            ]);
+
+        $this->actingAsCoordinator();
+
+        Livewire::test(OsifProfessionalTitleCountsWidget::class)
+            ->assertSee('المسجّلون حسب الصفة المهنية أو الأكاديمية')
+            ->assertSee('طبيب أسنان اختصاص')
+            ->assertSee('طبيب أسنان مقيم')
+            ->assertSee('طبيب أسنان تدرج')
+            ->assertSee('2')
+            ->assertSee('1')
+            ->assertSee('0');
+    }
+
     public function test_admins_still_see_every_event_and_the_settings_page_in_the_admin_panel(): void
     {
         $this->osifEvent()->registrations()->create([
@@ -181,6 +224,7 @@ class OsifRegistrationTest extends TestCase
             ->assertMountedActionModalSeeHtml('https://wa.me/9647801234567?text=')
             ->assertMountedActionModalSeeHtml($payload['chatUrl'])
             ->assertMountedActionModalSeeHtml(route('osif.invitation', $registration->fresh()->invitation_token))
+            ->assertMountedActionModalSeeHtml('x-on:click.once="$wire.callMountedAction()"')
             ->assertMountedActionModalSee('إرسال رابط الدعوة')
             ->assertMountedActionModalSee('OSIF-'.str_pad((string) $registration->id, 4, '0', STR_PAD_LEFT))
             ->callMountedAction()
@@ -189,6 +233,10 @@ class OsifRegistrationTest extends TestCase
         $registration->refresh();
         $this->assertNotNull($registration->invitation_sent_at);
         $this->assertTrue($registration->is_handled);
+
+        $this->get(EventRegistrationResource::getUrl('index', panel: 'osif'))
+            ->assertOk()
+            ->assertSee('تم إرسال الدعوة — تمت المعالجة', false);
     }
 
     private function osifRegistration(): EventRegistration

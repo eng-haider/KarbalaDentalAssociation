@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\OsifRegistrationSettings;
 use App\Filament\Resources\EventRegistrations\EventRegistrationResource;
+use App\Filament\Widgets\OsifProfessionalTitleCountsWidget;
 use App\Filament\Widgets\OsifRegistrationStatsWidget;
 use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
@@ -44,6 +45,7 @@ class OsifPanelProvider extends PanelProvider
             ])
             ->widgets([
                 OsifRegistrationStatsWidget::class,
+                OsifProfessionalTitleCountsWidget::class,
                 AccountWidget::class,
             ])
             ->middleware([

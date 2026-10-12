@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\EventRegistrations\Pages;
 
 use App\Filament\Resources\EventRegistrations\EventRegistrationResource;
+use App\Filament\Widgets\OsifProfessionalTitleCountsWidget;
 use App\Filament\Widgets\OsifRegistrationStatsWidget;
 use Filament\Actions\CreateAction;
 use Filament\Facades\Filament;
@@ -26,7 +27,9 @@ class ListEventRegistrations extends ListRecords
 
     protected function getHeaderWidgets(): array
     {
-        return $this->inOsifPanel() ? [OsifRegistrationStatsWidget::class] : [];
+        return $this->inOsifPanel()
+            ? [OsifRegistrationStatsWidget::class, OsifProfessionalTitleCountsWidget::class]
+            : [];
     }
 
     public function getTabs(): array
