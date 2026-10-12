@@ -169,6 +169,11 @@ class OsifRegistrationTest extends TestCase
 
         // The card goes out as an image after a link-free greeting; the link message opens the same card.
         $payload = OsifInvitation::payload($registration);
+        $this->assertStringStartsWith(
+            route('osif.invitation.card', $registration->invitation_token).'?',
+            OsifInvitation::cardMessageUrl($registration),
+        );
+        $this->assertStringEndsWith('&share=card', OsifInvitation::cardMessageUrl($registration));
         $link = rawurlencode(OsifInvitation::cardMessageUrl($registration));
         $this->assertStringNotContainsString($link, $payload['imageChatUrl']);
         $this->assertStringContainsString($link, $payload['chatUrl']);
@@ -251,6 +256,11 @@ class OsifRegistrationTest extends TestCase
             ->assertSee('<meta property="og:url" content="'.$registration->invitationShareUrl().'">', false);
 
         $this->get(route('osif.invitation.card', $registration->invitation_token))
+            ->assertOk()
+            ->assertSee('<meta property="og:image" content="'.route('osif.invitation.preview', $registration->invitation_token), false)
+            ->assertSee('تنزيل الصورة', false);
+
+        $this->get(route('osif.invitation.card.image', $registration->invitation_token))
             ->assertOk()
             ->assertHeader('content-type', 'image/png');
 

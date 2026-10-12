@@ -34,11 +34,35 @@ class OsifInvitationController extends Controller
     }
 
     /**
+     * WhatsApp does not make a rich preview for a PNG response. This small
+     * page keeps the requested /card URL while supplying its Open Graph image.
+     */
+    public function card(string $token): Response
+    {
+        $registration = $this->registrationFor($token);
+
+        if (! $registration) {
+            return response()->view('osif.invitation-missing', status: 404);
+        }
+
+        $card = OsifInvitation::fileUrl($registration, OsifInvitation::CARD);
+        abort_unless($card, 404);
+
+        return response()->view('osif.invitation-card', [
+            'registration' => $registration,
+            'event' => $registration->event,
+            'card' => $card,
+            'preview' => OsifInvitation::fileUrl($registration, OsifInvitation::PREVIEW) ?? $card,
+            'cardDownload' => OsifInvitation::downloadUrl($registration, OsifInvitation::CARD),
+        ]);
+    }
+
+    /**
      * Stream invitation images through Laravel instead of the public /storage
      * symlink. Some shared hosts deny that nested path even when the upload is
      * present, which prevents the card and WhatsApp preview from loading.
      */
-    public function card(string $token): StreamedResponse
+    public function cardImage(string $token): StreamedResponse
     {
         return $this->serveFile($token, OsifInvitation::CARD);
     }

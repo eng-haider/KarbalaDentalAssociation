@@ -60,6 +60,9 @@ Route::get('/osif/invitation/{token}', [OsifInvitationController::class, 'show']
 Route::get('/osif/invitation/{token}/card', [OsifInvitationController::class, 'card'])
     ->where('token', '[A-Za-z0-9]{20,64}')
     ->name('osif.invitation.card');
+Route::get('/osif/invitation/{token}/card/image', [OsifInvitationController::class, 'cardImage'])
+    ->where('token', '[A-Za-z0-9]{20,64}')
+    ->name('osif.invitation.card.image');
 Route::get('/osif/invitation/{token}/preview', [OsifInvitationController::class, 'preview'])
     ->where('token', '[A-Za-z0-9]{20,64}')
     ->name('osif.invitation.preview');

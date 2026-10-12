@@ -43,8 +43,8 @@ class OsifInvitation
             'message' => $message,
             // Sent before the card image itself, so it carries no link.
             'imageChatUrl' => $chat(static::message($registration, withLink: false)),
-            // The card image itself is the WhatsApp link, so it opens as a
-            // saveable invitation photo for the guest.
+            // The WhatsApp-friendly card page opens the image and carries its
+            // Open Graph preview.
             'chatUrl' => $chat($message),
             'uploadUrl' => route('osif.invitation.files', $registration, absolute: false),
             // Same-origin paths keep the canvas exportable even when APP_URL
@@ -60,7 +60,7 @@ class OsifInvitation
 
     /**
      * The WhatsApp message. With the link, the guest opens the invitation
-     * card itself; without it, the message just introduces the card image.
+     * card page; without it, the message just introduces the card image.
      */
     public static function message(EventRegistration $registration, bool $withLink = true): string
     {
@@ -79,15 +79,23 @@ class OsifInvitation
     }
 
     /**
-     * The direct image address placed in WhatsApp. Before the dashboard's
-     * first upload completes, use a fresh harmless version query; when a card
-     * is already stored, use its actual modification time for cache busting.
+     * The /card address placed in WhatsApp. It is an HTML wrapper with Open
+     * Graph data (not a raw PNG), which is what makes WhatsApp show the image.
+     * Before the dashboard's first upload completes, use a fresh harmless
+     * version query; after that, use the card's modification time.
      */
     public static function cardMessageUrl(EventRegistration $registration): string
     {
-        return static::fileUrl($registration, static::CARD)
-            ?? route('osif.invitation.card', $registration->invitationToken())
-                .'?v='.($registration->created_at?->timestamp ?? time());
+        $disk = Storage::disk('public');
+        $path = $registration->invitationFilePath(static::CARD);
+        $version = $disk->exists($path)
+            ? $disk->lastModified($path)
+            : ($registration->created_at?->timestamp ?? time());
+
+        // `share=card` is deliberately distinct from the former raw-PNG URL,
+        // so WhatsApp discards its old "card"-only preview and fetches the
+        // Open Graph page after deployment.
+        return route('osif.invitation.card', $registration->invitationToken()).'?v='.$version.'&share=card';
     }
 
     /**
@@ -172,7 +180,7 @@ class OsifInvitation
     private static function routeName(string $file): string
     {
         return match ($file) {
-            static::CARD => 'osif.invitation.card',
+            static::CARD => 'osif.invitation.card.image',
             static::PREVIEW => 'osif.invitation.preview',
             static::PDF => 'osif.invitation.pdf',
             default => throw new \InvalidArgumentException("Unknown invitation file [{$file}]."),
