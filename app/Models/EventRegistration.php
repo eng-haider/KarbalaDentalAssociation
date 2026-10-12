@@ -83,7 +83,9 @@ class EventRegistration extends Model
      */
     public function invitationShareUrl(): string
     {
-        return $this->invitationUrl().'?share=1';
+        // A new query value makes WhatsApp request the updated Open Graph
+        // card instead of reusing its earlier wide-preview cache.
+        return $this->invitationUrl().'?share=2';
     }
 
     /** Where the dashboard stores this attendee's card files on the public disk. */

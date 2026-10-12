@@ -9,15 +9,15 @@
 <x-layouts.osif :title="'دعوة حضور — '.$guest" :description="$summary">
     <x-slot:head>
         <meta name="robots" content="noindex, nofollow">
-        {{-- Keep the shared ?share=1 URL so WhatsApp can fetch a fresh preview. --}}
+        {{-- The shared ?share=2 URL lets WhatsApp fetch the new card preview. --}}
         <meta property="og:url" content="{{ request()->fullUrl() }}">
         <meta property="og:description" content="{{ $summary }}">
-        @if ($preview)
-            {{-- What WhatsApp shows as the large preview of the invitation link. --}}
-            <meta property="og:image" content="{{ $preview }}">
-            <meta property="og:image:type" content="image/jpeg">
-            <meta property="og:image:width" content="1200">
-            <meta property="og:image:height" content="630">
+        @if ($ogImage)
+            {{-- WhatsApp uses the actual QR invitation card, not a separate banner. --}}
+            <meta property="og:image" content="{{ $ogImage['url'] }}">
+            <meta property="og:image:type" content="{{ $ogImage['type'] }}">
+            <meta property="og:image:width" content="{{ $ogImage['width'] }}">
+            <meta property="og:image:height" content="{{ $ogImage['height'] }}">
             <meta property="og:image:alt" content="بطاقة دعوة {{ $guest }}">
             <meta name="twitter:card" content="summary_large_image">
         @endif

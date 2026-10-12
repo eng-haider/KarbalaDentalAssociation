@@ -69,6 +69,7 @@ class OsifInvitation
             'يسعدنا تأكيد تسجيلك في '.$event->title.' (OSIF KARBALA).',
             $event->starts_at ? 'الموعد: '.static::date($registration).' – الساعة '.static::time($registration) : null,
             $event->location ? 'المكان: '.$event->location : null,
+            'تشمل الدعوة وجبة غداء.',
             '',
             ...($withLink
                 ? ['بطاقة الدعوة الخاصة بك ورمز الدخول (QR):', $registration->invitationShareUrl()]

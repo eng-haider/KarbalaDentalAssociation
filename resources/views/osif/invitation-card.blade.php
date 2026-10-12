@@ -10,10 +10,10 @@
         <meta name="robots" content="noindex, nofollow">
         <meta property="og:url" content="{{ request()->fullUrl() }}">
         <meta property="og:description" content="{{ $summary }}">
-        <meta property="og:image" content="{{ $preview }}">
-        <meta property="og:image:type" content="image/jpeg">
-        <meta property="og:image:width" content="1200">
-        <meta property="og:image:height" content="630">
+        <meta property="og:image" content="{{ $ogImage['url'] }}">
+        <meta property="og:image:type" content="{{ $ogImage['type'] }}">
+        <meta property="og:image:width" content="{{ $ogImage['width'] }}">
+        <meta property="og:image:height" content="{{ $ogImage['height'] }}">
         <meta property="og:image:alt" content="بطاقة دعوة {{ $guest }}">
         <meta name="twitter:card" content="summary_large_image">
     </x-slot:head>

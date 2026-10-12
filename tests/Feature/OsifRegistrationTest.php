@@ -171,6 +171,7 @@ class OsifRegistrationTest extends TestCase
         $payload = OsifInvitation::payload($registration);
         $link = rawurlencode($registration->invitationShareUrl());
         $this->assertStringContainsString($link, $payload['chatUrl']);
+        $this->assertStringContainsString('تشمل الدعوة وجبة غداء', $payload['message']);
 
         Livewire::test(ListEventRegistrations::class)
             ->assertCanSeeTableRecords([$registration])
@@ -241,7 +242,10 @@ class OsifRegistrationTest extends TestCase
 
         $this->get($registration->invitationUrl())
             ->assertOk()
-            ->assertSee('<meta property="og:image" content="'.route('osif.invitation.preview', $registration->invitation_token), false)
+            ->assertSee('<meta property="og:image" content="'.route('osif.invitation.card.image', $registration->invitation_token), false)
+            ->assertSee('<meta property="og:image:type" content="image/png">', false)
+            ->assertSee('<meta property="og:image:width" content="1080">', false)
+            ->assertSee('<meta property="og:image:height" content="1350">', false)
             ->assertSee('تنزيل الدعوة (PDF)', false)
             ->assertSee('تنزيل كصورة', false);
 
@@ -251,7 +255,8 @@ class OsifRegistrationTest extends TestCase
 
         $this->get(route('osif.invitation.card', $registration->invitation_token))
             ->assertOk()
-            ->assertSee('<meta property="og:image" content="'.route('osif.invitation.preview', $registration->invitation_token), false)
+            ->assertSee('<meta property="og:image" content="'.route('osif.invitation.card.image', $registration->invitation_token), false)
+            ->assertSee('<meta property="og:image:type" content="image/png">', false)
             ->assertSee('تنزيل الصورة', false);
 
         $this->get(route('osif.invitation.card.image', $registration->invitation_token))
@@ -268,6 +273,20 @@ class OsifRegistrationTest extends TestCase
 
         $registration->delete();
         Storage::disk('public')->assertMissing($registration->invitationFilePath('card.png'));
+    }
+
+    public function test_the_wide_preview_is_only_used_until_the_invitation_card_exists(): void
+    {
+        Storage::fake('public');
+        $registration = $this->osifRegistration();
+        Storage::disk('public')->put($registration->invitationFilePath('preview.jpg'), 'preview');
+
+        $this->get($registration->invitationUrl())
+            ->assertOk()
+            ->assertSee('<meta property="og:image" content="'.route('osif.invitation.preview', $registration->invitation_token), false)
+            ->assertSee('<meta property="og:image:type" content="image/jpeg">', false)
+            ->assertSee('<meta property="og:image:width" content="1200">', false)
+            ->assertSee('<meta property="og:image:height" content="630">', false);
     }
 
     public function test_only_osif_managers_can_upload_cards(): void

@@ -22,11 +22,15 @@ class OsifInvitationController extends Controller
             return response()->view('osif.invitation-missing', status: 404);
         }
 
+        $card = OsifInvitation::fileUrl($registration, OsifInvitation::CARD);
+        $preview = OsifInvitation::fileUrl($registration, OsifInvitation::PREVIEW);
+
         return response()->view('osif.invitation', [
             'registration' => $registration,
             'event' => $registration->event,
-            'card' => OsifInvitation::fileUrl($registration, OsifInvitation::CARD),
-            'preview' => OsifInvitation::fileUrl($registration, OsifInvitation::PREVIEW),
+            'card' => $card,
+            'preview' => $preview,
+            'ogImage' => $this->ogImage($card, $preview),
             'pdf' => OsifInvitation::fileUrl($registration, OsifInvitation::PDF),
             'cardDownload' => OsifInvitation::downloadUrl($registration, OsifInvitation::CARD),
             'pdfDownload' => OsifInvitation::downloadUrl($registration, OsifInvitation::PDF),
@@ -52,7 +56,7 @@ class OsifInvitationController extends Controller
             'registration' => $registration,
             'event' => $registration->event,
             'card' => $card,
-            'preview' => OsifInvitation::fileUrl($registration, OsifInvitation::PREVIEW) ?? $card,
+            'ogImage' => $this->ogImage($card, null),
             'cardDownload' => OsifInvitation::downloadUrl($registration, OsifInvitation::CARD),
         ]);
     }
@@ -121,6 +125,30 @@ class OsifInvitationController extends Controller
             ->whereHas('event', fn ($event) => $event->where('slug', Event::OSIF_SLUG))
             ->with('event')
             ->first();
+    }
+
+    /** @return array{url: string, type: string, width: int, height: int}|null */
+    private function ogImage(?string $card, ?string $preview): ?array
+    {
+        if ($card) {
+            return [
+                'url' => $card,
+                'type' => 'image/png',
+                'width' => 1080,
+                'height' => 1350,
+            ];
+        }
+
+        if ($preview) {
+            return [
+                'url' => $preview,
+                'type' => 'image/jpeg',
+                'width' => 1200,
+                'height' => 630,
+            ];
+        }
+
+        return null;
     }
 
     private function serveFile(string $token, string $file, bool $download = false): StreamedResponse
