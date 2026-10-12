@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Pages\OsifRegistrationSettings;
 use App\Filament\Resources\EventRegistrations\EventRegistrationResource;
+use App\Filament\Resources\EventRegistrations\Pages\CreateEventRegistration;
 use App\Filament\Resources\EventRegistrations\Pages\ListEventRegistrations;
 use App\Models\Event;
 use App\Models\EventRegistration;
@@ -278,5 +279,69 @@ class OsifRegistrationTest extends TestCase
         $this->assertSame('الدكتورة زينب علي', $guest('الدكتورة زينب علي'));
         $this->assertSame('دكتور علي حسين', $guest('دكتور علي حسين'));
         $this->assertSame('Dr. Ali Hussein', $guest('Dr. Ali Hussein'));
+    }
+
+    public function test_admins_can_add_a_registration_with_only_a_name_and_title(): void
+    {
+        $event = $this->osifEvent();
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]));
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+        $this->get(EventRegistrationResource::getUrl('create', panel: 'admin'))->assertOk();
+
+        Livewire::test(CreateEventRegistration::class)
+            ->fillForm([
+                'event_id' => $event->id,
+                'name' => 'ضيف الملتقى',
+                'professional_title' => 'طبيب أسنان اختصاص',
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $registration = EventRegistration::sole();
+        $this->assertSame('ضيف الملتقى', $registration->name);
+        $this->assertSame('طبيب أسنان اختصاص', $registration->professional_title);
+        $this->assertNull($registration->phone);
+        $this->assertNotNull($registration->invitation_token);
+    }
+
+    public function test_added_registrations_need_a_name_and_title_and_a_phone_not_already_used(): void
+    {
+        $event = $this->osifEvent();
+        $event->registrations()->create(['name' => 'زينب علي حسن', 'phone' => '07801234567']);
+        $this->actingAsCoordinator();
+
+        Livewire::test(CreateEventRegistration::class)
+            ->fillForm(['name' => '', 'professional_title' => null, 'phone' => '07801234567'])
+            ->call('create')
+            ->assertHasFormErrors(['name' => 'required', 'professional_title' => 'required', 'phone' => 'unique']);
+
+        $this->assertSame(1, EventRegistration::count());
+    }
+
+    public function test_coordinators_add_registrations_to_osif_without_picking_an_event(): void
+    {
+        $event = $this->osifEvent();
+        $this->actingAsCoordinator();
+
+        $this->get(EventRegistrationResource::getUrl('create', panel: 'osif'))->assertOk();
+
+        Livewire::test(CreateEventRegistration::class)
+            ->fillForm([
+                'name' => 'علي حسين جواد',
+                'professional_title' => 'طبيب أسنان مقيم',
+                'phone' => '07712345678',
+                'owns_clinic' => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors()
+            ->assertRedirect(EventRegistrationResource::getUrl('index'));
+
+        $this->assertDatabaseHas('event_registrations', [
+            'event_id' => $event->id,
+            'name' => 'علي حسين جواد',
+            'whatsapp_phone' => '07712345678',
+            'owns_clinic' => true,
+        ]);
     }
 }

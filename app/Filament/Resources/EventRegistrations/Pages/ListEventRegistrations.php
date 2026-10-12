@@ -4,6 +4,7 @@ namespace App\Filament\Resources\EventRegistrations\Pages;
 
 use App\Filament\Resources\EventRegistrations\EventRegistrationResource;
 use App\Filament\Widgets\OsifRegistrationStatsWidget;
+use Filament\Actions\CreateAction;
 use Filament\Facades\Filament;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -16,7 +17,11 @@ class ListEventRegistrations extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [];
+        return [
+            CreateAction::make()
+                ->label('إضافة تسجيل')
+                ->icon(Heroicon::OutlinedUserPlus),
+        ];
     }
 
     protected function getHeaderWidgets(): array

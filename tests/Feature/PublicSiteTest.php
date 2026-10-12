@@ -110,7 +110,12 @@ class PublicSiteTest extends TestCase
             'phone' => '07801234567',
             'professional_title' => 'طبيب أسنان مقيم',
             'owns_clinic' => '1',
-        ])->assertRedirect(route('osif.register'));
+        ])->assertRedirect(route('osif.register').'#osif-form');
+
+        $this->get(route('osif.register'))
+            ->assertSee('تم التسجيل بنجاح', false)
+            ->assertSee('سوف نقوم بمراجعة البيانات وإرسال دعوة الحضور', false)
+            ->assertDontSee('name="professional_title"', false);
 
         $this->assertDatabaseHas('event_registrations', [
             'event_id' => $event->id,

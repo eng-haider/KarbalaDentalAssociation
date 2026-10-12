@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EventRegistrations;
 
+use App\Filament\Resources\EventRegistrations\Pages\CreateEventRegistration;
 use App\Filament\Resources\EventRegistrations\Pages\EditEventRegistration;
 use App\Filament\Resources\EventRegistrations\Pages\ListEventRegistrations;
 use App\Filament\Resources\EventRegistrations\Schemas\EventRegistrationForm;
@@ -89,9 +90,10 @@ class EventRegistrationResource extends Resource
         return $query;
     }
 
+    /** Coordinators and admins can add a registration by hand (e.g. guests, phone bookings). */
     public static function canCreate(): bool
     {
-        return false;
+        return auth()->user()?->canManageOsif() ?? false;
     }
 
     public static function canDelete(Model $record): bool
@@ -115,6 +117,7 @@ class EventRegistrationResource extends Resource
     {
         return [
             'index' => ListEventRegistrations::route('/'),
+            'create' => CreateEventRegistration::route('/create'),
             'edit' => EditEventRegistration::route('/{record}/edit'),
         ];
     }

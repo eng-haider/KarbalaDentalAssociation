@@ -1,14 +1,14 @@
 @props(['event'])
 
-<div class="osif-registration-card">
+<div class="osif-registration-card" id="osif-form">
     @if (session('registration_ok'))
-        <div class="osif-success" role="status">
-            <i class="bi bi-check-circle-fill"></i>
-            <div><strong>تم استلام طلبك بنجاح.</strong><span>سيصلك تأكيد التسجيل وبطاقة الدعوة على رقمك في واتساب.</span></div>
+        <div class="osif-done" role="status">
+            <span class="osif-done-icon" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
+            <h1>تم التسجيل بنجاح</h1>
+            <p>سوف نقوم بمراجعة البيانات وإرسال دعوة الحضور إليك على واتساب.</p>
+            <a href="{{ route('osif.register') }}#osif-form">تسجيل شخص آخر</a>
         </div>
-    @endif
-
-    @if ($event->registration_open)
+    @elseif ($event->registration_open)
         <div class="osif-form-head">
             <span>OSIF 2026</span>
             <h1>سجّل حضورك</h1>
