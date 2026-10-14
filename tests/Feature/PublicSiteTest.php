@@ -127,7 +127,7 @@ class PublicSiteTest extends TestCase
         ]);
     }
 
-    public function test_osif_email_is_optional_but_must_be_valid_when_provided(): void
+    public function test_osif_email_is_required_and_must_be_valid(): void
     {
         $event = Event::create([
             'title' => 'ملتقى OSIF',
@@ -136,13 +136,18 @@ class PublicSiteTest extends TestCase
             'registration_open' => true,
         ]);
 
-        $this->post(route('events.register', $event), [
+        $registration = [
             'name' => 'علي حسين محمد',
             'phone' => '07801234567',
-            'email' => 'not-an-email',
             'professional_title' => 'طبيب أسنان مقيم',
             'owns_clinic' => '1',
-        ])->assertSessionHasErrors('email');
+        ];
+
+        $this->post(route('events.register', $event), $registration)
+            ->assertSessionHasErrors(['email' => 'يرجى كتابة البريد الإلكتروني.']);
+
+        $this->post(route('events.register', $event), [...$registration, 'email' => 'not-an-email'])
+            ->assertSessionHasErrors(['email' => 'يرجى كتابة بريد إلكتروني صحيح.']);
 
         $this->assertSame(0, EventRegistration::count());
     }
@@ -159,16 +164,12 @@ class PublicSiteTest extends TestCase
         $payload = [
             'name' => 'علي حسين محمد',
             'phone' => '07801234567',
+            'email' => 'ali@example.com',
             'professional_title' => 'طبيب أسنان تدرج',
             'owns_clinic' => '0',
         ];
 
         $this->post(route('events.register', $event), $payload)->assertSessionHasNoErrors();
-
-        $this->get(route('osif.register'))
-            ->assertSee('سوف نقوم بمراجعة البيانات وإرسال دعوة الحضور إليك عبر واتساب.', false)
-            ->assertDontSee('إليك عبر واتساب والبريد الإلكتروني.', false);
-
         $this->post(route('events.register', $event), $payload)->assertSessionHasErrors('phone');
         $this->assertSame(1, EventRegistration::count());
     }

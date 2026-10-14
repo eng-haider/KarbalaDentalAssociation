@@ -17,7 +17,7 @@ class EventRegistrationController extends Controller
             throw new NotFoundHttpException('التسجيل في هذه الفعالية مغلق.');
         }
 
-        $registration = DB::transaction(function () use ($request, $event) {
+        DB::transaction(function () use ($request, $event) {
             // Locking the event makes registrations for it take turns, so the
             // last seat of a professional title cannot be given out twice.
             $event = Event::query()->lockForUpdate()->findOrFail($event->getKey());
@@ -28,14 +28,11 @@ class EventRegistrationController extends Controller
                 ]);
             }
 
-            return $event->registrations()->create($request->validated());
+            $event->registrations()->create($request->validated());
         });
 
         return redirect()
             ->to($event->isOsif() ? route('osif.register').'#osif-form' : route('events.show', $event).'#registration')
-            ->with([
-                'registration_ok' => true,
-                'registration_has_email' => $event->isOsif() && filled($registration->email),
-            ]);
+            ->with('registration_ok', true);
     }
 }

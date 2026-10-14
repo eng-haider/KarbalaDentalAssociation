@@ -42,7 +42,7 @@ class StoreEventRegistrationRequest extends FormRequest
         ];
 
         if ($isOsif) {
-            $rules['email'] = ['nullable', 'string', 'email', 'max:255'];
+            $rules['email'] = ['required', 'string', 'email', 'max:255'];
         }
 
         return $rules;
@@ -58,6 +58,7 @@ class StoreEventRegistrationRequest extends FormRequest
             'phone.unique' => 'هذا الرقم مسجّل مسبقاً في هذه الفعالية.',
             'whatsapp_phone.required' => 'يرجى كتابة رقم الواتساب.',
             'whatsapp_phone.regex' => 'يرجى كتابة رقم واتساب صحيح.',
+            'email.required' => 'يرجى كتابة البريد الإلكتروني.',
             'email.email' => 'يرجى كتابة بريد إلكتروني صحيح.',
             'professional_title.required' => 'يرجى اختيار الصفة المهنية أو الأكاديمية.',
             'professional_title.in' => 'يرجى اختيار الصفة من القائمة.',

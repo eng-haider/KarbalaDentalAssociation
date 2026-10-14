@@ -67,7 +67,7 @@ class OsifRegistrationTest extends TestCase
         $this->assertSame(0, EventRegistration::count());
     }
 
-    public function test_optional_email_is_stored_while_removed_fields_are_not(): void
+    public function test_email_is_stored_while_removed_fields_are_not(): void
     {
         $event = $this->osifEvent();
 
@@ -475,7 +475,7 @@ class OsifRegistrationTest extends TestCase
             ->assertSee('<option value="طبيب أسنان خريج جديد" disabled>طبيب أسنان خريج جديد — اكتمل العدد</option>', false)
             ->assertSee('إرسال طلب التسجيل');
 
-        $registration = ['name' => 'علي حسين محمد', 'phone' => '07801234568', 'owns_clinic' => '0'];
+        $registration = ['name' => 'علي حسين محمد', 'phone' => '07801234568', 'email' => 'ali@example.com', 'owns_clinic' => '0'];
 
         $this->post(route('events.register', $event), [...$registration, 'professional_title' => 'طبيب أسنان خريج جديد'])
             ->assertSessionHasErrors(['professional_title' => 'نعتذر، اكتمل العدد المخصص لهذه الصفة.']);
