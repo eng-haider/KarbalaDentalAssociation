@@ -258,4 +258,33 @@ class OsifCompaniesTest extends TestCase
             ->assertRedirect('/company-dashboard');
         $this->assertAuthenticatedAs($account);
     }
+
+    public function test_companies_get_a_qr_code_and_a_printable_sign_for_their_page(): void
+    {
+        $company = $this->company();
+
+        $png = $this->get(route('osif.companies.qr', $company))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/png')
+            ->assertHeader('Content-Disposition', 'attachment; filename="qr-dental-pro.png"')
+            ->getContent();
+        $this->assertStringStartsWith("\x89PNG", $png);
+        $this->assertSame([936, 936], array_slice(getimagesizefromstring($png), 0, 2));
+
+        $this->get(route('osif.companies.poster', $company))
+            ->assertOk()
+            ->assertSee('Dental Pro')
+            ->assertSee('جناح A12', false)
+            ->assertSee('امسح الرمز بكاميرا هاتفك', false)
+            ->assertSee('<svg', false)
+            ->assertSee(route('osif.companies.show', $company), false);
+
+        // The company finds both on its dashboard.
+        $this->actingAsCompany($company);
+        $this->get('/company-dashboard')
+            ->assertOk()
+            ->assertSee('رمز QR لصفحتك', false)
+            ->assertSee(route('osif.companies.qr', $company), false)
+            ->assertSee(route('osif.companies.poster', $company), false);
+    }
 }

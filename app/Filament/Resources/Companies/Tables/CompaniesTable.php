@@ -57,6 +57,11 @@ class CompaniesTable
                     ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                     ->color('gray')
                     ->url(fn (Company $record): string => route('osif.companies.show', $record), shouldOpenInNewTab: true),
+                Action::make('qr')
+                    ->label('ملصق QR')
+                    ->icon(Heroicon::OutlinedQrCode)
+                    ->color('gray')
+                    ->url(fn (Company $record): string => route('osif.companies.poster', $record), shouldOpenInNewTab: true),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

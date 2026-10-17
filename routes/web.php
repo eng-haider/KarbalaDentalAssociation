@@ -57,6 +57,8 @@ Route::get('/osif/register', [OsifController::class, 'registration'])->name('osi
 // The exhibiting companies: a page each with its products, offers and a WhatsApp cart.
 Route::get('/osif/companies', [OsifCompanyController::class, 'index'])->name('osif.companies');
 Route::get('/osif/companies/{company}', [OsifCompanyController::class, 'show'])->name('osif.companies.show');
+Route::get('/osif/companies/{company}/qr.png', [OsifCompanyController::class, 'qr'])->name('osif.companies.qr');
+Route::get('/osif/companies/{company}/poster', [OsifCompanyController::class, 'poster'])->name('osif.companies.poster');
 Route::get('/osif/media/{path}', [OsifCompanyController::class, 'media'])
     ->where('path', 'companies/[A-Za-z0-9._/-]+')
     ->name('osif.media');

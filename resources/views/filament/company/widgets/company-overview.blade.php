@@ -12,6 +12,12 @@
         .co-status.is-hidden { color: rgb(217 119 6); }
         .co-link { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; padding: .75rem 1rem; border: 1px dashed var(--gray-300); border-radius: .75rem; background: var(--gray-50); }
         .co-link code { flex: 1 1 16rem; min-width: 0; overflow-wrap: anywhere; color: var(--gray-700); font-size: .85rem; direction: ltr; text-align: left; }
+        .co-qr { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem 1.25rem; align-items: center; padding: 1rem; border: 1px solid var(--gray-200); border-radius: .75rem; }
+        .co-qr-code { width: 9rem; height: 9rem; padding: .35rem; border-radius: .5rem; background: #fff; }
+        .co-qr-code svg { display: block; width: 100%; height: 100%; }
+        .co-qr h3 { margin: 0; color: var(--gray-950); font-size: 1rem; font-weight: 800; }
+        .co-qr p { margin: .25rem 0 .75rem; color: var(--gray-500); font-size: .85rem; line-height: 1.7; }
+        .co-qr-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
         .co-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
         .co-stat { padding: .875rem 1rem; border: 1px solid var(--gray-200); border-radius: .75rem; }
         .co-stat strong { display: block; color: var(--gray-950); font-size: 1.6rem; line-height: 1.2; }
@@ -25,7 +31,9 @@
         .dark .co-title h2, .dark .co-stat strong { color: #fff; }
         .dark .co-link { border-color: var(--gray-700); background: var(--gray-900); }
         .dark .co-link code, .dark .co-steps li { color: var(--gray-300); }
-        @media (max-width: 480px) { .co-stats { grid-template-columns: 1fr 1fr; } }
+        .dark .co-qr { border-color: var(--gray-700); }
+        .dark .co-qr h3 { color: #fff; }
+        @media (max-width: 480px) { .co-stats { grid-template-columns: 1fr 1fr; } .co-qr { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; } .co-qr-actions { justify-content: center; } }
     </style>
 
     <x-filament::section>
@@ -60,6 +68,22 @@
                     x-on:click="navigator.clipboard.writeText(@js($pageUrl)).then(() => { copied = true; setTimeout(() => copied = false, 2000) })">
                     <span x-text="copied ? 'تم النسخ ✓' : 'نسخ الرابط'">نسخ الرابط</span>
                 </x-filament::button>
+            </div>
+
+            <div class="co-qr">
+                <div class="co-qr-code" role="img" aria-label="رمز QR لصفحة {{ $company->name }}">{!! $qr !!}</div>
+                <div>
+                    <h3>رمز QR لصفحتك</h3>
+                    <p>اطبعه وضعه في جناحك أو على منشوراتك؛ يمسحه الطبيب بكاميرا هاتفه فتُفتح صفحتك ويطلب مباشرة.</p>
+                    <div class="co-qr-actions">
+                        <x-filament::button tag="a" :href="$posterUrl" target="_blank" icon="heroicon-m-printer">
+                            طباعة ملصق للجناح
+                        </x-filament::button>
+                        <x-filament::button tag="a" :href="$qrDownloadUrl" color="gray" icon="heroicon-m-arrow-down-tray">
+                            تنزيل رمز QR
+                        </x-filament::button>
+                    </div>
+                </div>
             </div>
 
             <div class="co-stats">

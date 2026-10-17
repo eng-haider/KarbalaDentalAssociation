@@ -5,6 +5,7 @@ namespace App\Filament\Company\Widgets;
 use App\Filament\Company\Pages\CompanyProfile;
 use App\Filament\Company\Resources\Products\ProductResource;
 use App\Models\Company;
+use App\Support\QrCode;
 use Filament\Widgets\Widget;
 
 /** The company dashboard's home: its page link, what is listed, and the next steps. */
@@ -24,7 +25,10 @@ class CompanyOverviewWidget extends Widget
 
         return [
             'company' => $company,
-            'pageUrl' => route('osif.companies.show', $company),
+            'pageUrl' => $pageUrl = route('osif.companies.show', $company),
+            'qr' => QrCode::svg($pageUrl),
+            'qrDownloadUrl' => route('osif.companies.qr', $company),
+            'posterUrl' => route('osif.companies.poster', $company),
             'productsUrl' => ProductResource::getUrl(),
             'profileUrl' => CompanyProfile::getUrl(),
             'shown' => $products->where('is_active', true)->count(),

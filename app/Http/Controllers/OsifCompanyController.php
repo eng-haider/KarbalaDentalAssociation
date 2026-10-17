@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\CompanyProduct;
+use App\Support\QrCode;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -23,6 +25,27 @@ class OsifCompanyController extends Controller
             ->get();
 
         return view('osif.companies.index', ['companies' => $companies]);
+    }
+
+    /** The company page's QR code as a large PNG, to share or hand to a designer. */
+    public function qr(Company $company): Response
+    {
+        return response(QrCode::png(route('osif.companies.show', $company)), headers: [
+            'Content-Type' => 'image/png',
+            'Content-Disposition' => 'attachment; filename="qr-'.$company->slug.'.png"',
+        ]);
+    }
+
+    /** A printable A4 sign for the company's booth: scan to open its page and order. */
+    public function poster(Company $company): View
+    {
+        $url = route('osif.companies.show', $company);
+
+        return view('osif.companies.poster', [
+            'company' => $company,
+            'url' => $url,
+            'qr' => QrCode::svg($url),
+        ]);
     }
 
     /**
