@@ -10,6 +10,7 @@ use App\Filament\Resources\Companies\Schemas\CompanyForm;
 use App\Filament\Resources\Companies\Tables\CompaniesTable;
 use App\Models\Company;
 use App\Models\User;
+use App\Support\WhatsApp;
 use BackedEnum;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
@@ -77,14 +78,14 @@ class CompanyResource extends Resource
     /** Creates or updates the company's dashboard login from the form's account fields. */
     public static function saveAccount(Company $company, array $data): void
     {
-        if (blank($data['account_email'] ?? null)) {
+        if (blank($data['account_phone'] ?? null)) {
             return;
         }
 
         $account = $company->account()->first() ?? new User;
         $account->forceFill([
             'name' => $company->name,
-            'email' => $data['account_email'],
+            'phone' => WhatsApp::number($data['account_phone']),
             'role' => User::ROLE_COMPANY,
             'company_id' => $company->getKey(),
         ]);

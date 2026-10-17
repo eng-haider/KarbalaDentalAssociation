@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Company\Auth\Login;
 use App\Filament\Company\Pages\CompanyProfile;
 use App\Filament\Company\Resources\Products\Pages\ManageProducts;
 use App\Filament\Resources\Companies\Pages\CreateCompany;
@@ -117,7 +118,7 @@ class OsifCompaniesTest extends TestCase
             ->fillForm([
                 'name' => 'Implant House',
                 'whatsapp_phone' => '07801112222',
-                'account_email' => 'sales@implant.test',
+                'account_phone' => '0780 111 2222',
                 'account_password' => 'secret-pass',
             ])
             ->call('create')
@@ -126,8 +127,10 @@ class OsifCompaniesTest extends TestCase
         $company = Company::sole();
         $this->assertSame('implant-house', $company->slug);
 
+        // The login is the phone, stored in one form however it was typed; no email is needed.
         $account = $company->account;
-        $this->assertSame('sales@implant.test', $account->email);
+        $this->assertSame('9647801112222', $account->phone);
+        $this->assertNull($account->email);
         $this->assertSame(User::ROLE_COMPANY, $account->role);
         $this->assertTrue(Hash::check('secret-pass', $account->password));
 
@@ -201,12 +204,58 @@ class OsifCompaniesTest extends TestCase
 
     public function test_deleting_a_product_removes_its_image(): void
     {
-        Storage::fake('public');
-        $path = UploadedFile::fake()->image('kit.jpg')->store('companies/products', 'public');
+        Storage::fake('osif');
+        $path = UploadedFile::fake()->image('kit.jpg')->store('companies/products', 'osif');
         $product = $this->company()->products()->create(['name' => 'Kit', 'image' => $path]);
 
         $product->delete();
 
-        Storage::disk('public')->assertMissing($path);
+        Storage::disk('osif')->assertMissing($path);
+    }
+
+    public function test_company_images_are_served_by_laravel_without_the_storage_link(): void
+    {
+        Storage::fake('osif', ['url' => config('filesystems.disks.osif.url')]);
+        $path = UploadedFile::fake()->image('logo.png')->store('companies/logos', 'osif');
+        $company = $this->company(['logo' => $path]);
+
+        $this->assertSame('/osif/media/'.$path, $company->logoUrl());
+
+        $this->get($company->logoUrl())
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/png')
+            ->assertHeader('X-Content-Type-Options', 'nosniff');
+
+        $this->get('/osif/media/companies/logos/missing.png')->assertNotFound();
+        $this->get('/osif/media/companies/../../.env')->assertNotFound();
+        $this->get('/osif/media/osif-invitations/secret/card.png')->assertNotFound();
+    }
+
+    public function test_companies_sign_in_with_their_phone_and_password(): void
+    {
+        $company = $this->company();
+        $account = User::factory()->create([
+            'email' => null,
+            'phone' => '9647801112222',
+            'password' => 'secret-pass',
+            'role' => User::ROLE_COMPANY,
+            'company_id' => $company->id,
+        ]);
+        Filament::setCurrentPanel(Filament::getPanel('company'));
+
+        $this->get('/company-dashboard/login')->assertOk()->assertSee('رقم الهاتف', false);
+
+        Livewire::test(Login::class)
+            ->fillForm(['phone' => '0780 111 2223', 'password' => 'secret-pass'])
+            ->call('authenticate')
+            ->assertHasFormErrors(['phone']);
+        $this->assertGuest();
+
+        Livewire::test(Login::class)
+            ->fillForm(['phone' => '+964 780 111 2222', 'password' => 'secret-pass'])
+            ->call('authenticate')
+            ->assertHasNoFormErrors()
+            ->assertRedirect('/company-dashboard');
+        $this->assertAuthenticatedAs($account);
     }
 }

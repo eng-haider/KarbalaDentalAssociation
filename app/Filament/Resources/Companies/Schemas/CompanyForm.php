@@ -4,6 +4,9 @@ namespace App\Filament\Resources\Companies\Schemas;
 
 use App\Filament\Forms\Components\ImageUpload;
 use App\Models\Company;
+use App\Models\User;
+use App\Support\WhatsApp;
+use Closure;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -25,16 +28,31 @@ class CompanyForm
 
                 Section::make('حساب الشركة في لوحة التحكم')
                     ->description(fn (): HtmlString => new HtmlString(
-                        'تدخل الشركة بهذا الحساب لإضافة منتجاتها وعروضها وتعديل صفحتها فقط. رابط الدخول: <span dir="ltr" style="font-weight:600">'.e(Filament::getPanel('company')->getLoginUrl()).'</span>'
+                        'تدخل الشركة برقم الهاتف وكلمة المرور لإضافة منتجاتها وعروضها وتعديل صفحتها فقط. رابط الدخول: <span dir="ltr" style="font-weight:600">'.e(Filament::getPanel('company')->getLoginUrl()).'</span>'
                     ))
                     ->icon('heroicon-o-key')
                     ->schema([
-                        TextInput::make('account_email')
-                            ->label('البريد الإلكتروني للدخول')
-                            ->email()
+                        TextInput::make('account_phone')
+                            ->label('رقم الهاتف للدخول')
+                            ->tel()
                             ->required()
-                            ->maxLength(255)
-                            ->unique('users', 'email', ignorable: fn (?Company $record) => $record?->account),
+                            ->maxLength(32)
+                            ->regex('/^[0-9+\s\-]{10,}$/')
+                            ->placeholder('07XXXXXXXXX')
+                            ->helperText('يُملأ تلقائياً من رقم واتساب، ويمكن تغييره.')
+                            ->validationMessages(['regex' => 'يرجى كتابة رقم هاتف صحيح.'])
+                            ->rules([
+                                fn (?Company $record): Closure => function (string $attribute, mixed $value, Closure $fail) use ($record): void {
+                                    $taken = User::query()
+                                        ->where('phone', WhatsApp::number($value))
+                                        ->when($record?->account, fn ($query, User $account) => $query->whereKeyNot($account->getKey()))
+                                        ->exists();
+
+                                    if ($taken) {
+                                        $fail('هذا الرقم مستخدم لحساب آخر.');
+                                    }
+                                },
+                            ]),
                         TextInput::make('account_password')
                             ->label('كلمة المرور')
                             ->password()
@@ -81,7 +99,14 @@ class CompanyForm
                     ->regex('/^[0-9+\s\-]{10,}$/')
                     ->validationMessages(['regex' => 'يرجى كتابة رقم واتساب صحيح.'])
                     ->placeholder('07XXXXXXXXX')
-                    ->helperText('تصل طلبات السلة إلى هذا الرقم كرسالة واتساب جاهزة.'),
+                    ->helperText('تصل طلبات السلة إلى هذا الرقم كرسالة واتساب جاهزة.')
+                    // Organisers: the login phone starts as the WhatsApp number.
+                    ->live(onBlur: true, condition: ! $forCompany)
+                    ->afterStateUpdated(function (Get $get, Set $set, ?string $state) use ($forCompany): void {
+                        if (! $forCompany && blank($get('account_phone'))) {
+                            $set('account_phone', $state);
+                        }
+                    }),
                 TextInput::make('booth')
                     ->label('رقم الجناح في المعرض')
                     ->placeholder('مثال: A12')
@@ -93,7 +118,8 @@ class CompanyForm
                     ->columnSpanFull(),
                 ImageUpload::make('logo')
                     ->label('الشعار')
-                    ->disk('public')
+                    ->disk('osif')
+                    ->acceptedFileTypes(ImageUpload::PHOTO_TYPES)
                     ->directory('companies/logos')
                     ->image()
                     ->imageEditor()
@@ -101,7 +127,8 @@ class CompanyForm
                     ->helperText('يُفضّل شعار مربع بخلفية بيضاء أو شفافة.'),
                 ImageUpload::make('cover')
                     ->label('صورة الغلاف (اختياري)')
-                    ->disk('public')
+                    ->disk('osif')
+                    ->acceptedFileTypes(ImageUpload::PHOTO_TYPES)
                     ->directory('companies/covers')
                     ->image()
                     ->imageEditor()

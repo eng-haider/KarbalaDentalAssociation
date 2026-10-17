@@ -25,6 +25,12 @@ class ImageUpload extends FileUpload
         'image/heic', 'image/heif',
     ];
 
+    /** Photos only: SVG can carry scripts, so uploads from outside accounts leave it out. */
+    public const PHOTO_TYPES = [
+        'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+        'image/heic', 'image/heif',
+    ];
+
     public const HINT = 'الصيغ المقبولة: JPG، PNG، WEBP، وصور الآيفون HEIC (تُحوّل تلقائياً إلى JPG).';
 
     protected function setUp(): void

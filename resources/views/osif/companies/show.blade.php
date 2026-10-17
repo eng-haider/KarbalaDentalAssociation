@@ -9,7 +9,7 @@
 <x-layouts.osif :title="$company->name.' — الشركات المشاركة | OSIF KARBALA 2026'" :description="$summary">
     <x-slot:head>
         @if ($company->coverUrl() || $company->logoUrl())
-            <meta property="og:image" content="{{ $company->coverUrl() ?? $company->logoUrl() }}">
+            <meta property="og:image" content="{{ url($company->coverUrl() ?? $company->logoUrl()) }}">
         @endif
         <meta property="og:description" content="{{ $summary }}">
         @vite(['resources/css/osif-shop.css', 'resources/js/osif-shop.js'])

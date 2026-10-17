@@ -24,7 +24,7 @@ class CompanyProductsTable
             ->columns([
                 ImageColumn::make('image')
                     ->label('الصورة')
-                    ->disk('public')
+                    ->disk('osif')
                     ->square()
                     ->imageSize(56),
                 TextColumn::make('name')

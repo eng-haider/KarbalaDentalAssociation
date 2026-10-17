@@ -49,6 +49,18 @@ return [
             'report' => false,
         ],
 
+        // Company logos, covers and product photos (OSIF). The same files as the
+        // public disk, but linked through Laravel («osif.media» in routes/web.php)
+        // so they load even where the host lacks or blocks the public/storage link.
+        'osif' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public'),
+            'url' => '/osif/media',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

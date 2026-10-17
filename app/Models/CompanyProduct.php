@@ -28,7 +28,7 @@ class CompanyProduct extends Model
     {
         static::deleted(function (self $product): void {
             if ($product->image) {
-                Storage::disk('public')->delete($product->image);
+                Storage::disk('osif')->delete($product->image);
             }
         });
     }
@@ -75,7 +75,7 @@ class CompanyProduct extends Model
 
     public function imageUrl(): ?string
     {
-        return $this->image ? Storage::disk('public')->url($this->image) : null;
+        return $this->image ? Storage::disk('osif')->url($this->image) : null;
     }
 
     public static function formatPrice(?int $amount): string

@@ -57,6 +57,9 @@ Route::get('/osif/register', [OsifController::class, 'registration'])->name('osi
 // The exhibiting companies: a page each with its products, offers and a WhatsApp cart.
 Route::get('/osif/companies', [OsifCompanyController::class, 'index'])->name('osif.companies');
 Route::get('/osif/companies/{company}', [OsifCompanyController::class, 'show'])->name('osif.companies.show');
+Route::get('/osif/media/{path}', [OsifCompanyController::class, 'media'])
+    ->where('path', 'companies/[A-Za-z0-9._/-]+')
+    ->name('osif.media');
 
 // The page an invitation's QR code opens, and the dashboard upload of its card files.
 Route::get('/osif/invitation/{token}', [OsifInvitationController::class, 'show'])

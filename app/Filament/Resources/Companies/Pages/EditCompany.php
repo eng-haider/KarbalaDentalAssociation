@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Companies\Pages;
 
 use App\Filament\Resources\Companies\CompanyResource;
+use App\Support\WhatsApp;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
@@ -29,7 +30,7 @@ class EditCompany extends EditRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        $data['account_email'] = $this->getRecord()->account?->email;
+        $data['account_phone'] = WhatsApp::local($this->getRecord()->account?->phone);
 
         return $data;
     }
@@ -37,7 +38,7 @@ class EditCompany extends EditRecord
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         return DB::transaction(function () use ($record, $data): Model {
-            $record->update(Arr::except($data, ['account_email', 'account_password']));
+            $record->update(Arr::except($data, ['account_phone', 'account_password']));
             CompanyResource::saveAccount($record, $data);
 
             return $record;

@@ -36,6 +36,16 @@ class WhatsApp
         return $digits;
     }
 
+    /** The number as Iraqis write it (9647801234567 → 07801234567). */
+    public static function local(?string $phone): ?string
+    {
+        $number = static::number($phone);
+
+        return $number && str_starts_with($number, '964') && strlen($number) === 13
+            ? '0'.substr($number, 3)
+            : $number;
+    }
+
     /** A chat with the number, optionally with a message typed in. */
     public static function chatUrl(?string $phone, ?string $text = null): ?string
     {

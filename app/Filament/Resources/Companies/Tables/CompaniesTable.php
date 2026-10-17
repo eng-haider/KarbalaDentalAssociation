@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Companies\Tables;
 
 use App\Models\Company;
+use App\Support\WhatsApp;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -21,7 +22,7 @@ class CompaniesTable
             ->columns([
                 ImageColumn::make('logo')
                     ->label('الشعار')
-                    ->disk('public')
+                    ->disk('osif')
                     ->circular()
                     ->imageSize(44),
                 TextColumn::make('name')
@@ -39,8 +40,9 @@ class CompaniesTable
                     ->counts('products')
                     ->badge()
                     ->color('primary'),
-                TextColumn::make('account.email')
-                    ->label('حساب الدخول')
+                TextColumn::make('account.phone')
+                    ->label('رقم الدخول')
+                    ->formatStateUsing(fn (?string $state): ?string => WhatsApp::local($state))
                     ->placeholder('بدون حساب')
                     ->copyable()
                     ->toggleable(),

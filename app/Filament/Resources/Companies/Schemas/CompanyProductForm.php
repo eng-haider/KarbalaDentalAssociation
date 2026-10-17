@@ -21,7 +21,8 @@ class CompanyProductForm
             ->components([
                 ImageUpload::make('image')
                     ->label('صورة المنتج')
-                    ->disk('public')
+                    ->disk('osif')
+                    ->acceptedFileTypes(ImageUpload::PHOTO_TYPES)
                     ->directory('companies/products')
                     ->image()
                     ->imageEditor()

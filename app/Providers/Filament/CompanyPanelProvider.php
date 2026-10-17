@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Company\Auth\Login;
 use App\Filament\Company\Widgets\CompanyOverviewWidget;
 use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
@@ -30,7 +31,7 @@ class CompanyPanelProvider extends PanelProvider
         return $panel
             ->id('company')
             ->path('company-dashboard')
-            ->login()
+            ->login(Login::class)
             ->brandName('OSIF — لوحة الشركات')
             ->colors([
                 'primary' => Color::Violet,

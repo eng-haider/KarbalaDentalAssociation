@@ -37,7 +37,7 @@ class Company extends Model
         });
 
         static::deleting(function (self $company): void {
-            $disk = Storage::disk('public');
+            $disk = Storage::disk('osif');
             $disk->delete(array_filter([$company->logo, $company->cover, ...$company->products()->pluck('image')]));
         });
     }
@@ -70,12 +70,12 @@ class Company extends Model
 
     public function logoUrl(): ?string
     {
-        return $this->logo ? Storage::disk('public')->url($this->logo) : null;
+        return $this->logo ? Storage::disk('osif')->url($this->logo) : null;
     }
 
     public function coverUrl(): ?string
     {
-        return $this->cover ? Storage::disk('public')->url($this->cover) : null;
+        return $this->cover ? Storage::disk('osif')->url($this->cover) : null;
     }
 
     public function whatsappNumber(): ?string

@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\CompanyProduct;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /** The companies exhibiting at OSIF: their pages, products, offers and cart. */
 class OsifCompanyController extends Controller
@@ -21,6 +23,23 @@ class OsifCompanyController extends Controller
             ->get();
 
         return view('osif.companies.index', ['companies' => $companies]);
+    }
+
+    /**
+     * A company image, streamed by Laravel rather than through /storage, which
+     * some hosts block or lack (the same reason invitation cards are streamed).
+     */
+    public function media(string $path): StreamedResponse
+    {
+        $disk = Storage::disk('osif');
+        abort_if(str_contains($path, '..') || ! $disk->exists($path), 404);
+
+        return $disk->response($path, headers: [
+            // A replaced image is stored under a new name, so a URL never changes content.
+            'Cache-Control' => 'public, max-age=31536000, immutable',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+        ]);
     }
 
     public function show(Company $company): View

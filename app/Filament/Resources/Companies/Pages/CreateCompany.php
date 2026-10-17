@@ -15,7 +15,7 @@ class CreateCompany extends CreateRecord
     protected function handleRecordCreation(array $data): Model
     {
         return DB::transaction(function () use ($data): Model {
-            $company = static::getModel()::create(Arr::except($data, ['account_email', 'account_password']));
+            $company = static::getModel()::create(Arr::except($data, ['account_phone', 'account_password']));
             CompanyResource::saveAccount($company, $data);
 
             return $company;
