@@ -8,6 +8,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\MarketplaceController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\OsifCompanyController;
 use App\Http\Controllers\OsifController;
 use App\Http\Controllers\OsifInvitationController;
 use App\Http\Controllers\PageController;
@@ -52,6 +53,10 @@ Route::get('/events/{event}', [EventController::class, 'show'])->name('events.sh
 // association's registration and administration infrastructure.
 Route::get('/osif', OsifController::class)->name('osif');
 Route::get('/osif/register', [OsifController::class, 'registration'])->name('osif.register');
+
+// The exhibiting companies: a page each with its products, offers and a WhatsApp cart.
+Route::get('/osif/companies', [OsifCompanyController::class, 'index'])->name('osif.companies');
+Route::get('/osif/companies/{company}', [OsifCompanyController::class, 'show'])->name('osif.companies.show');
 
 // The page an invitation's QR code opens, and the dashboard upload of its card files.
 Route::get('/osif/invitation/{token}', [OsifInvitationController::class, 'show'])

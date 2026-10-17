@@ -542,13 +542,18 @@ class OsifRegistrationTest extends TestCase
             ->call('create')
             ->assertHasNoFormErrors();
 
+        // VIP guests need no professional title; the field is hidden for them.
         Livewire::test(CreateEventRegistration::class)
-            ->fillForm(['name' => 'ضيف مميز', 'professional_title' => 'طبيب أسنان اختصاص', 'is_vip' => true])
+            ->fillForm(['is_vip' => true])
+            ->assertFormFieldHidden('professional_title')
+            ->fillForm(['name' => 'ضيف مميز'])
             ->call('create')
             ->assertHasNoFormErrors();
 
         $this->assertFalse(EventRegistration::where('name', 'ضيف عادي')->sole()->is_vip);
-        $this->assertTrue(EventRegistration::where('name', 'ضيف مميز')->sole()->is_vip);
+        $vip = EventRegistration::where('name', 'ضيف مميز')->sole();
+        $this->assertTrue($vip->is_vip);
+        $this->assertNull($vip->professional_title);
     }
 
     public function test_vip_guests_get_their_own_message_page_label_and_dashboard_badge(): void
@@ -565,7 +570,8 @@ class OsifRegistrationTest extends TestCase
 
         $this->get($registration->invitationUrl())
             ->assertOk()
-            ->assertSee('دعوة VIP · '.$registration->invitationCode(), false);
+            ->assertSee('دعوة VIP · '.$registration->invitationCode(), false)
+            ->assertDontSee('طبيب أسنان اختصاص', false);
 
         $this->actingAsCoordinator();
         Livewire::test(ListEventRegistrations::class)

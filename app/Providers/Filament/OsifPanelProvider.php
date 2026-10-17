@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\OsifRegistrationSettings;
+use App\Filament\Resources\Companies\CompanyResource;
 use App\Filament\Resources\EventRegistrations\EventRegistrationResource;
 use App\Filament\Widgets\OsifProfessionalTitleCountsWidget;
 use App\Filament\Widgets\OsifRegistrationStatsWidget;
@@ -38,6 +39,7 @@ class OsifPanelProvider extends PanelProvider
             ->font('Cairo', url: fn (): string => asset('fonts/cairo/cairo.css'), provider: LocalFontProvider::class)
             ->resources([
                 EventRegistrationResource::class,
+                CompanyResource::class,
             ])
             ->pages([
                 Dashboard::class,

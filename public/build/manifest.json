@@ -1,4 +1,8 @@
 {
+  "_module.esm-eTHrBq0G.js": {
+    "file": "assets/module.esm-eTHrBq0G.js",
+    "name": "module.esm"
+  },
   "resources/css/app.css": {
     "file": "assets/app-C3xSos9Y.css",
     "name": "app",
@@ -8,8 +12,17 @@
     "src": "resources/css/app.css",
     "isEntry": true
   },
+  "resources/css/osif-shop.css": {
+    "file": "assets/osif-shop-Cpks-eEE.css",
+    "name": "osif-shop",
+    "names": [
+      "osif-shop.css"
+    ],
+    "src": "resources/css/osif-shop.css",
+    "isEntry": true
+  },
   "resources/css/osif.css": {
-    "file": "assets/osif-CcF0lwWS.css",
+    "file": "assets/osif-fyIEgquc.css",
     "name": "osif",
     "names": [
       "osif.css"
@@ -27,16 +40,28 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-BbzKHjiw.js",
+    "file": "assets/app-_22cSjFn.js",
     "name": "app",
     "src": "resources/js/app.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_module.esm-eTHrBq0G.js"
+    ]
   },
   "resources/js/osif-invitation.js": {
-    "file": "assets/osif-invitation-B5V_mzgC.js",
+    "file": "assets/osif-invitation-DuOdq4yh.js",
     "name": "osif-invitation",
     "src": "resources/js/osif-invitation.js",
     "isEntry": true
+  },
+  "resources/js/osif-shop.js": {
+    "file": "assets/osif-shop-CrkgLD1P.js",
+    "name": "osif-shop",
+    "src": "resources/js/osif-shop.js",
+    "isEntry": true,
+    "imports": [
+      "_module.esm-eTHrBq0G.js"
+    ]
   },
   "resources/js/osif.js": {
     "file": "assets/osif-DfYc1tva.js",

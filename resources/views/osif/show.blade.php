@@ -88,6 +88,34 @@
             </div>
         </section>
 
+        @if ($companies->isNotEmpty())
+            <section id="companies" class="osif-companies-section">
+                <div class="osif-container">
+                    <div class="osif-companies-head">
+                        <div>
+                            <p class="osif-section-kicker">المعرض المتخصص</p>
+                            <h2>الشركات المشاركة</h2>
+                            <p>تصفّح منتجات الشركات وعروضها الخاصة بالملتقى، وأرسل طلبك إلى الشركة عبر واتساب مباشرة.</p>
+                        </div>
+                        <a class="osif-button osif-button-primary" href="{{ route('osif.companies') }}">تصفّح المنتجات والعروض <i class="bi bi-arrow-down-left"></i></a>
+                    </div>
+                    <ul class="osif-company-logos">
+                        @foreach ($companies->take(12) as $company)
+                            <li>
+                                <a href="{{ route('osif.companies.show', $company) }}" title="{{ $company->name }}">
+                                    @if ($company->logoUrl())
+                                        <img src="{{ $company->logoUrl() }}" alt="{{ $company->name }}" loading="lazy">
+                                    @else
+                                        <span>{{ $company->name }}</span>
+                                    @endif
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </section>
+        @endif
+
         <section class="osif-registration-section osif-registration-cta">
             <div class="osif-container">
                 <p class="osif-section-kicker">التسجيل الإلكتروني</p>

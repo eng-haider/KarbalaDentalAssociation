@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Models\Event;
 use Illuminate\View\View;
 
@@ -9,7 +10,10 @@ class OsifController extends Controller
 {
     public function __invoke(): View
     {
-        return view('osif.show', ['event' => $this->event()]);
+        return view('osif.show', [
+            'event' => $this->event(),
+            'companies' => Company::query()->active()->ordered()->get(),
+        ]);
     }
 
     public function registration(): View

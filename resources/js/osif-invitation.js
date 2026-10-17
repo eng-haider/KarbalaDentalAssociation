@@ -506,19 +506,15 @@ function drawVipCard(data, logos, scale = 1) {
     ctx.strokeRect(qr.x - 1, qr.y - 1, qr.size + 2, qr.size + 2);
     text(ctx, 'امسح الرمز لعرض الدعوة', qr.x + qr.size / 2, qr.y + qr.size + 38, { weight: 600, size: 20, color: GOLD.muted });
 
+    // VIP guests are addressed by name alone, without their professional title.
     const column = right - (qr.x + qr.size + 48);
-    let y = badge.y + 100;
+    const y = badge.y + 124;
     text(ctx, 'يتشرّف منظمو الملتقى بدعوتكم', right, y, { size: 26, color: GOLD.muted, align: 'right' });
 
-    y = guest(ctx, data.name, right, y + 82, column, {
+    guest(ctx, data.name, right, y + 82, column, {
         color: GOLD.name,
         accent: (left, end) => gold(ctx, left, 0, end, 0),
     });
-
-    if (data.title) {
-        const titleFit = fit(ctx, data.title, 700, 30, column, 22);
-        text(ctx, data.title, right, y + 32, { weight: 700, size: titleFit, color: GOLD.deep, align: 'right' });
-    }
 
     details(ctx, data, 1094, 58, { labelColor: GOLD.base, valueColor: GOLD.ivory });
 
@@ -563,7 +559,7 @@ function drawPreview(data, logos) {
     text(ctx, data.name, right, 250, { weight: 800, size: nameSize, align: 'right' });
 
     let y = 250;
-    if (data.title) {
+    if (data.title && ! data.vip) {
         y += 56;
         text(ctx, data.title, right, y, { weight: 600, size: fit(ctx, data.title, 600, 32, column, 22), color: theme.soft, align: 'right' });
     }

@@ -30,7 +30,7 @@
                 <p class="osif-pass-valid"><i class="bi bi-patch-check-fill" aria-hidden="true"></i> دعوة صالحة</p>
                 <p class="osif-pass-kicker">{{ $label }} · {{ $registration->invitationCode() }}</p>
                 <h1 id="osif-pass-name">{{ $guest }}</h1>
-                @if ($registration->professional_title)
+                @if ($registration->professional_title && ! $registration->is_vip)
                     <p class="osif-pass-title">{{ $registration->professional_title }}</p>
                 @endif
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\WhatsApp;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
@@ -96,36 +97,10 @@ class EventRegistration extends Model
         return 'osif-invitations/'.$this->invitationToken().'/'.$file;
     }
 
-    /**
-     * The number in the international form wa.me expects
-     * (07801234567 → 9647801234567).
-     */
+    /** The number in the international form wa.me expects. */
     public function whatsappNumber(): ?string
     {
-        $digits = preg_replace('/\D+/', '', (string) ($this->whatsapp_phone ?: $this->phone));
-
-        if ($digits === '') {
-            return null;
-        }
-
-        if (str_starts_with($digits, '00')) {
-            $digits = substr($digits, 2);
-        }
-
-        // Iraqi numbers are usually typed locally (07…), sometimes as +964 07….
-        if (str_starts_with($digits, '9640')) {
-            return '964'.substr($digits, 4);
-        }
-
-        if (str_starts_with($digits, '0')) {
-            return '964'.substr($digits, 1);
-        }
-
-        if (strlen($digits) === 10 && str_starts_with($digits, '7')) {
-            return '964'.$digits;
-        }
-
-        return $digits;
+        return WhatsApp::number($this->whatsapp_phone ?: $this->phone);
     }
 
     public function invitationCode(): string

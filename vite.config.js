@@ -13,6 +13,8 @@ export default defineConfig({
                 'resources/css/osif.css',
                 'resources/js/osif.js',
                 'resources/js/osif-invitation.js',
+                'resources/css/osif-shop.css',
+                'resources/js/osif-shop.js',
             ],
             refresh: true,
         }),

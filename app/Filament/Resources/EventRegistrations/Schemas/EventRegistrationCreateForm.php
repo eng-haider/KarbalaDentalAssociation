@@ -26,11 +26,13 @@ class EventRegistrationCreateForm
         $inOsifPanel = Filament::getCurrentPanel()?->getId() === 'osif';
         // The OSIF panel has no event picker: its registrations are always for OSIF.
         $eventId = fn (Get $get) => $get('event_id') ?: $osifId;
+        // VIP guests are invited by name only, without a professional title.
+        $isVip = fn (Get $get): bool => $eventId($get) == $osifId && (bool) $get('is_vip');
 
         return $schema
             ->components([
                 Section::make('بيانات المسجّل')
-                    ->description('الاسم والصفة مطلوبان، وبقية الحقول اختيارية.')
+                    ->description('الاسم مطلوب، والصفة مطلوبة للدعوة العادية فقط، وبقية الحقول اختيارية.')
                     ->schema([
                         Select::make('event_id')
                             ->label('الفعالية')
@@ -40,6 +42,19 @@ class EventRegistrationCreateForm
                             ->live()
                             ->hidden($inOsifPanel)
                             ->columnSpanFull(),
+                        ToggleButtons::make('is_vip')
+                            ->label('نوع الدعوة')
+                            ->boolean()
+                            ->options([0 => 'عادية', 1 => 'VIP'])
+                            ->colors([0 => 'gray', 1 => 'warning'])
+                            ->icons([0 => Heroicon::OutlinedEnvelope, 1 => Heroicon::OutlinedStar])
+                            ->default(false)
+                            ->inline()
+                            ->live()
+                            ->helperText('يمكن تغييرها لاحقاً من نافذة «إرسال الدعوة».')
+                            // Invitation cards are an OSIF feature.
+                            ->visible(fn (Get $get): bool => $eventId($get) == $osifId)
+                            ->columnSpanFull(),
                         TextInput::make('name')
                             ->label('الاسم الثلاثي')
                             ->required()
@@ -48,7 +63,8 @@ class EventRegistrationCreateForm
                             ->label('الصفة المهنية أو الأكاديمية')
                             ->options(fn (Get $get): array => static::titles($eventId($get)))
                             ->searchable()
-                            ->required(),
+                            ->required()
+                            ->hidden($isVip),
                         TextInput::make('phone')
                             ->label('رقم الموبايل (واتساب)')
                             ->tel()
@@ -64,17 +80,6 @@ class EventRegistrationCreateForm
                             ->label('هل يمتلك عيادة؟')
                             ->boolean('نعم', 'لا')
                             ->inline(),
-                        ToggleButtons::make('is_vip')
-                            ->label('نوع الدعوة')
-                            ->boolean()
-                            ->options([0 => 'عادية', 1 => 'VIP'])
-                            ->colors([0 => 'gray', 1 => 'warning'])
-                            ->icons([0 => Heroicon::OutlinedEnvelope, 1 => Heroicon::OutlinedStar])
-                            ->default(false)
-                            ->inline()
-                            ->helperText('يمكن تغييرها لاحقاً من نافذة «إرسال الدعوة».')
-                            // Invitation cards are an OSIF feature.
-                            ->visible(fn (Get $get): bool => $eventId($get) == $osifId),
                         TextInput::make('membership_number')
                             ->label('رقم العضوية')
                             ->maxLength(64)

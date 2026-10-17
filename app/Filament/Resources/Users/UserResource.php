@@ -7,6 +7,7 @@ use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Models\User;
 use BackedEnum;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -15,8 +16,9 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
 use UnitEnum;
 
 class UserResource extends Resource
@@ -95,15 +97,21 @@ class UserResource extends Resource
                 TextColumn::make('email')->label('البريد الإلكتروني')->searchable(),
                 TextColumn::make('role')
                     ->label('الدور')
-                    ->formatStateUsing(fn (string $state): string => User::roleOptions()[$state] ?? $state)
+                    ->formatStateUsing(fn (string $state): string => User::roleLabels()[$state] ?? $state)
                     ->badge()
                     ->color(fn (string $state): string => $state === User::ROLE_ADMIN ? 'warning' : 'primary'),
                 TextColumn::make('created_at')->label('أُنشئ في')->dateTime('Y-m-d H:i')->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->recordActions([
-                \Filament\Actions\EditAction::make(),
+                EditAction::make(),
             ]);
+    }
+
+    /** Company logins are created and edited from «الشركات المشاركة». */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->where('role', '!=', User::ROLE_COMPANY);
     }
 
     public static function getPages(): array
