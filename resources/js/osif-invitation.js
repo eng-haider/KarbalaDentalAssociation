@@ -1,6 +1,7 @@
 // Draws an attendee's OSIF invitation (a badge-style card with a QR code, the
 // same card as a PDF, and a wide preview for WhatsApp's link preview) in the
-// browser and uploads them, so the invitation page and WhatsApp can use them. Canvas text is
+// browser and uploads them, so the invitation page and WhatsApp can use them.
+// VIP guests get a black-and-gold version of the card. Canvas text is
 // shaped by the browser, so Arabic renders correctly without a headless Chrome
 // on the server. Used by the "إرسال الدعوة" modal
 // (resources/views/filament/osif/invitation-modal.blade.php).
@@ -19,6 +20,29 @@ const COLOR = {
     ink: '#140a2c',
     muted: '#6b5b80',
 };
+
+/** The VIP card's black and gold. */
+const GOLD = {
+    base: '#d4a64a',
+    deep: '#8f6a1f',
+    ink: '#241a06',
+    black: '#0b0a0c',
+    coal: '#1a160f',
+    ivory: '#fdf8ec',
+    name: '#1b1408',
+    muted: '#86744f',
+    soft: 'rgba(249, 231, 167, 0.8)',
+    faint: 'rgba(212, 166, 74, 0.3)',
+    rule: 'rgba(184, 134, 43, 0.45)',
+};
+
+const ORGANISERS = [
+    { x: 800, logo: 'osif', label: 'OSIF KARBALA', brand: true },
+    { x: 540, logo: 'syndicate', label: 'نقابة أطباء أسنان كربلاء' },
+    { x: 280, logo: 'university', label: 'جامعة السبطين للعلوم الطبية' },
+];
+
+const label = (data) => (data.vip ? 'دعوة VIP' : 'دعوة حضور');
 
 let fontsReady;
 const images = new Map();
@@ -121,17 +145,43 @@ function text(ctx, value, x, y, { weight = 400, size = 28, color = COLOR.white, 
     ctx.fillText(value, x, y);
 }
 
-/** An amber, AEEDC-style pill label; x is its right edge, or its centre when centred. */
-function pill(ctx, label, x, y, { size = 28, centered = false } = {}) {
+/**
+ * An amber, AEEDC-style pill label; x is its right edge, or its centre when
+ * centred. A fill function receives the pill's box, for gradients.
+ */
+function pill(ctx, value, x, y, { size = 28, centered = false, fill = COLOR.amber, ink = COLOR.amberInk } = {}) {
     ctx.font = font(700, size);
-    const width = ctx.measureText(label).width + size * 2.2;
+    const width = ctx.measureText(value).width + size * 2.2;
     const height = size * 1.9;
     const left = centered ? x - width / 2 : x - width;
 
     roundRect(ctx, left, y, width, height, height / 2);
-    ctx.fillStyle = COLOR.amber;
+    ctx.fillStyle = typeof fill === 'function' ? fill(left, y, left + width, y + height) : fill;
     ctx.fill();
-    text(ctx, label, left + width / 2, y + height / 2 + size * 0.36, { weight: 700, size, color: COLOR.amberInk });
+    text(ctx, value, left + width / 2, y + height / 2 + size * 0.36, { weight: 700, size, color: ink });
+}
+
+/** Polished gold along the line from (x0, y0) to (x1, y1). */
+function gold(ctx, x0, y0, x1, y1) {
+    const gradient = ctx.createLinearGradient(x0, y0, x1, y1);
+    gradient.addColorStop(0, '#a87a26');
+    gradient.addColorStop(0.3, '#f6df8e');
+    gradient.addColorStop(0.5, '#c99a3e');
+    gradient.addColorStop(0.72, '#fbedb4');
+    gradient.addColorStop(1, '#a87a26');
+
+    return gradient;
+}
+
+function diamond(ctx, cx, cy, radius, fill) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - radius);
+    ctx.lineTo(cx + radius, cy);
+    ctx.lineTo(cx, cy + radius);
+    ctx.lineTo(cx - radius, cy);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
 }
 
 /** Deep night background with a purple glow and the OSIF orbit rings. */
@@ -162,13 +212,60 @@ function backdrop(ctx, width, height, glowX, glowY) {
     ctx.restore();
 }
 
-function seal(ctx, image, cx, cy, radius, { brand = false } = {}) {
+/** Black with faint gold rays and a gold glow: the VIP card's background. */
+function vipBackdrop(ctx, width, height, glowX, glowY) {
+    const base = ctx.createLinearGradient(0, 0, 0, height);
+    base.addColorStop(0, GOLD.coal);
+    base.addColorStop(1, GOLD.black);
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.save();
+    ctx.translate(glowX, glowY);
+    ctx.fillStyle = 'rgba(232, 196, 110, 0.035)';
+    const rays = 40;
+    const reach = Math.hypot(width, height);
+    for (let ray = 0; ray < rays; ray += 2) {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, reach, (ray / rays) * Math.PI * 2, ((ray + 1) / rays) * Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+    }
+    ctx.restore();
+
+    const glow = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, Math.max(width, height) * 0.62);
+    glow.addColorStop(0, 'rgba(212, 166, 74, 0.3)');
+    glow.addColorStop(1, 'rgba(212, 166, 74, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, width, height);
+}
+
+/** A gold double rule around the edge with diamonds at the corners. */
+function frame(ctx, width, height, inset) {
+    ctx.save();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = gold(ctx, 0, 0, width, height);
+    ctx.strokeRect(inset, inset, width - inset * 2, height - inset * 2);
+
+    const inner = inset + 12;
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = GOLD.faint;
+    ctx.strokeRect(inner, inner, width - inner * 2, height - inner * 2);
+    ctx.restore();
+
+    for (const [x, y] of [[inner, inner], [width - inner, inner], [inner, height - inner], [width - inner, height - inner]]) {
+        diamond(ctx, x, y, 9, gold(ctx, x - 9, y - 9, x + 9, y + 9));
+    }
+}
+
+function seal(ctx, image, cx, cy, radius, { brand = false, ring = null } = {}) {
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.fillStyle = brand ? COLOR.purple : COLOR.white;
     ctx.fill();
     ctx.lineWidth = 3;
-    ctx.strokeStyle = brand ? COLOR.amber : 'rgba(255, 255, 255, 0.35)';
+    ctx.strokeStyle = ring ?? (brand ? COLOR.amber : 'rgba(255, 255, 255, 0.35)');
     ctx.stroke();
 
     if (image) {
@@ -201,6 +298,51 @@ function drawQr(ctx, value, x, y, size) {
     }
 }
 
+/** The three organisers, equal weight, across the top of the card. */
+function organisers(ctx, logos, { ring = null, color = COLOR.soft } = {}) {
+    for (const { x, logo, label: name, brand } of ORGANISERS) {
+        seal(ctx, logos[logo], x, 132, 58, { brand, ring });
+        const size = fit(ctx, name, 600, 21, 236, 16);
+        text(ctx, name, x, 228, { weight: 600, size, color });
+    }
+}
+
+/** The guest's name (up to two lines) with a short accent rule beneath; returns the y below the rule. */
+function guest(ctx, name, right, y, column, { color, accent }) {
+    const nameSize = fit(ctx, name, 800, 62, column, 40);
+    ctx.font = font(800, nameSize);
+    const nameLines = ctx.measureText(name).width > column ? wrap(ctx, name, column).slice(0, 2) : [name];
+    for (const nameLine of nameLines) {
+        text(ctx, nameLine, right, y, { weight: 800, size: nameSize, color, align: 'right' });
+        y += nameSize + 12;
+    }
+
+    ctx.fillStyle = typeof accent === 'function' ? accent(right - 96, right) : accent;
+    roundRect(ctx, right - 96, y - 26, 96, 7, 3.5);
+    ctx.fill();
+
+    return y;
+}
+
+/** When, where and lunch, as label/value rows starting at y. */
+function details(ctx, data, y, step, { labelColor, valueColor }) {
+    const rows = [
+        { label: 'الموعد', value: [data.date, data.time].filter(Boolean).join(' – ') },
+        { label: 'المكان', value: data.location },
+        {
+            label: 'الضيافة',
+            value: 'تشمل الدعوة وجبة غداء — يرجى إبراز رمز QR لاستلام وجبة الغداء',
+        },
+    ].filter(({ value }) => value);
+
+    for (const row of rows) {
+        text(ctx, row.label, 990, y, { weight: 700, size: 24, color: labelColor, align: 'right' });
+        const size = fit(ctx, row.value, 700, 30, 780, row.label === 'الضيافة' ? 18 : 22);
+        text(ctx, row.value, 880, y, { weight: 700, size, color: valueColor, align: 'right' });
+        y += step;
+    }
+}
+
 function canvas(width, height, scale = 1) {
     const element = document.createElement('canvas');
     element.width = width * scale;
@@ -216,22 +358,16 @@ function canvas(width, height, scale = 1) {
 
 /** The invitation itself: 1080×1350 (×scale for print), shown in WhatsApp and on the invitation page. */
 function drawCard(data, logos, scale = 1) {
+    return data.vip ? drawVipCard(data, logos, scale) : drawStandardCard(data, logos, scale);
+}
+
+function drawStandardCard(data, logos, scale = 1) {
     const WIDTH = 1080;
     const HEIGHT = 1350;
     const [element, ctx] = canvas(WIDTH, HEIGHT, scale);
 
     backdrop(ctx, WIDTH, HEIGHT, 860, 120);
-
-    // The three organisers, equal weight.
-    [
-        { x: 800, image: logos.osif, label: 'OSIF KARBALA', brand: true },
-        { x: 540, image: logos.syndicate, label: 'نقابة أطباء أسنان كربلاء' },
-        { x: 280, image: logos.university, label: 'جامعة السبطين للعلوم الطبية' },
-    ].forEach((logo) => {
-        seal(ctx, logo.image, logo.x, 132, 58, { brand: logo.brand });
-        const size = fit(ctx, logo.label, 600, 21, 236, 16);
-        text(ctx, logo.label, logo.x, 228, { weight: 600, size, color: COLOR.soft });
-    });
+    organisers(ctx, logos);
 
     // Event.
     pill(ctx, 'دعوة حضور', WIDTH / 2, 272, { centered: true });
@@ -269,18 +405,7 @@ function drawCard(data, logos, scale = 1) {
     let y = badge.y + 104;
     text(ctx, 'يسرّنا دعوتكم لحضور الملتقى', right, y, { size: 26, color: COLOR.muted, align: 'right' });
 
-    y += 82;
-    const nameSize = fit(ctx, data.name, 800, 62, column, 40);
-    ctx.font = font(800, nameSize);
-    const nameLines = ctx.measureText(data.name).width > column ? wrap(ctx, data.name, column).slice(0, 2) : [data.name];
-    for (const nameLine of nameLines) {
-        text(ctx, nameLine, right, y, { weight: 800, size: nameSize, color: COLOR.ink, align: 'right' });
-        y += nameSize + 12;
-    }
-
-    ctx.fillStyle = COLOR.amber;
-    roundRect(ctx, right - 96, y - 26, 96, 7, 3.5);
-    ctx.fill();
+    y = guest(ctx, data.name, right, y + 82, column, { color: COLOR.ink, accent: COLOR.amber });
 
     if (data.title) {
         const titleFit = fit(ctx, data.title, 700, 30, column, 22);
@@ -288,26 +413,118 @@ function drawCard(data, logos, scale = 1) {
     }
 
     // When and where.
-    const rows = [
-        { label: 'الموعد', value: [data.date, data.time].filter(Boolean).join(' – ') },
-        { label: 'المكان', value: data.location },
-        {
-            label: 'الضيافة',
-            value: 'تشمل الدعوة وجبة غداء — يرجى إبراز رمز QR لاستلام وجبة الغداء',
-        },
-    ].filter(({ value }) => value);
-
-    let rowY = 1104;
-    for (const { label, value } of rows) {
-        text(ctx, label, 990, rowY, { weight: 700, size: 24, color: COLOR.amber, align: 'right' });
-        const size = fit(ctx, value, 700, 30, 780, label === 'الضيافة' ? 18 : 22);
-        text(ctx, value, 880, rowY, { weight: 700, size, align: 'right' });
-        rowY += 64;
-    }
+    details(ctx, data, 1104, 64, { labelColor: COLOR.amber, valueColor: COLOR.white });
 
     ctx.fillStyle = COLOR.faint;
     ctx.fillRect(150, 1264, WIDTH - 300, 2);
     text(ctx, 'يرجى إبراز الدعوة للدخول من البوابة الرئيسية', WIDTH / 2, 1318, { weight: 600, size: 22, color: COLOR.soft });
+
+    return element;
+}
+
+/** «VIP» in gold foil between two ruled lines, centred on cx with its baseline at y. */
+function vipEmblem(ctx, cx, y) {
+    const size = 92;
+    const spacing = 24;
+    const letters = ['V', 'I', 'P'];
+
+    ctx.font = font(800, size);
+    const widths = letters.map((letter) => ctx.measureText(letter).width);
+    const total = widths.reduce((sum, width) => sum + width, 0) + spacing * (letters.length - 1);
+
+    const foil = ctx.createLinearGradient(0, y - size * 0.75, 0, y);
+    foil.addColorStop(0, '#fbeeb6');
+    foil.addColorStop(0.45, '#d9ad52');
+    foil.addColorStop(0.55, '#b8862b');
+    foil.addColorStop(1, '#f3d98a');
+
+    let x = cx - total / 2;
+    letters.forEach((letter, index) => {
+        text(ctx, letter, x + widths[index] / 2, y, { weight: 800, size, color: foil });
+        x += widths[index] + spacing;
+    });
+
+    const middle = y - size * 0.36;
+    for (const side of [-1, 1]) {
+        const near = cx + side * (total / 2 + 36);
+        const far = cx + side * (total / 2 + 210);
+        ctx.fillStyle = gold(ctx, Math.min(near, far), 0, Math.max(near, far), 0);
+        ctx.fillRect(Math.min(near, far), middle - 1, Math.abs(far - near), 2);
+        diamond(ctx, far, middle, 8, GOLD.base);
+        diamond(ctx, near, middle, 4, GOLD.base);
+    }
+}
+
+/** The VIP invitation: the same content in black and gold, under a VIP emblem. */
+function drawVipCard(data, logos, scale = 1) {
+    const WIDTH = 1080;
+    const HEIGHT = 1350;
+    const [element, ctx] = canvas(WIDTH, HEIGHT, scale);
+
+    vipBackdrop(ctx, WIDTH, HEIGHT, WIDTH / 2, 0);
+    frame(ctx, WIDTH, HEIGHT, 28);
+    organisers(ctx, logos, { ring: GOLD.base, color: GOLD.soft });
+
+    // Emblem and event.
+    vipEmblem(ctx, WIDTH / 2, 356);
+    text(ctx, 'دعوة خاصة', WIDTH / 2, 404, { weight: 700, size: 28, color: GOLD.ivory });
+    const titleSize = fit(ctx, data.event, 800, 46, 900, 34);
+    text(ctx, data.event, WIDTH / 2, 470, { weight: 800, size: titleSize });
+    text(ctx, data.brand, WIDTH / 2, 512, { weight: 700, size: 26, color: GOLD.base });
+
+    // The badge: ivory with a fine gold rule and a gold band.
+    const badge = { x: 90, y: 548, width: 900, height: 466 };
+    const band = 96;
+    const right = badge.x + badge.width - 56;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 40 * scale;
+    ctx.shadowOffsetY = 18 * scale;
+    roundRect(ctx, badge.x, badge.y, badge.width, badge.height, 32);
+    ctx.fillStyle = GOLD.ivory;
+    ctx.fill();
+    ctx.restore();
+
+    roundRect(ctx, badge.x + 14, badge.y + 14, badge.width - 28, badge.height - band - 28, 22);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = GOLD.rule;
+    ctx.stroke();
+
+    const bandY = badge.y + badge.height - band;
+    roundRect(ctx, badge.x, bandY, badge.width, band, [0, 0, 32, 32]);
+    ctx.fillStyle = gold(ctx, badge.x, bandY, badge.x + badge.width, bandY + band);
+    ctx.fill();
+    text(ctx, 'دعوة VIP', right, bandY + 60, { weight: 800, size: 30, color: GOLD.ink, align: 'right' });
+    text(ctx, data.code, badge.x + 56, bandY + 60, { weight: 800, size: 30, color: GOLD.ink, align: 'left' });
+
+    // QR on the left, the guest on the right.
+    const qr = { x: badge.x + 48, y: badge.y + 44, size: 252 };
+    drawQr(ctx, data.url, qr.x, qr.y, qr.size);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = GOLD.rule;
+    ctx.strokeRect(qr.x - 1, qr.y - 1, qr.size + 2, qr.size + 2);
+    text(ctx, 'امسح الرمز لعرض الدعوة', qr.x + qr.size / 2, qr.y + qr.size + 38, { weight: 600, size: 20, color: GOLD.muted });
+
+    const column = right - (qr.x + qr.size + 48);
+    let y = badge.y + 100;
+    text(ctx, 'يتشرّف منظمو الملتقى بدعوتكم', right, y, { size: 26, color: GOLD.muted, align: 'right' });
+
+    y = guest(ctx, data.name, right, y + 82, column, {
+        color: GOLD.name,
+        accent: (left, end) => gold(ctx, left, 0, end, 0),
+    });
+
+    if (data.title) {
+        const titleFit = fit(ctx, data.title, 700, 30, column, 22);
+        text(ctx, data.title, right, y + 32, { weight: 700, size: titleFit, color: GOLD.deep, align: 'right' });
+    }
+
+    details(ctx, data, 1094, 58, { labelColor: GOLD.base, valueColor: GOLD.ivory });
+
+    ctx.fillStyle = GOLD.faint;
+    ctx.fillRect(150, 1232, WIDTH - 300, 2);
+    text(ctx, 'يرجى إبراز الدعوة للدخول من البوابة الرئيسية', WIDTH / 2, 1280, { weight: 600, size: 22, color: GOLD.soft });
 
     return element;
 }
@@ -318,15 +535,29 @@ function drawPreview(data, logos) {
     const HEIGHT = 630;
     const [element, ctx] = canvas(WIDTH, HEIGHT);
 
-    backdrop(ctx, WIDTH, HEIGHT, 260, 200);
-
-    seal(ctx, logos.osif, 250, 268, 150, { brand: true });
-    seal(ctx, logos.syndicate, 190, 516, 46);
-    seal(ctx, logos.university, 310, 516, 46);
-
     const right = WIDTH - 80;
     const column = 640;
-    pill(ctx, 'دعوة حضور', right, 82, { size: 26 });
+    const theme = data.vip
+        ? {
+            ring: GOLD.base,
+            accent: GOLD.base,
+            soft: GOLD.soft,
+            pill: { fill: (x0, y0, x1, y1) => gold(ctx, x0, y0, x1, y1), ink: GOLD.ink },
+        }
+        : { ring: null, accent: COLOR.amber, soft: COLOR.soft, pill: {} };
+
+    if (data.vip) {
+        vipBackdrop(ctx, WIDTH, HEIGHT, 260, 200);
+        frame(ctx, WIDTH, HEIGHT, 18);
+    } else {
+        backdrop(ctx, WIDTH, HEIGHT, 260, 200);
+    }
+
+    seal(ctx, logos.osif, 250, 268, 150, { brand: true, ring: theme.ring });
+    seal(ctx, logos.syndicate, 190, 516, 46, { ring: theme.ring });
+    seal(ctx, logos.university, 310, 516, 46, { ring: theme.ring });
+
+    pill(ctx, label(data), right, 82, { size: 26, ...theme.pill });
 
     const nameSize = fit(ctx, data.name, 800, 70, column, 44);
     text(ctx, data.name, right, 250, { weight: 800, size: nameSize, align: 'right' });
@@ -334,10 +565,10 @@ function drawPreview(data, logos) {
     let y = 250;
     if (data.title) {
         y += 56;
-        text(ctx, data.title, right, y, { weight: 600, size: fit(ctx, data.title, 600, 32, column, 22), color: COLOR.soft, align: 'right' });
+        text(ctx, data.title, right, y, { weight: 600, size: fit(ctx, data.title, 600, 32, column, 22), color: theme.soft, align: 'right' });
     }
 
-    ctx.fillStyle = COLOR.amber;
+    ctx.fillStyle = theme.accent;
     roundRect(ctx, right - 96, y + 28, 96, 7, 3.5);
     ctx.fill();
 
@@ -347,16 +578,16 @@ function drawPreview(data, logos) {
     const when = [data.date, data.time].filter(Boolean).join(' – ');
     if (when) {
         y += 56;
-        text(ctx, when, right, y, { weight: 700, size: fit(ctx, when, 700, 30, column, 22), color: COLOR.amber, align: 'right' });
+        text(ctx, when, right, y, { weight: 700, size: fit(ctx, when, 700, 30, column, 22), color: theme.accent, align: 'right' });
     }
 
     if (data.location) {
         y += 50;
-        text(ctx, data.location, right, y, { size: fit(ctx, data.location, 400, 26, column, 20), color: COLOR.soft, align: 'right' });
+        text(ctx, data.location, right, y, { size: fit(ctx, data.location, 400, 26, column, 20), color: theme.soft, align: 'right' });
     }
 
     // A clear benefit note that remains visible in WhatsApp's wide preview.
-    pill(ctx, 'تشمل الدعوة وجبة غداء', right, 548, { size: 20 });
+    pill(ctx, 'تشمل الدعوة وجبة غداء', right, 548, { size: 20, ...theme.pill });
 
     return element;
 }
@@ -418,13 +649,41 @@ const toBlob = (element, type, quality) => new Promise((resolve, reject) => {
 
 window.osifInvitation = (data) => ({
     data,
+    vip: data.vip,
     status: 'loading', // loading → uploading → ready | error
     uploadFailed: false,
     previewUrl: null,
     blob: null,
     pdf: null,
 
-    async init() {
+    get busy() {
+        return this.status === 'loading' || this.status === 'uploading';
+    },
+
+    get chatUrl() {
+        return this.data.chatUrls[this.vip ? 'vip' : 'standard'];
+    },
+
+    init() {
+        return this.render();
+    },
+
+    /** Switches between the standard and VIP card; the upload saves the choice. */
+    setVip(vip) {
+        if (this.busy || this.vip === vip) {
+            return;
+        }
+
+        this.vip = vip;
+        this.render();
+    },
+
+    async render() {
+        this.status = 'loading';
+        this.uploadFailed = false;
+        this.blob = null;
+        this.discardPreview();
+
         try {
             const [, osif, syndicate, university] = await Promise.all([
                 ensureFonts(this.data.font),
@@ -433,17 +692,18 @@ window.osifInvitation = (data) => ({
                 loadImage(this.data.logos.university),
             ]);
             const logos = { osif, syndicate, university };
+            const card = { ...this.data, vip: this.vip };
 
-            this.blob = await toBlob(drawCard(this.data, logos), 'image/png');
+            this.blob = await toBlob(drawCard(card, logos), 'image/png');
             this.previewUrl = URL.createObjectURL(this.blob);
 
             // The PDF is drawn at twice the size so it stays sharp when printed.
-            const print = await toBlob(drawCard(this.data, logos, 2), 'image/jpeg', 0.9);
-            const pdf = await pdfFrom(print, 2160, 2700, `دعوة حضور — ${this.data.name}`);
+            const print = await toBlob(drawCard(card, logos, 2), 'image/jpeg', 0.9);
+            const pdf = await pdfFrom(print, 2160, 2700, `${label(card)} — ${card.name}`);
             this.pdf = new File([pdf], this.data.pdfName, { type: 'application/pdf' });
             this.status = 'uploading';
 
-            const preview = await toBlob(drawPreview(this.data, logos), 'image/jpeg', 0.88);
+            const preview = await toBlob(drawPreview(card, logos), 'image/jpeg', 0.88);
             await this.upload(preview);
         } catch (error) {
             console.error(error);
@@ -454,8 +714,13 @@ window.osifInvitation = (data) => ({
     },
 
     destroy() {
+        this.discardPreview();
+    },
+
+    discardPreview() {
         if (this.previewUrl) {
             URL.revokeObjectURL(this.previewUrl);
+            this.previewUrl = null;
         }
     },
 
@@ -464,6 +729,8 @@ window.osifInvitation = (data) => ({
         body.append('card', this.blob, 'card.png');
         body.append('preview', preview, 'preview.jpg');
         body.append('pdf', this.pdf, 'invitation.pdf');
+        // Toggling is locked while busy, so this is the type just drawn.
+        body.append('vip', this.vip ? '1' : '0');
 
         const response = await fetch(this.data.uploadUrl, {
             method: 'POST',

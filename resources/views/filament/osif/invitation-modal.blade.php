@@ -28,6 +28,10 @@
         .osif-invite__links { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; color: var(--gray-500); font-size: .8rem; }
         .osif-invite__links a, .osif-invite__links button { color: var(--primary-600); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
         .osif-invite__notice { margin: 0; padding: .75rem .875rem; border-radius: .75rem; color: var(--gray-700); background: var(--gray-50); font-size: .8rem; }
+        .osif-invite__type { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem .75rem; }
+        .osif-invite__type > strong { color: var(--gray-950); font-size: .9rem; }
+        .osif-invite__type .fi-tabs-item:disabled { cursor: wait; opacity: .6; }
+        .dark .osif-invite__type > strong { color: #fff; }
         .dark .osif-invite__preview, .dark .osif-invite__panel { border-color: var(--gray-700); }
         .dark .osif-invite__panel strong { color: #fff; }
         .dark .osif-invite__notice { color: var(--gray-300); background: var(--gray-900); }
@@ -45,17 +49,30 @@
     </div>
 
     <div style="display: grid; gap: .75rem;">
+        {{-- Switching redraws the card and saves the type with it. --}}
+        <div class="osif-invite__type">
+            <strong>نوع الدعوة</strong>
+            <x-filament::tabs contained label="نوع الدعوة">
+                <x-filament::tabs.item alpine-active="! vip" icon="heroicon-m-envelope" x-on:click="setVip(false)" x-bind:disabled="busy">
+                    عادية
+                </x-filament::tabs.item>
+                <x-filament::tabs.item alpine-active="vip" icon="heroicon-m-star" x-on:click="setVip(true)" x-bind:disabled="busy">
+                    VIP
+                </x-filament::tabs.item>
+            </x-filament::tabs>
+        </div>
+
         @if ($payload['chatUrl'])
             <div class="osif-invite__panel">
                 <strong>إرسال رابط الدعوة إلى {{ $record->name }}</strong>
                 <p>يفتح واتساب بالنص ورابط الدعوة، ثم يعرض البطاقة كصورة معاينة داخل الرسالة ويسجّل الإرسال تلقائياً.</p>
                 <div class="osif-invite__status" x-bind:class="{ 'is-ready': status === 'ready' && ! uploadFailed, 'is-warning': uploadFailed }">
                     <span x-show="status === 'loading' || status === 'uploading'">جارٍ تجهيز معاينة البطاقة…</span>
-                    <span x-show="status === 'ready' && ! uploadFailed" x-cloak>✓ البطاقة جاهزة للمعاينة في واتساب</span>
+                    <span x-show="status === 'ready' && ! uploadFailed" x-cloak x-text="vip ? '✓ بطاقة VIP جاهزة للمعاينة في واتساب' : '✓ البطاقة جاهزة للمعاينة في واتساب'"></span>
                     <span x-show="uploadFailed" x-cloak>تعذّر رفع البطاقة؛ أعد فتح النافذة وحاول مرة أخرى.</span>
                 </div>
                 <div x-bind:style="status === 'ready' && ! uploadFailed ? '' : 'pointer-events: none; opacity: .5'">
-                    <x-filament::button tag="a" :href="$payload['chatUrl']" target="_blank" color="success" icon="heroicon-m-link" x-on:click.once="$wire.callMountedAction()">
+                    <x-filament::button tag="a" :href="$payload['chatUrl']" x-bind:href="chatUrl" target="_blank" color="success" icon="heroicon-m-link" x-on:click.once="$wire.callMountedAction()">
                         إرسال الرابط عبر واتساب
                     </x-filament::button>
                 </div>

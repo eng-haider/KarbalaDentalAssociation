@@ -42,6 +42,12 @@ class EventRegistrationsTable
                             ->label('الصفة المهنية أو الأكاديمية')
                             ->badge()
                             ->color('primary'),
+                        TextColumn::make('invitation_type')
+                            ->label('نوع الدعوة')
+                            ->state(fn (EventRegistration $record): ?string => $record->is_vip ? 'دعوة VIP' : null)
+                            ->badge()
+                            ->color('warning')
+                            ->icon(Heroicon::Star),
                     ])->space(2),
 
                     Stack::make([
@@ -110,6 +116,10 @@ class EventRegistrationsTable
                     ->label('يمتلك عيادة')
                     ->trueLabel('نعم')
                     ->falseLabel('لا'),
+                TernaryFilter::make('is_vip')
+                    ->label('نوع الدعوة')
+                    ->trueLabel('VIP')
+                    ->falseLabel('عادية'),
                 SelectFilter::make('event_id')
                     ->label('الفعالية')
                     ->relationship('event', 'title')

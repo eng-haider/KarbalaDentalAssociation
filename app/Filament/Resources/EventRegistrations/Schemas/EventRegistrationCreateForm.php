@@ -11,6 +11,7 @@ use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Validation\Rules\Unique;
 
 /**
@@ -63,6 +64,17 @@ class EventRegistrationCreateForm
                             ->label('هل يمتلك عيادة؟')
                             ->boolean('نعم', 'لا')
                             ->inline(),
+                        ToggleButtons::make('is_vip')
+                            ->label('نوع الدعوة')
+                            ->boolean()
+                            ->options([0 => 'عادية', 1 => 'VIP'])
+                            ->colors([0 => 'gray', 1 => 'warning'])
+                            ->icons([0 => Heroicon::OutlinedEnvelope, 1 => Heroicon::OutlinedStar])
+                            ->default(false)
+                            ->inline()
+                            ->helperText('يمكن تغييرها لاحقاً من نافذة «إرسال الدعوة».')
+                            // Invitation cards are an OSIF feature.
+                            ->visible(fn (Get $get): bool => $eventId($get) == $osifId),
                         TextInput::make('membership_number')
                             ->label('رقم العضوية')
                             ->maxLength(64)

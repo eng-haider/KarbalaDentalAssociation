@@ -91,7 +91,10 @@ class OsifInvitationController extends Controller
         return $this->serveFile($token, OsifInvitation::PDF, download: true);
     }
 
-    /** The dashboard uploads the card, its PDF and the link preview it draws. */
+    /**
+     * The dashboard uploads the card, its PDF and the link preview it draws,
+     * with the invitation type (standard or VIP) the card was drawn for.
+     */
     public function storeFiles(Request $request, EventRegistration $registration): JsonResponse
     {
         // Checked here rather than with the auth middleware: the app has no generic login route.
@@ -102,7 +105,12 @@ class OsifInvitationController extends Controller
             'card' => ['required', 'file', 'mimetypes:image/png', 'max:4096'],
             'preview' => ['required', 'file', 'mimetypes:image/jpeg', 'max:2048'],
             'pdf' => ['nullable', 'file', 'mimetypes:application/pdf', 'max:8192'],
+            'vip' => ['nullable', 'boolean'],
         ]);
+
+        if ($request->filled('vip')) {
+            $registration->forceFill(['is_vip' => $request->boolean('vip')])->save();
+        }
 
         $directory = dirname($registration->invitationFilePath(OsifInvitation::CARD));
         $files = [OsifInvitation::CARD => 'card', OsifInvitation::PREVIEW => 'preview', OsifInvitation::PDF => 'pdf'];

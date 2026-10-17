@@ -11,6 +11,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 
 class EventRegistrationForm
 {
@@ -84,6 +85,17 @@ class EventRegistrationForm
                             ->label('أُرسلت الدعوة في')
                             ->disabled()
                             ->visible($filled('invitation_sent_at')),
+                        // Changed in the send dialog, which redraws the card to match.
+                        ToggleButtons::make('is_vip')
+                            ->label('نوع الدعوة')
+                            ->boolean()
+                            ->options([0 => 'عادية', 1 => 'VIP'])
+                            ->colors([0 => 'gray', 1 => 'warning'])
+                            ->icons([0 => Heroicon::OutlinedEnvelope, 1 => Heroicon::OutlinedStar])
+                            ->inline()
+                            ->disabled()
+                            ->helperText('يُغيَّر من نافذة «إرسال الدعوة».')
+                            ->visible(fn (?EventRegistration $record): bool => (bool) $record?->event?->isOsif()),
                     ])
                     ->columns(2),
             ]);

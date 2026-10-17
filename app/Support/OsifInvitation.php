@@ -28,6 +28,12 @@ class OsifInvitation
         $chat = fn (string $text): ?string => $number ? 'https://wa.me/'.$number.'?text='.rawurlencode($text) : null;
 
         return [
+            // The type can be switched in the send dialog, so both messages travel with the card data.
+            'vip' => (bool) $registration->is_vip,
+            'chatUrls' => [
+                'standard' => $chat(static::message($registration, vip: false)),
+                'vip' => $chat(static::message($registration, vip: true)),
+            ],
             'name' => static::guestName($registration),
             'title' => $registration->professional_title,
             'event' => $event->title,
@@ -58,22 +64,26 @@ class OsifInvitation
 
     /**
      * The WhatsApp message. With the link, the guest opens the invitation
-     * page and WhatsApp shows its card preview.
+     * page and WhatsApp shows its card preview. VIP guests are invited
+     * rather than told their registration is confirmed.
      */
-    public static function message(EventRegistration $registration, bool $withLink = true): string
+    public static function message(EventRegistration $registration, bool $withLink = true, ?bool $vip = null): string
     {
         $event = $registration->event;
+        $vip ??= (bool) $registration->is_vip;
 
         return implode("\n", array_filter([
             'مرحباً '.static::guestName($registration).'،',
-            'يسعدنا تأكيد تسجيلك في '.$event->title.' (OSIF KARBALA).',
+            $vip
+                ? 'يسعدنا توجيه دعوة خاصة (VIP) لحضوركم '.$event->title.' (OSIF KARBALA).'
+                : 'يسعدنا تأكيد تسجيلك في '.$event->title.' (OSIF KARBALA).',
             $event->starts_at ? 'الموعد: '.static::date($registration).' – الساعة '.static::time($registration) : null,
             $event->location ? 'المكان: '.$event->location : null,
             'تشمل الدعوة وجبة غداء.',
             'يرجى إبراز رمز QR لاستلام وجبة الغداء.',
             '',
             ...($withLink
-                ? ['بطاقة الدعوة الخاصة بك ورمز الدخول (QR):', $registration->invitationShareUrl()]
+                ? [$vip ? 'بطاقة دعوتكم الخاصة (VIP) ورمز الدخول (QR):' : 'بطاقة الدعوة الخاصة بك ورمز الدخول (QR):', $registration->invitationShareUrl()]
                 : ['بطاقة الدعوة الخاصة بك مرفقة، يرجى إبراز الدعوة للدخول من البوابة الرئيسية، ورمز QR لاستلام وجبة الغداء.']),
         ], fn (?string $line) => $line !== null));
     }
@@ -134,6 +144,12 @@ class OsifInvitation
             static::PDF => 'osif-invitation-'.$registration->getKey().'.pdf',
             default => throw new \InvalidArgumentException("Invitation file [{$file}] cannot be downloaded."),
         };
+    }
+
+    /** What the card, page and PDF call this invitation. */
+    public static function label(EventRegistration $registration): string
+    {
+        return $registration->is_vip ? 'دعوة VIP' : 'دعوة حضور';
     }
 
     public static function date(EventRegistration $registration): ?string

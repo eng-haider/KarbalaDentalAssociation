@@ -25,6 +25,7 @@ class EventRegistration extends Model
         'whatsapp_consent',
         'is_handled',
         'invitation_sent_at',
+        'is_vip',
     ];
 
     protected function casts(): array
@@ -34,6 +35,7 @@ class EventRegistration extends Model
             'whatsapp_consent' => 'boolean',
             'owns_clinic' => 'boolean',
             'invitation_sent_at' => 'datetime',
+            'is_vip' => 'boolean',
         ];
     }
 

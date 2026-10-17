@@ -529,4 +529,77 @@ class OsifRegistrationTest extends TestCase
 
         $this->assertSame(2, $event->registrations()->where('professional_title', 'طبيب أسنان خريج جديد')->count());
     }
+
+    public function test_invitations_are_standard_unless_vip_is_chosen_when_adding_someone(): void
+    {
+        $this->osifEvent();
+        $this->actingAsCoordinator();
+
+        Livewire::test(CreateEventRegistration::class)
+            ->assertFormFieldExists('is_vip')
+            ->assertSchemaStateSet(['is_vip' => false])
+            ->fillForm(['name' => 'ضيف عادي', 'professional_title' => 'طبيب أسنان مقيم'])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        Livewire::test(CreateEventRegistration::class)
+            ->fillForm(['name' => 'ضيف مميز', 'professional_title' => 'طبيب أسنان اختصاص', 'is_vip' => true])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertFalse(EventRegistration::where('name', 'ضيف عادي')->sole()->is_vip);
+        $this->assertTrue(EventRegistration::where('name', 'ضيف مميز')->sole()->is_vip);
+    }
+
+    public function test_vip_guests_get_their_own_message_page_label_and_dashboard_badge(): void
+    {
+        $registration = $this->osifRegistration();
+        $registration->update(['is_vip' => true]);
+
+        $payload = OsifInvitation::payload($registration);
+        $this->assertTrue($payload['vip']);
+        $this->assertSame($payload['chatUrl'], $payload['chatUrls']['vip']);
+        $this->assertStringContainsString(rawurlencode('دعوة خاصة (VIP)'), $payload['chatUrls']['vip']);
+        $this->assertStringContainsString(rawurlencode('يسعدنا تأكيد تسجيلك'), $payload['chatUrls']['standard']);
+        $this->assertStringContainsString(rawurlencode($registration->invitationShareUrl()), $payload['chatUrls']['vip']);
+
+        $this->get($registration->invitationUrl())
+            ->assertOk()
+            ->assertSee('دعوة VIP · '.$registration->invitationCode(), false);
+
+        $this->actingAsCoordinator();
+        Livewire::test(ListEventRegistrations::class)
+            ->assertSee('دعوة VIP')
+            ->filterTable('is_vip', false)
+            ->assertCanNotSeeTableRecords([$registration])
+            ->filterTable('is_vip', true)
+            ->assertCanSeeTableRecords([$registration])
+            // The send dialog offers both types and links WhatsApp to the chosen one.
+            ->mountAction(TestAction::make('sendInvitation')->table($registration))
+            ->assertMountedActionModalSee('نوع الدعوة')
+            ->assertMountedActionModalSeeHtml('x-on:click="setVip(true)"')
+            ->assertMountedActionModalSeeHtml('x-bind:href="chatUrl"');
+    }
+
+    public function test_the_card_upload_saves_the_type_it_was_drawn_for(): void
+    {
+        Storage::fake('public');
+        $registration = $this->osifRegistration();
+        $this->actingAsCoordinator();
+        $upload = fn (array $extra = []) => $this->post(route('osif.invitation.files', $registration), [
+            'card' => UploadedFile::fake()->image('card.png', 1080, 1350),
+            'preview' => UploadedFile::fake()->image('preview.jpg', 1200, 630),
+            ...$extra,
+        ])->assertOk();
+
+        $upload(['vip' => '1']);
+        $this->assertTrue($registration->refresh()->is_vip);
+
+        // Older dashboards that send no type leave it alone.
+        $upload();
+        $this->assertTrue($registration->refresh()->is_vip);
+
+        $upload(['vip' => '0']);
+        $this->assertFalse($registration->refresh()->is_vip);
+    }
 }

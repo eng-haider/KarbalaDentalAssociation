@@ -4,9 +4,10 @@
     $time = \App\Support\OsifInvitation::time($registration);
     $summary = collect([$event->title, $date])->filter()->implode(' · ');
     $guest = \App\Support\OsifInvitation::guestName($registration);
+    $label = \App\Support\OsifInvitation::label($registration);
 @endphp
 
-<x-layouts.osif :title="'دعوة حضور — '.$guest" :description="$summary">
+<x-layouts.osif :title="$label.' — '.$guest" :description="$summary">
     <x-slot:head>
         <meta name="robots" content="noindex, nofollow">
         {{-- The shared ?share=2 URL lets WhatsApp fetch the new card preview. --}}
@@ -27,7 +28,7 @@
         <div class="osif-container osif-pass-grid">
             <section class="osif-pass-info" aria-labelledby="osif-pass-name">
                 <p class="osif-pass-valid"><i class="bi bi-patch-check-fill" aria-hidden="true"></i> دعوة صالحة</p>
-                <p class="osif-pass-kicker">دعوة حضور · {{ $registration->invitationCode() }}</p>
+                <p class="osif-pass-kicker">{{ $label }} · {{ $registration->invitationCode() }}</p>
                 <h1 id="osif-pass-name">{{ $guest }}</h1>
                 @if ($registration->professional_title)
                     <p class="osif-pass-title">{{ $registration->professional_title }}</p>

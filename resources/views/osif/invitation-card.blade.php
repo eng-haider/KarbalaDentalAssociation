@@ -1,11 +1,12 @@
 @php
     /** @var \App\Models\EventRegistration $registration */
     $guest = \App\Support\OsifInvitation::guestName($registration);
+    $label = \App\Support\OsifInvitation::label($registration);
     $date = \App\Support\OsifInvitation::date($registration);
     $summary = collect([$event->title, $date])->filter()->implode(' · ');
 @endphp
 
-<x-layouts.osif :title="'دعوة حضور — '.$guest" :description="$summary">
+<x-layouts.osif :title="$label.' — '.$guest" :description="$summary">
     <x-slot:head>
         <meta name="robots" content="noindex, nofollow">
         <meta property="og:url" content="{{ request()->fullUrl() }}">
