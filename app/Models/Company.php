@@ -68,6 +68,15 @@ class Company extends Model
         return $query->orderBy('sort_order')->orderBy('name');
     }
 
+    /** The product and offer counts a company card shows. */
+    public function scopeWithShopCounts(Builder $query): Builder
+    {
+        return $query->withCount([
+            'products' => fn ($query) => $query->active(),
+            'products as offers_count' => fn ($query) => $query->active()->withOffer(),
+        ]);
+    }
+
     public function logoUrl(): ?string
     {
         return $this->logo ? Storage::disk('osif')->url($this->logo) : null;

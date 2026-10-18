@@ -6,5 +6,6 @@
 
     <div class="page-body">
         <x-site.discounts :items="$items" :heading="false" />
+        <x-site.osif-companies :companies="$companies" />
     </div>
 </x-layouts.site>

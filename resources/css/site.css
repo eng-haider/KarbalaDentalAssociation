@@ -1873,6 +1873,48 @@ a.ad-card:hover .ad-bg { transform: scale(1.04); }
 }
 
 /* ==========================================================================
+   OSIF companies (on the discounts page)
+   ========================================================================== */
+.company-card {
+    display: flex; flex-direction: row; align-items: center; gap: 1rem;
+    padding: 1.1rem 1.2rem;
+    border-inline-start: 3px solid var(--secondary);
+    color: var(--ink); text-decoration: none;
+}
+.company-card:hover { color: var(--ink); }
+
+.company-logo {
+    flex: 0 0 auto; width: 60px; height: 60px;
+    display: grid; place-items: center; overflow: hidden;
+    background: var(--light); border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--primary); font-size: 1.2rem; font-weight: 900;
+}
+.company-logo img { width: 100%; height: 100%; object-fit: contain; }
+
+.company-text { flex: 1 1 auto; min-width: 0; display: grid; gap: .45rem; }
+.company-name { font-size: 1.05rem; font-weight: 800; line-height: 1.4; overflow-wrap: anywhere; }
+
+.company-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.company-chip {
+    display: inline-flex; align-items: center; gap: .35rem;
+    background: var(--light); border: 1px solid var(--border);
+    border-radius: 999px; padding: .2rem .65rem;
+    font-size: .78rem; font-weight: 700; color: var(--ink);
+}
+.company-chip i { color: var(--primary); }
+.company-chip--offer { background: rgba(200, 154, 43, .12); border-color: rgba(200, 154, 43, .4); color: #7a5a0c; }
+.company-chip--offer i { color: var(--secondary-600); }
+
+.company-go { flex: 0 0 auto; color: var(--muted); transition: transform .2s ease, color .2s ease; }
+a.company-card:hover .company-go { color: var(--primary); transform: translateX(-3px); }
+
+@media (prefers-reduced-motion: reduce) {
+    .company-go { transition: none; }
+    a.company-card:hover .company-go { transform: none; }
+}
+
+/* ==========================================================================
    Job opportunities
    ========================================================================== */
 .jobs-section { background: linear-gradient(180deg, #ffffff 0%, var(--light) 100%); }

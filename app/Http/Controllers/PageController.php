@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BoardMember;
+use App\Models\Company;
 use App\Models\Discount;
 use App\Models\RegulationType;
 use App\Models\Transaction;
@@ -33,6 +34,8 @@ class PageController extends Controller
     {
         return view('pages.discounts', [
             'items' => Discount::active()->get(),
+            // The OSIF exhibitors' offers are discounts for members too.
+            'companies' => Company::query()->active()->ordered()->withShopCounts()->get(),
         ]);
     }
 

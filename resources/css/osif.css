@@ -37,7 +37,7 @@ button { cursor: pointer; }
 .osif-eyebrow, .osif-section-kicker { display: flex; align-items: center; gap: .6rem; margin: 0 0 1rem; color: var(--osif-lilac); font-family: Outfit, sans-serif; font-size: .69rem; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; }
 .osif-eyebrow span { width: 30px; height: 1px; background: currentColor; }
 .osif-hero-arabic { margin: 0 0 .55rem; color: rgba(255,255,255,.83); font-size: clamp(.85rem, 1.4vw, 1.1rem); font-weight: 700; }
-.osif-hero h1 { max-width: 690px; margin: 0; font-family: Outfit, Cairo, sans-serif; font-size: clamp(2.35rem, 5.1vw, 5.35rem); font-weight: 800; line-height: .91; letter-spacing: -.055em; text-align: right; }
+.osif-hero h1 { max-width: 690px; margin: 0; color: var(--osif-white); font-family: Outfit, Cairo, sans-serif; font-size: clamp(2.35rem, 5.1vw, 5.35rem); font-weight: 800; line-height: .91; letter-spacing: -.055em; text-align: right; }
 .osif-hero h1 span { color: var(--osif-lilac); font-size: .48em; font-weight: 700; letter-spacing: .1em; }
 .osif-hero h1 em { color: transparent; font-style: normal; -webkit-text-stroke: 1px rgba(255,255,255,.78); }
 .osif-hero-summary { max-width: 580px; margin: 1.75rem 0; color: rgba(255,255,255,.78); font-size: .99rem; }

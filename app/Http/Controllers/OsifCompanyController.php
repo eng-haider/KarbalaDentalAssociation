@@ -15,14 +15,7 @@ class OsifCompanyController extends Controller
 {
     public function index(): View
     {
-        $companies = Company::query()
-            ->active()
-            ->ordered()
-            ->withCount([
-                'products' => fn ($query) => $query->active(),
-                'products as offers_count' => fn ($query) => $query->active()->withOffer(),
-            ])
-            ->get();
+        $companies = Company::query()->active()->ordered()->withShopCounts()->get();
 
         return view('osif.companies.index', ['companies' => $companies]);
     }
