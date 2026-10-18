@@ -82,6 +82,8 @@ class DiscountForm
                                     ->required()
                             )
                             ->addActionLabel('إضافة ميزة')
+                            // Perks are optional: a blank starter row is required and would block saving.
+                            ->defaultItems(0)
                             ->reorderable()
                             ->columnSpanFull(),
                     ]),
