@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\CompanyProduct;
+use App\Models\ProductCategory;
 use App\Support\QrCode;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
@@ -62,15 +63,19 @@ class OsifCompanyController extends Controller
     {
         abort_unless($company->is_active, 404);
 
-        $products = $company->products()->active()->get();
+        $products = $company->products()->active()->with('category')->get();
 
         return view('osif.companies.show', [
             'company' => $company,
             'products' => $products,
             'offersCount' => $products->filter->hasOffer()->count(),
-            // Category → product count, in the order the company arranged its products.
-            'categories' => $products->pluck('category')->filter()->countBy(),
-            'uncategorizedCount' => $products->whereNull('category')->count(),
+            // Category name → product count, in the organisers' order.
+            'categories' => $products->pluck('category')->filter()->unique('id')
+                ->sortBy([['sort_order', 'asc'], ['name', 'asc']])
+                ->mapWithKeys(fn (ProductCategory $category): array => [
+                    $category->name => $products->where('product_category_id', $category->id)->count(),
+                ]),
+            'uncategorizedCount' => $products->whereNull('product_category_id')->count(),
             // What the cart needs; prices are re-read from here on every visit,
             // so a saved cart never keeps an outdated price.
             'shop' => [
@@ -83,7 +88,7 @@ class OsifCompanyController extends Controller
                 'products' => $products->map(fn (CompanyProduct $product) => [
                     'id' => $product->id,
                     'name' => $product->name,
-                    'category' => $product->category,
+                    'category' => $product->category?->name,
                     'description' => $product->description,
                     'price' => $product->currentPrice(),
                     'original' => $product->hasDiscount() ? $product->price : null,

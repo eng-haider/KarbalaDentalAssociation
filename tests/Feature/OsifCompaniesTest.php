@@ -6,15 +6,14 @@ use App\Filament\Company\Auth\Login;
 use App\Filament\Company\Pages\CompanyProfile;
 use App\Filament\Company\Resources\Products\Pages\ManageProducts;
 use App\Filament\Resources\Companies\Pages\CreateCompany;
-use App\Filament\Resources\Companies\Pages\EditCompany;
-use App\Filament\Resources\Companies\RelationManagers\ProductsRelationManager;
+use App\Filament\Resources\ProductCategories\Pages\ManageProductCategories;
+use App\Filament\Resources\ProductCategories\ProductCategoryResource;
 use App\Models\Company;
 use App\Models\CompanyProduct;
 use App\Models\Event;
+use App\Models\ProductCategory;
 use App\Models\User;
-use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\TextInput;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -89,29 +88,33 @@ class OsifCompaniesTest extends TestCase
             ->assertDontSee('Retired item');
     }
 
-    public function test_a_company_page_filters_its_products_by_category(): void
+    public function test_a_company_page_filters_its_products_by_category_in_the_organisers_order(): void
     {
+        $implants = ProductCategory::create(['name' => 'زراعة', 'sort_order' => 1]);
+        $fillings = ProductCategory::create(['name' => 'حشوات', 'sort_order' => 2]);
+        $hidden = ProductCategory::create(['name' => 'مخفي', 'sort_order' => 3]);
         $company = $this->company();
         $company->products()->createMany([
-            ['name' => 'Composite A2', 'category' => 'حشوات'],
-            ['name' => 'Composite A3', 'category' => 'حشوات'],
-            ['name' => 'Implant kit', 'category' => 'زراعة'],
+            ['name' => 'Composite A2', 'product_category_id' => $fillings->id],
+            ['name' => 'Composite A3', 'product_category_id' => $fillings->id],
+            ['name' => 'Implant kit', 'product_category_id' => $implants->id],
             ['name' => 'Gloves'],
-            ['name' => 'Hidden', 'category' => 'مخفي', 'is_active' => false],
+            ['name' => 'Hidden', 'product_category_id' => $hidden->id, 'is_active' => false],
         ]);
 
         $this->get(route('osif.companies.show', $company))
             ->assertOk()
-            ->assertSeeInOrder(['كل التصنيفات', 'حشوات', '2', 'زراعة', '1', 'أخرى', '1'])
+            ->assertSeeInOrder(['كل التصنيفات', 'زراعة', '1', 'حشوات', '2', 'أخرى', '1'])
             ->assertDontSee('مخفي');
     }
 
     public function test_a_single_category_shows_no_filter(): void
     {
+        $fillings = ProductCategory::create(['name' => 'حشوات']);
         $company = $this->company();
         $company->products()->createMany([
-            ['name' => 'Composite A2', 'category' => 'حشوات'],
-            ['name' => 'Composite A3', 'category' => 'حشوات'],
+            ['name' => 'Composite A2', 'product_category_id' => $fillings->id],
+            ['name' => 'Composite A3', 'product_category_id' => $fillings->id],
         ]);
 
         $this->get(route('osif.companies.show', $company))
@@ -121,45 +124,48 @@ class OsifCompaniesTest extends TestCase
             ->assertDontSee('shop-toolbar');
     }
 
-    public function test_companies_put_their_products_in_categories(): void
+    public function test_companies_pick_a_category_from_the_organisers_list(): void
     {
-        $company = $this->company();
-        $company->products()->create(['name' => 'Bond', 'category' => 'حشوات']);
-        $this->actingAsCompany($company);
+        $fillings = ProductCategory::create(['name' => 'حشوات']);
+        $this->actingAsCompany($this->company());
 
         Livewire::test(ManageProducts::class)
-            ->callAction('create', data: ['name' => 'Composite', 'category' => '  حشوات  ', 'is_active' => true])
-            ->assertHasNoErrors()
-            ->callAction('create', data: ['name' => 'Kit', 'category' => 'زراعة', 'is_active' => true])
-            ->assertHasNoErrors()
-            ->callAction('create', data: ['name' => 'Gloves', 'category' => '  ', 'is_active' => true])
-            ->assertHasNoErrors();
+            ->callAction('create', data: ['name' => 'Composite', 'product_category_id' => $fillings->id, 'is_active' => true])
+            ->assertHasNoFormErrors()
+            ->callAction('create', data: ['name' => 'Gloves', 'is_active' => true])
+            ->assertHasNoFormErrors()
+            // Only the list's categories can be chosen.
+            ->callAction('create', data: ['name' => 'Kit', 'product_category_id' => 999999, 'is_active' => true])
+            ->assertHasFormErrors(['product_category_id']);
 
-        // Spaces don't make a second «حشوات», and a blank one is none.
-        $this->assertSame('حشوات', CompanyProduct::where('name', 'Composite')->value('category'));
-        $this->assertNull(CompanyProduct::where('name', 'Gloves')->value('category'));
-        $this->assertSame(['حشوات', 'زراعة'], $company->productCategories());
+        $this->assertSame('حشوات', CompanyProduct::where('name', 'Composite')->sole()->category->name);
+        $this->assertNull(CompanyProduct::where('name', 'Gloves')->sole()->category);
+        $this->assertFalse(CompanyProduct::where('name', 'Kit')->exists());
     }
 
-    public function test_the_category_field_suggests_only_that_companys_categories(): void
+    public function test_organisers_keep_the_category_list(): void
     {
-        $mine = $this->company();
-        $other = $this->company(['name' => 'Other Co']);
-        $mine->products()->create(['name' => 'Bond', 'category' => 'حشوات']);
-        $other->products()->create(['name' => 'Kit', 'category' => 'زراعة']);
-        $suggests = fn (array $categories) => fn (TextInput $field): bool => $field->getDatalistOptions() === $categories;
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_OSIF_COORDINATOR]));
+        Filament::setCurrentPanel(Filament::getPanel('osif'));
 
-        $this->actingAsCompany($mine);
-        Livewire::test(ManageProducts::class)
-            ->mountAction('create')
-            ->assertFormFieldExists('category', $suggests(['حشوات']));
+        $this->get('/osif-dashboard/product-categories')->assertOk()->assertSee('زراعة الأسنان', false);
 
-        // Organisers editing another company's products get that company's list.
-        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]));
-        Filament::setCurrentPanel(Filament::getPanel('admin'));
-        Livewire::test(ProductsRelationManager::class, ['ownerRecord' => $other, 'pageClass' => EditCompany::class])
-            ->mountAction(TestAction::make('create')->table())
-            ->assertFormFieldExists('category', $suggests(['زراعة']));
+        Livewire::test(ManageProductCategories::class)
+            ->callAction('create', data: ['name' => 'ليزر الأسنان'])
+            ->assertHasNoFormErrors()
+            ->callAction('create', data: ['name' => 'ليزر الأسنان'])
+            ->assertHasFormErrors(['name' => 'unique']);
+
+        // Removing a category keeps its products, just without one.
+        $laser = ProductCategory::where('name', 'ليزر الأسنان')->sole();
+        $this->assertSame(ProductCategory::max('sort_order'), $laser->sort_order);
+        $product = $this->company()->products()->create(['name' => 'Laser', 'product_category_id' => $laser->id]);
+        $laser->delete();
+        $this->assertNull($product->fresh()->product_category_id);
+
+        // Companies use the list but can't change it.
+        $this->actingAsCompany($this->company(['name' => 'Other Co']));
+        $this->assertFalse(ProductCategoryResource::canViewAny());
     }
 
     public function test_hidden_companies_have_no_page(): void

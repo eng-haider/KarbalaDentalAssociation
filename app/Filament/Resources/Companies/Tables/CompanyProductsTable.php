@@ -10,6 +10,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -32,7 +33,7 @@ class CompanyProductsTable
                     ->weight(FontWeight::Bold)
                     ->description(fn (CompanyProduct $record): ?string => Str::limit((string) $record->description, 70) ?: null)
                     ->searchable(),
-                TextColumn::make('category')
+                TextColumn::make('category.name')
                     ->label('التصنيف')
                     ->badge()
                     ->color('gray')
@@ -58,6 +59,9 @@ class CompanyProductsTable
             ->defaultSort('sort_order')
             ->reorderable('sort_order')
             ->filters([
+                SelectFilter::make('product_category_id')
+                    ->label('التصنيف')
+                    ->relationship('category', 'name', fn (Builder $query) => $query->ordered()),
                 TernaryFilter::make('offers')
                     ->label('العروض')
                     ->trueLabel('عليها عرض')

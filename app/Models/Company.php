@@ -77,13 +77,6 @@ class Company extends Model
         ]);
     }
 
-    /** @return list<string> the categories its products already use, to suggest when adding one */
-    public function productCategories(): array
-    {
-        return $this->products()->reorder()->whereNotNull('category')
-            ->distinct()->orderBy('category')->pluck('category')->all();
-    }
-
     public function logoUrl(): ?string
     {
         return $this->logo ? Storage::disk('osif')->url($this->logo) : null;

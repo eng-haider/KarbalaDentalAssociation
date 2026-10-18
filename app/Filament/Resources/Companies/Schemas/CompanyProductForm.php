@@ -3,14 +3,13 @@
 namespace App\Filament\Resources\Companies\Schemas;
 
 use App\Filament\Forms\Components\ImageUpload;
-use App\Models\Company;
-use App\Models\CompanyProduct;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * One product on a company's page. Shared by the company dashboard and the
@@ -37,13 +36,13 @@ class CompanyProductForm
                     ->required()
                     ->maxLength(255)
                     ->columnSpanFull(),
-                TextInput::make('category')
+                Select::make('product_category_id')
                     ->label('التصنيف')
-                    ->placeholder('مثال: حشوات، أدوات جراحية، زراعة')
-                    ->maxLength(60)
-                    // Free text, with the company's own categories suggested so one name stays one category.
-                    ->datalist(fn (?CompanyProduct $record, $livewire): array => static::company($record, $livewire)?->productCategories() ?? [])
-                    ->helperText('اختر تصنيفاً سابقاً أو اكتب تصنيفاً جديداً. تظهر التصنيفات في صفحة الشركة ليصفّي الطبيب المنتجات بها.')
+                    ->relationship('category', 'name', fn (Builder $query) => $query->ordered())
+                    ->placeholder('بدون تصنيف')
+                    ->searchable()
+                    ->preload()
+                    ->helperText('يظهر في صفحة الشركة ليصفّي الطبيب المنتجات به. لم تجد التصنيف المناسب؟ تواصل مع منظمي الملتقى لإضافته.')
                     ->columnSpanFull(),
                 Textarea::make('description')
                     ->label('الوصف')
@@ -88,12 +87,5 @@ class CompanyProductForm
                     ->columnSpanFull(),
             ])
             ->columns(2);
-    }
-
-    /** The company being edited: the organisers' company page, or the signed-in company. */
-    private static function company(?CompanyProduct $record, mixed $livewire): ?Company
-    {
-        return $record?->company
-            ?? ($livewire instanceof RelationManager ? $livewire->getOwnerRecord() : auth()->user()?->company);
     }
 }

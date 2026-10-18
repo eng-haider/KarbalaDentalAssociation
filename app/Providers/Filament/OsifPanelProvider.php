@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Pages\OsifRegistrationSettings;
 use App\Filament\Resources\Companies\CompanyResource;
 use App\Filament\Resources\EventRegistrations\EventRegistrationResource;
+use App\Filament\Resources\ProductCategories\ProductCategoryResource;
 use App\Filament\Widgets\OsifProfessionalTitleCountsWidget;
 use App\Filament\Widgets\OsifRegistrationStatsWidget;
 use Filament\FontProviders\LocalFontProvider;
@@ -40,6 +41,7 @@ class OsifPanelProvider extends PanelProvider
             ->resources([
                 EventRegistrationResource::class,
                 CompanyResource::class,
+                ProductCategoryResource::class,
             ])
             ->pages([
                 Dashboard::class,
