@@ -4,14 +4,19 @@
     use App\Support\Arabic;
 
     $summary = $company->description ?: 'منتجات وعروض '.$company->name.' في ملتقى OSIF KARBALA 2026.';
+
+    // A shared product link previews the product (in WhatsApp and the like), not just the company.
+    $pageTitle = ($opened ? $opened->name.' — '.$company->name : $company->name.' — الشركات المشاركة').' | OSIF KARBALA 2026';
+    $previewText = $opened ? $opened->shareData()['text'] : $summary;
+    $previewImage = $opened?->imageUrl() ?? $company->coverUrl() ?? $company->logoUrl();
 @endphp
 
-<x-layouts.osif :title="$company->name.' — الشركات المشاركة | OSIF KARBALA 2026'" :description="$summary">
+<x-layouts.osif :title="$pageTitle" :description="$previewText">
     <x-slot:head>
-        @if ($company->coverUrl() || $company->logoUrl())
-            <meta property="og:image" content="{{ url($company->coverUrl() ?? $company->logoUrl()) }}">
+        @if ($previewImage)
+            <meta property="og:image" content="{{ url($previewImage) }}">
         @endif
-        <meta property="og:description" content="{{ $summary }}">
+        <meta property="og:description" content="{{ $previewText }}">
         @vite(['resources/css/osif-shop.css', 'resources/js/osif-shop.js'])
     </x-slot:head>
 
@@ -52,11 +57,16 @@
                             <p>{{ $company->description }}</p>
                         @endif
                     </div>
-                    @if ($company->whatsappNumber())
-                        <a class="shop-contact" href="https://wa.me/{{ $company->whatsappNumber() }}" target="_blank" rel="noopener">
-                            <i class="bi bi-whatsapp" aria-hidden="true"></i> تواصل مع الشركة
-                        </a>
-                    @endif
+                    <div class="shop-company-actions">
+                        @if ($company->whatsappNumber())
+                            <a class="shop-contact" href="https://wa.me/{{ $company->whatsappNumber() }}" target="_blank" rel="noopener">
+                                <i class="bi bi-whatsapp" aria-hidden="true"></i> تواصل مع الشركة
+                            </a>
+                        @endif
+                        <button type="button" class="shop-contact" x-on:click="share(pageShare)">
+                            <i class="bi bi-share" aria-hidden="true"></i> مشاركة الصفحة
+                        </button>
+                    </div>
                 </div>
             </div>
         </header>
@@ -130,6 +140,9 @@
                                         <span class="shop-badge">عرض</span>
                                     @endif
                                 </button>
+                                <button type="button" class="shop-share-mini" x-on:click="shareProduct({{ $product->id }})" aria-label="مشاركة {{ $product->name }}">
+                                    <i class="bi bi-share" aria-hidden="true"></i>
+                                </button>
 
                                 <div class="shop-product-body">
                                     <h3><button type="button" x-on:click="show({{ $product->id }})">{{ $product->name }}</button></h3>
@@ -183,7 +196,7 @@
 
         <div class="shop-toast" x-show="toast" x-transition.opacity x-cloak role="status">
             <i class="bi bi-check-circle-fill" aria-hidden="true"></i> <span x-text="toast"></span>
-            <button type="button" x-on:click="openCart()">عرض السلة</button>
+            <button type="button" x-show="toastCart" x-on:click="openCart()">عرض السلة</button>
         </div>
 
         {{-- Product details --}}
@@ -215,6 +228,9 @@
                             </div>
                         </div>
                         <button type="button" class="shop-link" x-show="qty(detail) > 0" x-on:click="openCart()">الانتقال إلى السلة <i class="bi bi-arrow-left"></i></button>
+                        <button type="button" class="shop-share" x-on:click="shareProduct(detail)">
+                            <i class="bi bi-share" aria-hidden="true"></i> مشاركة المنتج
+                        </button>
                     </div>
                 </div>
             </template>

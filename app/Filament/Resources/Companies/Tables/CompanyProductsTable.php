@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Companies\Tables;
 
 use App\Filament\Resources\Companies\Schemas\CompanyProductForm;
 use App\Models\CompanyProduct;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Support\Enums\FontWeight;
@@ -15,6 +16,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Js;
 use Illuminate\Support\Str;
 
 class CompanyProductsTable
@@ -73,6 +75,13 @@ class CompanyProductsTable
                     ),
             ])
             ->recordActions([
+                // A hidden product isn't on the page, so its link would show nothing.
+                Action::make('share')
+                    ->label('مشاركة')
+                    ->icon(Heroicon::OutlinedShare)
+                    ->color('gray')
+                    ->visible(fn (CompanyProduct $record): bool => $record->is_active)
+                    ->alpineClickHandler(fn (CompanyProduct $record): string => 'shareLink('.Js::from($record->shareData()).')'),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

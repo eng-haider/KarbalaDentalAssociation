@@ -51,7 +51,9 @@
 .shop-company-meta { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
 .shop-company-meta > span { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .65rem; border-radius: 999px; background: rgba(255, 255, 255, .12); font-size: .8rem; font-weight: 700; }
 .shop-company-meta > span.is-offer { color: var(--shop-amber-ink); background: var(--shop-amber); }
-.shop-contact { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .55rem 1.1rem; border: 1px solid rgba(255, 255, 255, .45); border-radius: 999px; color: #fff; font-size: .9rem; font-weight: 800; transition: background .15s; }
+/* WhatsApp and «مشاركة الصفحة», side by side under the company's name. */
+.shop-company-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .5rem; }
+.shop-contact { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .55rem 1.1rem; border: 1px solid rgba(255, 255, 255, .45); border-radius: 999px; color: #fff; background: transparent; font-family: inherit; font-size: .9rem; font-weight: 800; transition: background .15s; }
 .shop-contact:hover { color: #fff; background: rgba(255, 255, 255, .12); }
 
 /* Catalogue --------------------------------------------------------------- */
@@ -84,7 +86,7 @@
 .shop-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
 @media (min-width: 720px) { .shop-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1.1rem; } }
 
-.shop-product { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--shop-line); border-radius: var(--shop-radius); background: var(--shop-card); transition: border-color .15s, box-shadow .15s; }
+.shop-product { position: relative; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--shop-line); border-radius: var(--shop-radius); background: var(--shop-card); transition: border-color .15s, box-shadow .15s; }
 .shop-product:hover { box-shadow: 0 12px 28px rgba(40, 10, 60, .08); }
 .shop-product.is-in-cart { border-color: rgba(124, 43, 184, .55); box-shadow: 0 0 0 1px rgba(124, 43, 184, .35); }
 .shop-product-media { position: relative; display: grid; place-items: center; aspect-ratio: 1; width: 100%; padding: 0; border: 0; border-bottom: 1px solid var(--shop-line); background: #fff; }
@@ -160,6 +162,11 @@
 
 .shop-overlay { position: fixed; z-index: 1050; inset: 0; display: grid; place-items: end center; background: rgba(20, 4, 30, .55); }
 @media (min-width: 720px) { .shop-overlay { place-items: center; padding: 1.5rem; } }
+/* Share: a round button in the card's corner (the badge takes the other one), and a full one in the details. */
+.shop-share-mini { position: absolute; top: .5rem; inset-inline-end: .5rem; z-index: 1; display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--shop-line); border-radius: 50%; color: var(--shop-purple); background: rgba(255, 255, 255, .94); box-shadow: 0 2px 8px rgba(40, 10, 60, .12); font-size: .95rem; }
+.shop-share-mini:hover { background: #fff; color: var(--shop-violet); }
+.shop-share { align-self: flex-start; display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; padding: .5rem 1rem; border: 1px solid var(--shop-line); border-radius: 10px; color: var(--shop-purple); background: #fff; font-size: .9rem; font-weight: 800; }
+.shop-share:hover { border-color: var(--shop-violet); }
 .shop-close { display: grid; place-items: center; flex: 0 0 auto; width: 44px; height: 44px; border: 0; border-radius: 12px; color: var(--shop-ink); background: var(--shop-bg); font-size: 1.05rem; }
 .shop-close:hover { background: #ece4f3; }
 

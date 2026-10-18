@@ -15,6 +15,7 @@ export default defineConfig({
                 'resources/js/osif-invitation.js',
                 'resources/css/osif-shop.css',
                 'resources/js/osif-shop.js',
+                'resources/js/dashboard-share.js',
             ],
             refresh: true,
         }),

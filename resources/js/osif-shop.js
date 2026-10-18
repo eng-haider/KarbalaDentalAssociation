@@ -4,6 +4,7 @@
 
 import Alpine from 'alpinejs';
 import focus from '@alpinejs/focus';
+import { shareLink } from './share';
 
 Alpine.plugin(focus);
 
@@ -39,7 +40,7 @@ Alpine.data('osifCompanies', () => ({
 }));
 
 /** One company's page and cart. */
-Alpine.data('osifShop', ({ company, event, products }) => ({
+Alpine.data('osifShop', ({ company, event, share, open, products }) => ({
     company,
     event,
     products: new Map(products.map((product) => [product.id, product])),
@@ -54,7 +55,9 @@ Alpine.data('osifShop', ({ company, event, products }) => ({
     buyer: '',
     note: '',
     toast: null,
+    toastCart: true, // whether the toast offers «عرض السلة»
     toastTimer: null,
+    pageShare: share,
 
     init() {
         // Drop anything the company has since removed or hidden.
@@ -63,6 +66,11 @@ Alpine.data('osifShop', ({ company, event, products }) => ({
             .map(([id, qty]) => [Number(id), Math.max(0, Math.min(999, Number(qty) || 0))])
             .filter(([id, qty]) => qty > 0 && this.products.has(id)));
         this.buyer = storage.read('osif-buyer-name', '');
+
+        // Arrived from a shared product link: show that product.
+        if (this.products.has(open)) {
+            this.detail = open;
+        }
 
         this.$watch('items', (items) => storage.write(this.cartKey, items));
         this.$watch('buyer', (buyer) => storage.write('osif-buyer-name', buyer));
@@ -212,8 +220,25 @@ Alpine.data('osifShop', ({ company, event, products }) => ({
         return this.detail === null ? null : this.products.get(this.detail);
     },
 
-    flash(message) {
+    // Sharing
+
+    async share(data) {
+        if (await shareLink(data) === 'copied') {
+            this.flash('تم نسخ الرابط، الصقه في واتساب أو أي تطبيق', false);
+        }
+    },
+
+    shareProduct(id) {
+        const product = this.products.get(id);
+
+        if (product) {
+            this.share(product.share);
+        }
+    },
+
+    flash(message, withCart = true) {
         this.toast = message;
+        this.toastCart = withCart;
         clearTimeout(this.toastTimer);
         this.toastTimer = setTimeout(() => {
             this.toast = null;

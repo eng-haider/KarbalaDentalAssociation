@@ -91,6 +91,16 @@ class Company extends Model
         ]);
     }
 
+    /** @return array{title: string, text: string, url: string} what a «مشاركة» button sends */
+    public function shareData(): array
+    {
+        return [
+            'title' => $this->name,
+            'text' => 'منتجات وعروض '.$this->name.' في ملتقى OSIF KARBALA 2026، اطلب مباشرة عبر واتساب.',
+            'url' => route('osif.companies.show', $this),
+        ];
+    }
+
     public function logoUrl(): ?string
     {
         return $this->logo ? Storage::disk('osif')->url($this->logo) : null;

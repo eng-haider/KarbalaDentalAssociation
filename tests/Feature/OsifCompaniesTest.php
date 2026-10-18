@@ -198,6 +198,63 @@ class OsifCompaniesTest extends TestCase
             ->assertFormFieldExists('product_category_id', fn (Select $field): bool => $field->getOptions() === [$implants->id => 'زراعة']);
     }
 
+    public function test_a_company_page_and_its_products_can_be_shared(): void
+    {
+        $company = $this->company();
+        $kit = $company->products()->create(['name' => 'Implant kit', 'price' => 100000, 'offer_price' => 80000]);
+
+        $this->assertSame(route('osif.companies.show', [$company, 'product' => $kit->id]), $kit->url());
+        $this->assertSame('Implant kit من Dental Pro · بخصم 20٪: 80,000 د.ع', $kit->shareData()['text']);
+
+        $this->get(route('osif.companies.show', $company))
+            ->assertOk()
+            ->assertSee('مشاركة الصفحة', false)
+            ->assertSee('مشاركة المنتج', false)
+            ->assertSee('shareProduct('.$kit->id.')', false)
+            ->assertSee('<meta property="og:title" content="Dental Pro — الشركات المشاركة', false);
+    }
+
+    public function test_a_shared_product_link_opens_and_previews_that_product(): void
+    {
+        $company = $this->company();
+        $kit = $company->products()->create(['name' => 'Implant kit', 'price' => 100000, 'image' => 'companies/products/kit.jpg']);
+        $hidden = $company->products()->create(['name' => 'Retired item', 'is_active' => false]);
+        $elsewhere = $this->company(['name' => 'Other Co'])->products()->create(['name' => 'Their item']);
+
+        $this->get($kit->url())
+            ->assertOk()
+            ->assertSee('<meta property="og:title" content="Implant kit — Dental Pro', false)
+            ->assertSee('<meta property="og:image" content="'.url('/osif/media/companies/products/kit.jpg').'"', false)
+            ->assertViewHas('opened', fn ($opened): bool => $opened?->is($kit) ?? false);
+
+        // A product that's hidden, or another company's, just opens the company page.
+        foreach ([$hidden, $elsewhere] as $product) {
+            $this->get(route('osif.companies.show', [$company, 'product' => $product->id]))
+                ->assertOk()
+                ->assertSee('<meta property="og:title" content="Dental Pro — الشركات المشاركة', false)
+                ->assertViewHas('opened', null);
+        }
+    }
+
+    public function test_companies_share_their_page_and_products_from_the_dashboard(): void
+    {
+        $company = $this->company();
+        $shown = $company->products()->create(['name' => 'Kit']);
+        $hidden = $company->products()->create(['name' => 'Old', 'is_active' => false]);
+        $this->actingAsCompany($company);
+
+        $this->get('/company-dashboard')
+            ->assertOk()
+            ->assertSee('مشاركة صفحتي', false)
+            ->assertSee('dashboard-share', false);
+
+        Livewire::test(ManageProducts::class)
+            ->assertActionVisible('share')
+            ->assertActionVisible(TestAction::make('share')->table($shown))
+            // A hidden product isn't on the page, so there's nothing to share.
+            ->assertActionHidden(TestAction::make('share')->table($hidden));
+    }
+
     public function test_hidden_companies_have_no_page(): void
     {
         $company = $this->company(['is_active' => false]);

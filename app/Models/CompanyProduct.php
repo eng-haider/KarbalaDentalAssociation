@@ -78,6 +78,28 @@ class CompanyProduct extends Model
         return $this->hasDiscount() ? (int) round(100 - $this->offer_price * 100 / $this->price) : null;
     }
 
+    /** Its company's page, opened on this product. */
+    public function url(): string
+    {
+        return route('osif.companies.show', [$this->company, 'product' => $this->id]);
+    }
+
+    /** @return array{title: string, text: string, url: string} what a «مشاركة» button sends */
+    public function shareData(): array
+    {
+        $offer = match (true) {
+            $this->hasDiscount() => 'بخصم '.$this->discountPercent().'٪: '.static::formatPrice($this->offer_price),
+            $this->price !== null => static::formatPrice($this->price),
+            default => null,
+        };
+
+        return [
+            'title' => $this->name,
+            'text' => collect([$this->name.' من '.$this->company->name, $offer, $this->offer_note])->filter()->implode(' · '),
+            'url' => $this->url(),
+        ];
+    }
+
     public function imageUrl(): ?string
     {
         return $this->image ? Storage::disk('osif')->url($this->image) : null;

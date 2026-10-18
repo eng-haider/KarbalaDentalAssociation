@@ -1,0 +1,1 @@
+import{t as e}from"./share-N-98QgFR.js";window.shareLink=async t=>{await e(t)===`copied`&&new window.FilamentNotification().title(`تم نسخ الرابط`).body(`الصقه في واتساب أو أي تطبيق لمشاركته.`).success().send()};

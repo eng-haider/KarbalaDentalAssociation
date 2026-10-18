@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\CompanyProduct;
 use App\Models\ProductCategory;
 use App\Support\QrCode;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -59,15 +60,20 @@ class OsifCompanyController extends Controller
         ]);
     }
 
-    public function show(Company $company): View
+    public function show(Request $request, Company $company): View
     {
         abort_unless($company->is_active, 404);
 
-        $products = $company->products()->active()->with('category')->get();
+        $products = $company->products()->active()->with('category')->get()
+            ->each->setRelation('company', $company);
+
+        // A shared product link (?product=…) opens on that product and previews it.
+        $opened = $products->firstWhere('id', $request->integer('product'));
 
         return view('osif.companies.show', [
             'company' => $company,
             'products' => $products,
+            'opened' => $opened,
             'offersCount' => $products->filter->hasOffer()->count(),
             // Category name → product count, in the order the company set in «تصنيفاتي».
             'categories' => $products->pluck('category')->filter()->unique('id')
@@ -85,6 +91,8 @@ class OsifCompanyController extends Controller
                     'whatsapp' => $company->whatsappNumber(),
                 ],
                 'event' => 'OSIF KARBALA 2026',
+                'share' => $company->shareData(),
+                'open' => $opened?->id,
                 'products' => $products->map(fn (CompanyProduct $product) => [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -96,6 +104,7 @@ class OsifCompanyController extends Controller
                     'image' => $product->imageUrl(),
                     'offer' => $product->hasOffer(),
                     'offerNote' => $product->offer_note,
+                    'share' => $product->shareData(),
                 ])->values(),
             ],
         ]);

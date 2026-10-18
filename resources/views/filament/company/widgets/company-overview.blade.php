@@ -61,6 +61,9 @@
 
             <div class="co-link">
                 <code>{{ $pageUrl }}</code>
+                <x-filament::button size="sm" icon="heroicon-m-share" x-on:click="shareLink({{ $share }})">
+                    مشاركة صفحتي
+                </x-filament::button>
                 <x-filament::button tag="a" :href="$pageUrl" target="_blank" color="gray" size="sm" icon="heroicon-m-arrow-top-right-on-square">
                     فتح صفحتي
                 </x-filament::button>
@@ -95,7 +98,7 @@
             <ol class="co-steps">
                 <li><span @class(['co-check', 'is-done' => $profileDone])>{{ $profileDone ? '✓' : '1' }}</span> <span>أكمل <a href="{{ $profileUrl }}">بيانات صفحتك</a>: الشعار، النبذة، ورقم واتساب الطلبات.</span></li>
                 <li><span @class(['co-check', 'is-done' => $shown > 0])>{{ $shown > 0 ? '✓' : '2' }}</span> <span>أضف <a href="{{ $productsUrl }}">منتجاتك وعروضك</a> مع صورها وأسعارها.</span></li>
-                <li><span class="co-check">3</span> <span>شارك رابط صفحتك؛ تصلك طلبات الأطباء على واتساب مباشرة.</span></li>
+                <li><span class="co-check">3</span> <span><a href="{{ $pageUrl }}" x-on:click.prevent="shareLink({{ $share }})">شارك رابط صفحتك</a>؛ تصلك طلبات الأطباء على واتساب مباشرة.</span></li>
             </ol>
         </div>
     </x-filament::section>

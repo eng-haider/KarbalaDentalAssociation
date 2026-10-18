@@ -1,0 +1,1 @@
+async function e({title:e,text:t,url:n}){if(navigator.share)try{return await navigator.share({title:e,text:t,url:n}),`shared`}catch(e){if(e?.name===`AbortError`)return`cancelled`}try{return await navigator.clipboard.writeText(n),`copied`}catch{return window.open(`https://wa.me/?text=${encodeURIComponent(`${t??e}\n${n}`)}`,`_blank`,`noopener`),`whatsapp`}}export{e as t};

@@ -7,6 +7,7 @@ use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Js;
 
 class ManageProducts extends ManageRecords
 {
@@ -17,6 +18,11 @@ class ManageProducts extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('share')
+                ->label('مشاركة صفحتي')
+                ->icon(Heroicon::OutlinedShare)
+                ->color('gray')
+                ->alpineClickHandler(fn (): string => 'shareLink('.Js::from(auth()->user()->company->shareData()).')'),
             Action::make('page')
                 ->label('عرض صفحتي')
                 ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
