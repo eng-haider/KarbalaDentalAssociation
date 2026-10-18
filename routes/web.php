@@ -12,10 +12,16 @@ use App\Http\Controllers\OsifCompanyController;
 use App\Http\Controllers\OsifController;
 use App\Http\Controllers\OsifInvitationController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\StorageFileController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+
+// Uploaded images, for when the host's public/storage link is missing or stale.
+Route::get('/storage/{path}', StorageFileController::class)
+    ->where('path', '.*')
+    ->name('storage.public');
 
 // Section pages
 Route::get('/about', [PageController::class, 'about'])->name('about');
