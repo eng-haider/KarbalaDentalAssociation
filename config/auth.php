@@ -42,6 +42,13 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // The OSIF company dashboard signs in on its own, so an admin already
+        // signed in to /admin still gets the company login instead of a 403.
+        'company' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
     ],
 
     /*

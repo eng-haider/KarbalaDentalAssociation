@@ -35,7 +35,7 @@ class OsifCompaniesTest extends TestCase
     private function actingAsCompany(Company $company): User
     {
         $user = User::factory()->create(['role' => User::ROLE_COMPANY, 'company_id' => $company->id]);
-        $this->actingAs($user);
+        $this->actingAs($user, 'company');
         Filament::setCurrentPanel(Filament::getPanel('company'));
 
         return $user;
@@ -149,8 +149,9 @@ class OsifCompaniesTest extends TestCase
 
         $this->get('/company-dashboard')->assertOk()->assertSee(route('osif.companies.show', $mine), false);
         $this->get('/company-dashboard/products')->assertOk();
-        $this->get('/osif-dashboard')->assertForbidden();
-        $this->get('/admin')->assertForbidden();
+        // A company session is separate: the other panels just ask for their own login.
+        $this->get('/osif-dashboard')->assertRedirect('/osif-dashboard/login');
+        $this->get('/admin')->assertRedirect('/admin/login');
 
         Livewire::test(ManageProducts::class)
             ->assertCanSeeTableRecords([$own])
@@ -249,14 +250,24 @@ class OsifCompaniesTest extends TestCase
             ->fillForm(['phone' => '0780 111 2223', 'password' => 'secret-pass'])
             ->call('authenticate')
             ->assertHasFormErrors(['phone']);
-        $this->assertGuest();
+        $this->assertGuest('company');
 
         Livewire::test(Login::class)
             ->fillForm(['phone' => '+964 780 111 2222', 'password' => 'secret-pass'])
             ->call('authenticate')
             ->assertHasNoFormErrors()
             ->assertRedirect('/company-dashboard');
-        $this->assertAuthenticatedAs($account);
+        $this->assertAuthenticatedAs($account, 'company');
+        $this->assertGuest('web');
+    }
+
+    public function test_an_admin_signed_in_elsewhere_still_gets_the_company_login(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]));
+
+        $this->get('/admin')->assertOk();
+        $this->get('/company-dashboard')->assertRedirect('/company-dashboard/login');
+        $this->get('/company-dashboard/login')->assertOk()->assertSee('رقم الهاتف', false);
     }
 
     public function test_companies_get_a_qr_code_and_a_printable_sign_for_their_page(): void

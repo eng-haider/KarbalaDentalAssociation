@@ -32,6 +32,7 @@ class CompanyPanelProvider extends PanelProvider
             ->id('company')
             ->path('company-dashboard')
             ->login(Login::class)
+            ->authGuard('company')
             ->brandName('OSIF — لوحة الشركات')
             ->colors([
                 'primary' => Color::Violet,
