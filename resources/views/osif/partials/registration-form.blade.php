@@ -10,7 +10,7 @@
         <div class="osif-done" role="status">
             <span class="osif-done-icon" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
             <h1>تم التسجيل بنجاح</h1>
-            <p>سوف نقوم بمراجعة البيانات وإرسال دعوة الحضور إليك عبر واتساب والبريد الإلكتروني.</p>
+            <p>سوف نقوم بمراجعة البيانات وإرسال دعوة الحضور إليك عبر واتساب أو البريد الإلكتروني.</p>
             <a href="{{ route('osif.register') }}#osif-form">تسجيل شخص آخر</a>
         </div>
     @elseif ($event->registration_open && $event->isFullyBooked())

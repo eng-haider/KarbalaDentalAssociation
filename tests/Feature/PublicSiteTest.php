@@ -115,7 +115,7 @@ class PublicSiteTest extends TestCase
 
         $this->get(route('osif.register'))
             ->assertSee('تم التسجيل بنجاح', false)
-            ->assertSee('سوف نقوم بمراجعة البيانات وإرسال دعوة الحضور إليك عبر واتساب والبريد الإلكتروني.', false)
+            ->assertSee('سوف نقوم بمراجعة البيانات وإرسال دعوة الحضور إليك عبر واتساب أو البريد الإلكتروني.', false)
             ->assertDontSee('name="professional_title"', false);
 
         $this->assertDatabaseHas('event_registrations', [
