@@ -53,6 +53,20 @@ class Company extends Model
     }
 
     /** The login that manages this company's page from the company dashboard. */
+    public function productCategories(): HasMany
+    {
+        return $this->hasMany(ProductCategory::class)->orderBy('sort_order')->orderBy('name');
+    }
+
+    /** Adds a category at the end of the company's list. */
+    public function addProductCategory(string $name): ProductCategory
+    {
+        return $this->productCategories()->create([
+            'name' => $name,
+            'sort_order' => (int) $this->productCategories()->max('sort_order') + 1,
+        ]);
+    }
+
     public function account(): HasOne
     {
         return $this->hasOne(User::class)->where('role', User::ROLE_COMPANY);

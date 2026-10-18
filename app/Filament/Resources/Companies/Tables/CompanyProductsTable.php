@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Companies\Tables;
 
+use App\Filament\Resources\Companies\Schemas\CompanyProductForm;
 use App\Models\CompanyProduct;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -61,7 +62,7 @@ class CompanyProductsTable
             ->filters([
                 SelectFilter::make('product_category_id')
                     ->label('التصنيف')
-                    ->relationship('category', 'name', fn (Builder $query) => $query->ordered()),
+                    ->options(fn ($livewire): array => CompanyProductForm::companyOf($livewire)?->productCategories()->pluck('name', 'id')->all() ?? []),
                 TernaryFilter::make('offers')
                     ->label('العروض')
                     ->trueLabel('عليها عرض')

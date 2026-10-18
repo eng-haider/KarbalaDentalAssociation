@@ -4,18 +4,24 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/** A category the organisers offer for OSIF companies' products, e.g. «زراعة الأسنان». */
+/** One of a company's own product categories, e.g. «زراعة الأسنان». */
 class ProductCategory extends Model
 {
-    protected $fillable = ['name', 'sort_order'];
+    protected $fillable = ['company_id', 'name', 'sort_order'];
 
     protected function casts(): array
     {
         return [
             'sort_order' => 'integer',
         ];
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function products(): HasMany

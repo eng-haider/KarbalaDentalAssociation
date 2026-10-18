@@ -69,7 +69,7 @@ class OsifCompanyController extends Controller
             'company' => $company,
             'products' => $products,
             'offersCount' => $products->filter->hasOffer()->count(),
-            // Category name → product count, in the organisers' order.
+            // Category name → product count, in the order the company set in «تصنيفاتي».
             'categories' => $products->pluck('category')->filter()->unique('id')
                 ->sortBy([['sort_order', 'asc'], ['name', 'asc']])
                 ->mapWithKeys(fn (ProductCategory $category): array => [

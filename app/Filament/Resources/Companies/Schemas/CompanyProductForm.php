@@ -3,13 +3,18 @@
 namespace App\Filament\Resources\Companies\Schemas;
 
 use App\Filament\Forms\Components\ImageUpload;
+use App\Models\Company;
+use App\Models\CompanyProduct;
+use App\Models\ProductCategory;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\Rules\Unique;
 
 /**
  * One product on a company's page. Shared by the company dashboard and the
@@ -38,11 +43,18 @@ class CompanyProductForm
                     ->columnSpanFull(),
                 Select::make('product_category_id')
                     ->label('التصنيف')
-                    ->relationship('category', 'name', fn (Builder $query) => $query->ordered())
+                    // Only this company's own categories.
+                    ->relationship('category', 'name', fn (Builder $query, $livewire, ?CompanyProduct $record) => $query
+                        ->where('company_id', static::companyOf($livewire, $record)?->getKey())
+                        ->ordered())
                     ->placeholder('بدون تصنيف')
                     ->searchable()
                     ->preload()
-                    ->helperText('يظهر في صفحة الشركة ليصفّي الطبيب المنتجات به. لم تجد التصنيف المناسب؟ تواصل مع منظمي الملتقى لإضافته.')
+                    ->createOptionForm([static::categoryNameInput()])
+                    ->createOptionModalHeading('تصنيف جديد')
+                    ->createOptionUsing(fn (array $data, $livewire, ?CompanyProduct $record): int => static::companyOf($livewire, $record)
+                        ->addProductCategory($data['name'])->getKey())
+                    ->helperText('اختر من تصنيفاتك، أو أضف تصنيفاً جديداً بزر +. يظهر في صفحة الشركة ليصفّي الطبيب المنتجات به.')
                     ->columnSpanFull(),
                 Textarea::make('description')
                     ->label('الوصف')
@@ -87,5 +99,31 @@ class CompanyProductForm
                     ->columnSpanFull(),
             ])
             ->columns(2);
+    }
+
+    /** A category's name, unique within the company: shared by the product form and «تصنيفاتي». */
+    public static function categoryNameInput(): TextInput
+    {
+        return TextInput::make('name')
+            ->label('اسم التصنيف')
+            ->required()
+            ->maxLength(60)
+            ->placeholder('مثال: زراعة الأسنان')
+            ->unique(
+                table: 'product_categories',
+                ignoreRecord: true,
+                modifyRuleUsing: fn (Unique $rule, $livewire, $record) => $rule->where(
+                    'company_id',
+                    $record instanceof ProductCategory ? $record->company_id : static::companyOf($livewire)?->getKey(),
+                ),
+            )
+            ->validationMessages(['unique' => 'لديك تصنيف بهذا الاسم.']);
+    }
+
+    /** The company whose products are being edited: from the organisers' company page, or the signed-in company. */
+    public static function companyOf(mixed $livewire, ?CompanyProduct $record = null): ?Company
+    {
+        return $record?->company
+            ?? ($livewire instanceof RelationManager ? $livewire->getOwnerRecord() : auth()->user()?->company);
     }
 }

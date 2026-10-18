@@ -20,6 +20,9 @@ class Lesson extends Model
         ];
     }
 
+
+
+
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);

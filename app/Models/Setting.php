@@ -16,8 +16,10 @@ class Setting extends Model
 
     protected $fillable = ['key', 'value'];
 
+
     protected static function booted(): void
     {
+
         // Keep the cached map in sync with any write.
         static::saved(fn () => Cache::forget('settings.all'));
         static::deleted(fn () => Cache::forget('settings.all'));
