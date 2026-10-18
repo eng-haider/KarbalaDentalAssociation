@@ -22,6 +22,7 @@ class Course extends Model
         ];
     }
 
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(CourseCategory::class, 'course_category_id');

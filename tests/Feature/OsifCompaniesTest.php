@@ -6,11 +6,15 @@ use App\Filament\Company\Auth\Login;
 use App\Filament\Company\Pages\CompanyProfile;
 use App\Filament\Company\Resources\Products\Pages\ManageProducts;
 use App\Filament\Resources\Companies\Pages\CreateCompany;
+use App\Filament\Resources\Companies\Pages\EditCompany;
+use App\Filament\Resources\Companies\RelationManagers\ProductsRelationManager;
 use App\Models\Company;
 use App\Models\CompanyProduct;
 use App\Models\Event;
 use App\Models\User;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\TextInput;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -83,6 +87,79 @@ class OsifCompaniesTest extends TestCase
             // The cart sends orders to the company's number in wa.me form.
             ->assertSee('9647701234567')
             ->assertDontSee('Retired item');
+    }
+
+    public function test_a_company_page_filters_its_products_by_category(): void
+    {
+        $company = $this->company();
+        $company->products()->createMany([
+            ['name' => 'Composite A2', 'category' => 'حشوات'],
+            ['name' => 'Composite A3', 'category' => 'حشوات'],
+            ['name' => 'Implant kit', 'category' => 'زراعة'],
+            ['name' => 'Gloves'],
+            ['name' => 'Hidden', 'category' => 'مخفي', 'is_active' => false],
+        ]);
+
+        $this->get(route('osif.companies.show', $company))
+            ->assertOk()
+            ->assertSeeInOrder(['كل التصنيفات', 'حشوات', '2', 'زراعة', '1', 'أخرى', '1'])
+            ->assertDontSee('مخفي');
+    }
+
+    public function test_a_single_category_shows_no_filter(): void
+    {
+        $company = $this->company();
+        $company->products()->createMany([
+            ['name' => 'Composite A2', 'category' => 'حشوات'],
+            ['name' => 'Composite A3', 'category' => 'حشوات'],
+        ]);
+
+        $this->get(route('osif.companies.show', $company))
+            ->assertOk()
+            ->assertDontSee('كل التصنيفات')
+            // Nothing else to show either, so no empty toolbar box.
+            ->assertDontSee('shop-toolbar');
+    }
+
+    public function test_companies_put_their_products_in_categories(): void
+    {
+        $company = $this->company();
+        $company->products()->create(['name' => 'Bond', 'category' => 'حشوات']);
+        $this->actingAsCompany($company);
+
+        Livewire::test(ManageProducts::class)
+            ->callAction('create', data: ['name' => 'Composite', 'category' => '  حشوات  ', 'is_active' => true])
+            ->assertHasNoErrors()
+            ->callAction('create', data: ['name' => 'Kit', 'category' => 'زراعة', 'is_active' => true])
+            ->assertHasNoErrors()
+            ->callAction('create', data: ['name' => 'Gloves', 'category' => '  ', 'is_active' => true])
+            ->assertHasNoErrors();
+
+        // Spaces don't make a second «حشوات», and a blank one is none.
+        $this->assertSame('حشوات', CompanyProduct::where('name', 'Composite')->value('category'));
+        $this->assertNull(CompanyProduct::where('name', 'Gloves')->value('category'));
+        $this->assertSame(['حشوات', 'زراعة'], $company->productCategories());
+    }
+
+    public function test_the_category_field_suggests_only_that_companys_categories(): void
+    {
+        $mine = $this->company();
+        $other = $this->company(['name' => 'Other Co']);
+        $mine->products()->create(['name' => 'Bond', 'category' => 'حشوات']);
+        $other->products()->create(['name' => 'Kit', 'category' => 'زراعة']);
+        $suggests = fn (array $categories) => fn (TextInput $field): bool => $field->getDatalistOptions() === $categories;
+
+        $this->actingAsCompany($mine);
+        Livewire::test(ManageProducts::class)
+            ->mountAction('create')
+            ->assertFormFieldExists('category', $suggests(['حشوات']));
+
+        // Organisers editing another company's products get that company's list.
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]));
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        Livewire::test(ProductsRelationManager::class, ['ownerRecord' => $other, 'pageClass' => EditCompany::class])
+            ->mountAction(TestAction::make('create')->table())
+            ->assertFormFieldExists('category', $suggests(['زراعة']));
     }
 
     public function test_hidden_companies_have_no_page(): void

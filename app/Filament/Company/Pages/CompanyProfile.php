@@ -14,6 +14,8 @@ use Filament\Support\Icons\Heroicon;
 /** The signed-in company edits its own public details. */
 class CompanyProfile extends Page
 {
+
+
     protected string $view = 'filament.company.pages.company-profile';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingStorefront;

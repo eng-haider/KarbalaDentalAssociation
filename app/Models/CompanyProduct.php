@@ -3,16 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CompanyProduct extends Model
 {
     protected $fillable = [
-        'company_id', 'name', 'description', 'image',
+        'company_id', 'name', 'category', 'description', 'image',
         'price', 'offer_price', 'offer_note', 'is_active', 'sort_order',
     ];
+
+    /** «حشوات » and «حشوات» are one category; a blank one is none. */
+    protected function category(): Attribute
+    {
+        return Attribute::make(set: fn (?string $value): ?string => Str::squish((string) $value) ?: null);
+    }
 
     protected function casts(): array
     {

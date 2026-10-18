@@ -68,6 +68,9 @@ class OsifCompanyController extends Controller
             'company' => $company,
             'products' => $products,
             'offersCount' => $products->filter->hasOffer()->count(),
+            // Category → product count, in the order the company arranged its products.
+            'categories' => $products->pluck('category')->filter()->countBy(),
+            'uncategorizedCount' => $products->whereNull('category')->count(),
             // What the cart needs; prices are re-read from here on every visit,
             // so a saved cart never keeps an outdated price.
             'shop' => [
@@ -80,6 +83,7 @@ class OsifCompanyController extends Controller
                 'products' => $products->map(fn (CompanyProduct $product) => [
                     'id' => $product->id,
                     'name' => $product->name,
+                    'category' => $product->category,
                     'description' => $product->description,
                     'price' => $product->currentPrice(),
                     'original' => $product->hasDiscount() ? $product->price : null,

@@ -3,9 +3,12 @@
 namespace App\Filament\Resources\Companies\Schemas;
 
 use App\Filament\Forms\Components\ImageUpload;
+use App\Models\Company;
+use App\Models\CompanyProduct;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -33,6 +36,14 @@ class CompanyProductForm
                     ->label('اسم المنتج')
                     ->required()
                     ->maxLength(255)
+                    ->columnSpanFull(),
+                TextInput::make('category')
+                    ->label('التصنيف')
+                    ->placeholder('مثال: حشوات، أدوات جراحية، زراعة')
+                    ->maxLength(60)
+                    // Free text, with the company's own categories suggested so one name stays one category.
+                    ->datalist(fn (?CompanyProduct $record, $livewire): array => static::company($record, $livewire)?->productCategories() ?? [])
+                    ->helperText('اختر تصنيفاً سابقاً أو اكتب تصنيفاً جديداً. تظهر التصنيفات في صفحة الشركة ليصفّي الطبيب المنتجات بها.')
                     ->columnSpanFull(),
                 Textarea::make('description')
                     ->label('الوصف')
@@ -77,5 +88,12 @@ class CompanyProductForm
                     ->columnSpanFull(),
             ])
             ->columns(2);
+    }
+
+    /** The company being edited: the organisers' company page, or the signed-in company. */
+    private static function company(?CompanyProduct $record, mixed $livewire): ?Company
+    {
+        return $record?->company
+            ?? ($livewire instanceof RelationManager ? $livewire->getOwnerRecord() : auth()->user()?->company);
     }
 }

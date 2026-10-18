@@ -19,6 +19,7 @@ class Announcement extends Model
 
     public function scopePublished(Builder $query): Builder
     {
+
         return $query->whereNotNull('published_at')->where('published_at', '<=', now());
     }
 }

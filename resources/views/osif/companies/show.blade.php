@@ -72,6 +72,13 @@
                         <p>تابع الصفحة لاحقاً، أو تواصل مع الشركة مباشرة على واتساب.</p>
                     </div>
                 @else
+                    @php
+                        $hasSearch = $products->count() > 6;
+                        // Worth a filter only when it splits the products: two categories, or one plus the rest.
+                        $hasCategories = $categories->count() > 1 || ($categories->isNotEmpty() && $uncategorizedCount);
+                    @endphp
+
+                    @if ($offersCount || $hasSearch || $hasCategories)
                     <div class="shop-toolbar">
                         @if ($offersCount)
                             <div class="shop-tabs" role="tablist" aria-label="عرض المنتجات">
@@ -83,18 +90,34 @@
                                 </button>
                             </div>
                         @endif
-                        @if ($products->count() > 6)
+                        @if ($hasSearch)
                             <label class="shop-search">
                                 <i class="bi bi-search" aria-hidden="true"></i>
                                 <span class="visually-hidden">ابحث عن منتج</span>
                                 <input type="search" x-model="query" placeholder="ابحث عن منتج…" autocomplete="off">
                             </label>
                         @endif
+                        @if ($hasCategories)
+                            <div class="shop-categories" role="group" aria-label="تصنيفات المنتجات">
+                                <button type="button" x-bind:aria-pressed="category === null" x-on:click="category = null">كل التصنيفات</button>
+                                @foreach ($categories as $name => $count)
+                                    <button type="button" x-bind:aria-pressed="category === @js($name)" x-on:click="category = @js($name)">
+                                        {{ $name }} <span>{{ $count }}</span>
+                                    </button>
+                                @endforeach
+                                @if ($uncategorizedCount)
+                                    <button type="button" x-bind:aria-pressed="category === ''" x-on:click="category = ''">
+                                        أخرى <span>{{ $uncategorizedCount }}</span>
+                                    </button>
+                                @endif
+                            </div>
+                        @endif
                     </div>
+                    @endif
 
                     <div class="shop-grid">
                         @foreach ($products as $product)
-                            <article class="shop-product" x-show="visible({{ $product->id }}, @js($product->name))" x-bind:class="{ 'is-in-cart': qty({{ $product->id }}) > 0 }">
+                            <article class="shop-product" x-show="visible({{ $product->id }})" x-bind:class="{ 'is-in-cart': qty({{ $product->id }}) > 0 }">
                                 <button type="button" class="shop-product-media" x-on:click="show({{ $product->id }})" aria-label="تفاصيل {{ $product->name }}">
                                     @if ($product->imageUrl())
                                         <img src="{{ $product->imageUrl() }}" alt="" loading="lazy">
@@ -143,7 +166,7 @@
                     <div class="shop-empty is-filtered" x-show="visibleCount === 0" x-cloak>
                         <i class="bi bi-search" aria-hidden="true"></i>
                         <h3>لا توجد منتجات مطابقة</h3>
-                        <button type="button" class="shop-link" x-on:click="query = ''; filter = 'all'">عرض كل المنتجات</button>
+                        <button type="button" class="shop-link" x-on:click="query = ''; filter = 'all'; category = null">عرض كل المنتجات</button>
                     </div>
                 @endif
             </div>

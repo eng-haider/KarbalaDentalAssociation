@@ -46,6 +46,7 @@ Alpine.data('osifShop', ({ company, event, products }) => ({
     cartKey: `osif-cart-${company.id}`,
     items: {}, // product id → quantity
     filter: 'all', // all | offers
+    category: null, // null: every category; '': the products without one
     query: '',
     cartOpen: false,
     detail: null, // the product id shown in the details dialog
@@ -69,21 +70,22 @@ Alpine.data('osifShop', ({ company, event, products }) => ({
 
     // Catalogue
 
-    visible(id, name) {
-        const product = this.products.get(id);
+    matches(product) {
         const query = this.query.trim().toLowerCase();
 
-        return (this.filter === 'all' || product?.offer)
-            && (query === '' || name.toLowerCase().includes(query));
+        return (this.filter === 'all' || product.offer)
+            && (this.category === null || (product.category ?? '') === this.category)
+            && (query === '' || product.name.toLowerCase().includes(query));
+    },
+
+    visible(id) {
+        const product = this.products.get(id);
+
+        return product !== undefined && this.matches(product);
     },
 
     get visibleCount() {
-        const query = this.query.trim().toLowerCase();
-
-        return [...this.products.values()]
-            .filter((product) => (this.filter === 'all' || product.offer)
-                && (query === '' || product.name.toLowerCase().includes(query)))
-            .length;
+        return [...this.products.values()].filter((product) => this.matches(product)).length;
     },
 
     // Cart

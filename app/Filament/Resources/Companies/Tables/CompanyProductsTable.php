@@ -32,6 +32,12 @@ class CompanyProductsTable
                     ->weight(FontWeight::Bold)
                     ->description(fn (CompanyProduct $record): ?string => Str::limit((string) $record->description, 70) ?: null)
                     ->searchable(),
+                TextColumn::make('category')
+                    ->label('التصنيف')
+                    ->badge()
+                    ->color('gray')
+                    ->placeholder('—')
+                    ->searchable(),
                 TextColumn::make('price')
                     ->label('السعر')
                     ->state(fn (CompanyProduct $record): string => CompanyProduct::formatPrice($record->price)),
