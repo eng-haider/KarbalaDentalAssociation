@@ -14,7 +14,7 @@
     <meta property="og:type" content="website">
     <meta property="og:locale" content="ar_IQ">
     <meta property="og:title" content="{{ $title ?? config('app.name') }}">
-    <meta property="og:image" content="{{ asset('images/logo.png') }}">
+    <meta property="og:image" content="{{ $ogImage ?? asset('images/logo.png') }}">
 
     <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
 

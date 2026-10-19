@@ -11,14 +11,14 @@ class CompanyProduct extends Model
 {
     protected $fillable = [
         'company_id', 'name', 'product_category_id', 'description', 'image',
-        'price', 'offer_price', 'offer_note', 'is_active', 'sort_order',
+        'price', 'discount_percent', 'offer_note', 'is_active', 'sort_order',
     ];
 
     protected function casts(): array
     {
         return [
             'price' => 'integer',
-            'offer_price' => 'integer',
+            'discount_percent' => 'integer',
             'is_active' => 'boolean',
             'sort_order' => 'integer',
         ];
@@ -52,11 +52,11 @@ class CompanyProduct extends Model
     public function scopeWithOffer(Builder $query): Builder
     {
         return $query->where(fn (Builder $query) => $query
-            ->where(fn (Builder $query) => $query->whereNotNull('price')->whereNotNull('offer_price')->whereColumn('offer_price', '<', 'price'))
+            ->where(fn (Builder $query) => $query->where('price', '>', 0)->where('discount_percent', '>', 0))
             ->orWhere(fn (Builder $query) => $query->whereNotNull('offer_note')->where('offer_note', '!=', '')));
     }
 
-    /** An offer is a lower price, a note such as "10 + 1 free", or both. */
+    /** An offer is a percentage off, a note such as "10 + 1 free", or both. */
     public function hasOffer(): bool
     {
         return $this->hasDiscount() || filled($this->offer_note);
@@ -64,18 +64,24 @@ class CompanyProduct extends Model
 
     public function hasDiscount(): bool
     {
-        return $this->price && $this->offer_price !== null && $this->offer_price < $this->price;
+        return $this->price > 0 && $this->discount_percent > 0;
     }
 
     /** What the doctor pays, or null when the price is given on request. */
     public function currentPrice(): ?int
     {
-        return $this->hasDiscount() ? $this->offer_price : $this->price;
+        return $this->hasDiscount() ? static::discounted($this->price, $this->discount_percent) : $this->price;
     }
 
     public function discountPercent(): ?int
     {
-        return $this->hasDiscount() ? (int) round(100 - $this->offer_price * 100 / $this->price) : null;
+        return $this->hasDiscount() ? $this->discount_percent : null;
+    }
+
+    /** A price after a percentage off, in whole dinars. */
+    public static function discounted(int $price, int $percent): int
+    {
+        return (int) round($price * (100 - $percent) / 100);
     }
 
     /** Its company's page, opened on this product. */
@@ -88,7 +94,7 @@ class CompanyProduct extends Model
     public function shareData(): array
     {
         $offer = match (true) {
-            $this->hasDiscount() => 'بخصم '.$this->discountPercent().'٪: '.static::formatPrice($this->offer_price),
+            $this->hasDiscount() => 'بخصم '.$this->discount_percent.'٪: '.static::formatPrice($this->currentPrice()),
             $this->price !== null => static::formatPrice($this->price),
             default => null,
         };

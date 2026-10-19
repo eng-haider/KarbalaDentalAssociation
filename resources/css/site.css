@@ -1915,6 +1915,34 @@ a.company-card:hover .company-go { color: var(--primary); transform: translateX(
 }
 
 /* ==========================================================================
+   Offer page (one member discount)
+   ========================================================================== */
+.offer-file {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .85rem 1rem;
+    margin-top: 1.75rem; padding: 1rem 1.15rem;
+    border: 1px solid var(--border); border-inline-start: 4px solid var(--primary);
+    border-radius: var(--radius-sm); background: var(--light);
+}
+.offer-file-icon {
+    flex: 0 0 auto; display: grid; place-items: center; width: 48px; height: 48px;
+    border-radius: var(--radius-sm); background: rgba(12, 45, 107, .08);
+    color: var(--primary); font-size: 1.5rem;
+}
+.offer-file-icon.is-pdf { background: rgba(185, 28, 28, .08); color: #B91C1C; }
+.offer-file-text { flex: 1 1 12rem; min-width: 0; display: grid; gap: .1rem; }
+.offer-file-text strong { color: var(--ink); }
+.offer-file-text small { color: var(--muted); overflow-wrap: anywhere; }
+.offer-file .btn { display: inline-flex; align-items: center; gap: .45rem; }
+
+.offer-cta { display: inline-flex; align-items: center; gap: .5rem; margin-top: 1.5rem; }
+.offer-note { display: flex; align-items: flex-start; gap: .5rem; margin: 1.25rem 0 0; font-size: .92rem; color: var(--muted); }
+.offer-note i { color: var(--secondary-600); margin-top: .3rem; }
+
+@media (max-width: 575.98px) {
+    .offer-file .btn, .offer-cta { width: 100%; justify-content: center; }
+}
+
+/* ==========================================================================
    Job opportunities
    ========================================================================== */
 .jobs-section { background: linear-gradient(180deg, #ffffff 0%, var(--light) 100%); }

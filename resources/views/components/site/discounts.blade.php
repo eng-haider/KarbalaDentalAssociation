@@ -13,10 +13,8 @@
 
             <div class="ad-list">
                 @foreach ($items as $discount)
-                    {{-- Only linked ads are clickable; the rest stay plain banners. --}}
-                    @php($tag = $discount->link ? 'a' : 'div')
-                    <{{ $tag }} class="ad-card reveal"
-                        @if ($discount->link) href="{{ $discount->link }}" target="_blank" rel="noopener" @endif>
+                    {{-- Each offer opens its own page: details, file and link. --}}
+                    <a class="ad-card reveal" href="{{ route('discounts.show', $discount) }}">
 
                         @if ($discount->image)
                             <img src="{{ Storage::url($discount->image) }}" alt="{{ $discount->title }}" class="ad-bg" loading="lazy">
@@ -27,7 +25,7 @@
                         @endif
 
                         <h3 class="ad-title">{{ $discount->title }}</h3>
-                    </{{ $tag }}>
+                    </a>
                 @endforeach
             </div>
         </div>

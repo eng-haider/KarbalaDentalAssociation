@@ -9,6 +9,7 @@ use App\Filament\Company\Resources\Products\Pages\ManageProducts;
 use App\Filament\Resources\Companies\Pages\CreateCompany;
 use App\Filament\Resources\Companies\Pages\EditCompany;
 use App\Filament\Resources\Companies\RelationManagers\ProductsRelationManager;
+use App\Filament\Resources\Companies\Schemas\CompanyProductForm;
 use App\Models\Company;
 use App\Models\CompanyProduct;
 use App\Models\Event;
@@ -50,10 +51,10 @@ class OsifCompaniesTest extends TestCase
     {
         $company = $this->company();
         $company->products()->createMany([
-            ['name' => 'Implant kit', 'price' => 100000, 'offer_price' => 80000],
+            ['name' => 'Implant kit', 'price' => 100000, 'discount_percent' => 20],
             ['name' => 'Gloves', 'price' => 5000, 'offer_note' => '10 + 1'],
             ['name' => 'Suture', 'price' => 3000],
-            ['name' => 'Hidden', 'price' => 3000, 'offer_price' => 1000, 'is_active' => false],
+            ['name' => 'Hidden', 'price' => 3000, 'discount_percent' => 50, 'is_active' => false],
         ]);
         $this->company(['name' => 'Secret Co', 'is_active' => false]);
 
@@ -70,7 +71,7 @@ class OsifCompaniesTest extends TestCase
     {
         $company = $this->company(['description' => 'Implants and surgical kits.']);
         $company->products()->createMany([
-            ['name' => 'Implant kit', 'price' => 100000, 'offer_price' => 80000, 'description' => 'Full surgical kit'],
+            ['name' => 'Implant kit', 'price' => 100000, 'discount_percent' => 20, 'description' => 'Full surgical kit'],
             ['name' => 'Bone graft', 'offer_note' => 'هدية مع كل طلب'],
             ['name' => 'Retired item', 'price' => 1000, 'is_active' => false],
         ]);
@@ -110,14 +111,21 @@ class OsifCompaniesTest extends TestCase
             ->assertDontSee('مخفي');
     }
 
-    public function test_a_single_category_shows_no_filter(): void
+    public function test_a_single_category_still_shows(): void
     {
         $company = $this->company();
-        $fillings = $company->productCategories()->create(['name' => 'حشوات']);
-        $company->products()->createMany([
-            ['name' => 'Composite A2', 'product_category_id' => $fillings->id],
-            ['name' => 'Composite A3', 'product_category_id' => $fillings->id],
-        ]);
+        $emax = $company->productCategories()->create(['name' => 'ايماكس']);
+        $company->products()->create(['name' => 'ايماكس', 'product_category_id' => $emax->id]);
+
+        $this->get(route('osif.companies.show', $company))
+            ->assertOk()
+            ->assertSeeInOrder(['كل التصنيفات', 'ايماكس', '1']);
+    }
+
+    public function test_products_without_categories_show_no_filter(): void
+    {
+        $company = $this->company();
+        $company->products()->createMany([['name' => 'Composite A2'], ['name' => 'Composite A3']]);
 
         $this->get(route('osif.companies.show', $company))
             ->assertOk()
@@ -201,7 +209,7 @@ class OsifCompaniesTest extends TestCase
     public function test_a_company_page_and_its_products_can_be_shared(): void
     {
         $company = $this->company();
-        $kit = $company->products()->create(['name' => 'Implant kit', 'price' => 100000, 'offer_price' => 80000]);
+        $kit = $company->products()->create(['name' => 'Implant kit', 'price' => 100000, 'discount_percent' => 20]);
 
         $this->assertSame(route('osif.companies.show', [$company, 'product' => $kit->id]), $kit->url());
         $this->assertSame('Implant kit من Dental Pro · بخصم 20٪: 80,000 د.ع', $kit->shareData()['text']);
@@ -329,7 +337,7 @@ class OsifCompaniesTest extends TestCase
             ->callAction('create', data: [
                 'name' => 'Composite',
                 'price' => 25000,
-                'offer_price' => 20000,
+                'discount_percent' => 20,
                 'offer_note' => 'عرض المعرض',
                 'is_active' => true,
             ])
@@ -339,17 +347,27 @@ class OsifCompaniesTest extends TestCase
         $this->assertSame($mine->id, $product->company_id);
         $this->assertTrue($product->hasOffer());
         $this->assertSame(20, $product->discountPercent());
+        $this->assertSame(20000, $product->currentPrice());
     }
 
-    public function test_an_offer_price_must_be_below_the_original_price(): void
+    public function test_a_discount_is_a_percentage_of_the_price(): void
     {
         $this->actingAsCompany($this->company());
 
         Livewire::test(ManageProducts::class)
-            ->callAction('create', data: ['name' => 'Kit', 'price' => 1000, 'offer_price' => 1500])
-            ->assertHasFormErrors(['offer_price' => 'lt']);
+            ->callAction('create', data: ['name' => 'Kit', 'price' => 1000, 'discount_percent' => 100])
+            ->assertHasFormErrors(['discount_percent' => 'max']);
+
+        // A percentage needs a price to come off.
+        Livewire::test(ManageProducts::class)
+            ->callAction('create', data: ['name' => 'Kit', 'discount_percent' => 10])
+            ->assertHasFormErrors(['price' => 'required_with']);
 
         $this->assertSame(0, CompanyProduct::count());
+
+        // The company sees the price after the discount as it types.
+        $this->assertSame('السعر بعد الخصم: 61,625 د.ع', CompanyProductForm::discountHint('72500', '15'));
+        $this->assertSame('يُحسب سعر العرض تلقائياً من السعر.', CompanyProductForm::discountHint(null, '15'));
     }
 
     public function test_companies_edit_their_page_details_but_not_their_name(): void

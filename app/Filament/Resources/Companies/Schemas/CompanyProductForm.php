@@ -12,6 +12,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rules\Unique;
@@ -69,7 +70,9 @@ class CompanyProductForm
                     ->minValue(0)
                     ->maxValue(4_000_000_000)
                     ->suffix('د.ع')
-                    ->requiredWith('offer_price')
+                    ->live(onBlur: true)
+                    ->requiredWith('discount_percent')
+                    ->validationMessages(['required_with' => 'أدخل السعر ليُحسب الخصم منه.'])
                     ->helperText('اتركه فارغاً ليظهر «السعر عند الطلب».'),
                 Toggle::make('is_active')
                     ->label('ظاهر في صفحة الشركة')
@@ -77,19 +80,24 @@ class CompanyProductForm
                     ->inline(false),
 
                 Section::make('العرض (اختياري)')
-                    ->description('سعر مخفّض، أو عرض مثل «اشترِ 10 واحصل على 1 مجاناً». يظهر المنتج في تبويب «العروض» بشارة مميزة.')
+                    ->description('نسبة خصم على السعر، أو عرض مثل «اشترِ 10 واحصل على 1 مجاناً». يظهر المنتج في تبويب «العروض» بشارة مميزة.')
                     ->icon('heroicon-o-tag')
                     ->schema([
-                        TextInput::make('offer_price')
-                            ->label('سعر العرض')
+                        TextInput::make('discount_percent')
+                            ->label('نسبة الخصم')
                             ->numeric()
                             ->integer()
-                            ->minValue(0)
-                            ->suffix('د.ع')
-                            ->lt('price')
+                            ->minValue(1)
+                            ->maxValue(99)
+                            ->suffix('٪')
+                            ->placeholder('مثال: 15')
+                            ->live(onBlur: true)
                             ->validationMessages([
-                                'lt' => 'سعر العرض يجب أن يكون أقل من السعر الأصلي.',
-                            ]),
+                                'min' => 'نسبة الخصم من 1 إلى 99٪.',
+                                'max' => 'نسبة الخصم من 1 إلى 99٪.',
+                                'integer' => 'اكتب النسبة رقماً صحيحاً، مثل 15.',
+                            ])
+                            ->helperText(fn (Get $get): string => static::discountHint($get('price'), $get('discount_percent'))),
                         TextInput::make('offer_note')
                             ->label('وصف العرض')
                             ->placeholder('مثال: اشترِ 10 واحصل على 1 مجاناً')
@@ -99,6 +107,17 @@ class CompanyProductForm
                     ->columnSpanFull(),
             ])
             ->columns(2);
+    }
+
+    /** Under «نسبة الخصم»: the price after the discount, worked out as the company types. */
+    public static function discountHint(mixed $price, mixed $percent): string
+    {
+        $price = (int) $price;
+        $percent = (int) $percent;
+
+        return $price > 0 && $percent >= 1 && $percent <= 99
+            ? 'السعر بعد الخصم: '.CompanyProduct::formatPrice(CompanyProduct::discounted($price, $percent))
+            : 'يُحسب سعر العرض تلقائياً من السعر.';
     }
 
     /** A category's name, unique within the company: shared by the product form and «تصنيفاتي». */

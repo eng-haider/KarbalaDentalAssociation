@@ -50,7 +50,7 @@ class CompanyProductsTable
                 TextColumn::make('offer')
                     ->label('العرض')
                     ->state(fn (CompanyProduct $record): ?string => collect([
-                        $record->hasDiscount() ? CompanyProduct::formatPrice($record->offer_price).' (−'.$record->discountPercent().'٪)' : null,
+                        $record->hasDiscount() ? 'خصم '.$record->discount_percent.'٪: '.CompanyProduct::formatPrice($record->currentPrice()) : null,
                         $record->offer_note,
                     ])->filter()->implode(' · ') ?: null)
                     ->badge()

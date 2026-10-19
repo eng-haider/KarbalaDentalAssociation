@@ -3,7 +3,10 @@
 namespace App\Filament\Resources\Discounts\Schemas;
 
 use App\Filament\Forms\Components\ImageUpload;
+use App\Models\Discount;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -46,6 +49,27 @@ class DiscountForm
                     ])
                     ->columns(2),
 
+                Section::make('صفحة العرض')
+                    ->description('لكل عرض صفحة خاصة تُفتح عند الضغط على بطاقته: فيها الصورة والعنوان والوصف، وما تضيفه هنا.')
+                    ->schema([
+                        RichEditor::make('body')
+                            ->label('تفاصيل العرض')
+                            ->placeholder('الشروط، طريقة الاستفادة، المدة، أرقام التواصل…')
+                            ->columnSpanFull(),
+                        FileUpload::make('attachment')
+                            ->label('ملف مرفق (PDF أو Word)')
+                            ->disk('public')
+                            ->directory('discounts/files')
+                            ->acceptedFileTypes(array_values(Discount::ATTACHMENT_TYPES))
+                            ->maxSize(10240)
+                            // The stored name is random; the download keeps the name the file was uploaded with.
+                            ->storeFileNamesIn('attachment_name')
+                            ->downloadable()
+                            ->openable()
+                            ->helperText('يظهر في الصفحة زرّاً لفتح الملف أو تحميله. الحد الأقصى 10 ميغابايت.')
+                            ->columnSpanFull(),
+                    ]),
+
                 Section::make('قيمة الخصم')
                     ->schema([
                         TextInput::make('value_label')
@@ -60,6 +84,7 @@ class DiscountForm
                             ->label('رابط التسجيل')
                             ->url()
                             ->placeholder('https://')
+                            ->helperText('يظهر زرّاً في صفحة العرض.')
                             ->columnSpanFull(),
                         TextInput::make('icon')
                             ->label('الأيقونة')
