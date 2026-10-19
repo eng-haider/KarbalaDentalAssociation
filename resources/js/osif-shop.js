@@ -46,8 +46,7 @@ Alpine.data('osifShop', ({ company, event, share, open, products }) => ({
     products: new Map(products.map((product) => [product.id, product])),
     cartKey: `osif-cart-${company.id}`,
     items: {}, // product id → quantity
-    filter: 'all', // all | offers
-    category: null, // null: every category; '': the products without one
+    filter: 'all', // 'all', 'offers', or 'category:' + a category's name ('category:' alone: the products without one)
     query: '',
     cartOpen: false,
     detail: null, // the product id shown in the details dialog
@@ -80,10 +79,10 @@ Alpine.data('osifShop', ({ company, event, share, open, products }) => ({
 
     matches(product) {
         const query = this.query.trim().toLowerCase();
+        const inFilter = this.filter === 'all'
+            || (this.filter === 'offers' ? product.offer : this.filter === `category:${product.category ?? ''}`);
 
-        return (this.filter === 'all' || product.offer)
-            && (this.category === null || (product.category ?? '') === this.category)
-            && (query === '' || product.name.toLowerCase().includes(query));
+        return inFilter && (query === '' || product.name.toLowerCase().includes(query));
     },
 
     visible(id) {

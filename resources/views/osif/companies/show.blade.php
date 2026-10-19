@@ -82,18 +82,35 @@
                         <p>تابع الصفحة لاحقاً، أو تواصل مع الشركة مباشرة على واتساب.</p>
                     </div>
                 @else
-                    @php($hasSearch = $products->count() > 6)
+                    @php
+                        $hasFilters = $offersCount || $categories->isNotEmpty();
+                        $hasSearch = $products->count() > 6;
+                    @endphp
 
-                    @if ($offersCount || $hasSearch || $categories->isNotEmpty())
+                    @if ($hasFilters || $hasSearch)
                         <div class="shop-toolbar">
-                            @if ($offersCount)
-                                <div class="shop-tabs" role="tablist" aria-label="عرض المنتجات">
-                                    <button type="button" role="tab" x-bind:aria-selected="filter === 'all'" x-on:click="filter = 'all'">
-                                        كل المنتجات <span>{{ $products->count() }}</span>
+                            {{-- One row: everything, the offers, then each of the company's categories. --}}
+                            @if ($hasFilters)
+                                <div class="shop-filters" role="group" aria-label="تصفية المنتجات">
+                                    <button type="button" x-bind:aria-pressed="filter === 'all'" x-on:click="filter = 'all'">
+                                        الكل <span>{{ $products->count() }}</span>
                                     </button>
-                                    <button type="button" role="tab" x-bind:aria-selected="filter === 'offers'" x-on:click="filter = 'offers'">
-                                        <i class="bi bi-tag-fill" aria-hidden="true"></i> العروض <span>{{ $offersCount }}</span>
-                                    </button>
+                                    @if ($offersCount)
+                                        <button type="button" class="is-offer" x-bind:aria-pressed="filter === 'offers'" x-on:click="filter = 'offers'">
+                                            <i class="bi bi-tag-fill" aria-hidden="true"></i> العروض <span>{{ $offersCount }}</span>
+                                        </button>
+                                    @endif
+                                    @foreach ($categories as $name => $count)
+                                        @php($key = 'category:'.$name)
+                                        <button type="button" x-bind:aria-pressed="filter === @js($key)" x-on:click="filter = @js($key)">
+                                            {{ $name }} <span>{{ $count }}</span>
+                                        </button>
+                                    @endforeach
+                                    @if ($categories->isNotEmpty() && $uncategorizedCount)
+                                        <button type="button" x-bind:aria-pressed="filter === 'category:'" x-on:click="filter = 'category:'">
+                                            أخرى <span>{{ $uncategorizedCount }}</span>
+                                        </button>
+                                    @endif
                                 </div>
                             @endif
                             @if ($hasSearch)
@@ -102,22 +119,6 @@
                                     <span class="visually-hidden">ابحث عن منتج</span>
                                     <input type="search" x-model="query" placeholder="ابحث عن منتج…" autocomplete="off">
                                 </label>
-                            @endif
-                            {{-- The company's categories, whenever its products use any. --}}
-                            @if ($categories->isNotEmpty())
-                                <div class="shop-categories" role="group" aria-label="تصنيفات المنتجات">
-                                    <button type="button" x-bind:aria-pressed="category === null" x-on:click="category = null">كل التصنيفات</button>
-                                    @foreach ($categories as $name => $count)
-                                        <button type="button" x-bind:aria-pressed="category === @js($name)" x-on:click="category = @js($name)">
-                                            {{ $name }} <span>{{ $count }}</span>
-                                        </button>
-                                    @endforeach
-                                    @if ($uncategorizedCount)
-                                        <button type="button" x-bind:aria-pressed="category === ''" x-on:click="category = ''">
-                                            أخرى <span>{{ $uncategorizedCount }}</span>
-                                        </button>
-                                    @endif
-                                </div>
                             @endif
                         </div>
                     @endif
@@ -176,7 +177,7 @@
                     <div class="shop-empty is-filtered" x-show="visibleCount === 0" x-cloak>
                         <i class="bi bi-search" aria-hidden="true"></i>
                         <h3>لا توجد منتجات مطابقة</h3>
-                        <button type="button" class="shop-link" x-on:click="query = ''; filter = 'all'; category = null">عرض كل المنتجات</button>
+                        <button type="button" class="shop-link" x-on:click="query = ''; filter = 'all'">عرض كل المنتجات</button>
                     </div>
                 @endif
             </div>

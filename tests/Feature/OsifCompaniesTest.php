@@ -107,19 +107,20 @@ class OsifCompaniesTest extends TestCase
 
         $this->get(route('osif.companies.show', $company))
             ->assertOk()
-            ->assertSeeInOrder(['كل التصنيفات', 'زراعة', '1', 'حشوات', '2', 'أخرى', '1'])
+            ->assertSeeInOrder(['تصفية المنتجات', 'الكل', '4', 'زراعة', '1', 'حشوات', '2', 'أخرى', '1'])
             ->assertDontSee('مخفي');
     }
 
-    public function test_a_single_category_still_shows(): void
+    public function test_offers_and_categories_share_one_row_of_filters(): void
     {
         $company = $this->company();
         $emax = $company->productCategories()->create(['name' => 'ايماكس']);
-        $company->products()->create(['name' => 'ايماكس', 'product_category_id' => $emax->id]);
+        $company->products()->create(['name' => 'ايماكس', 'price' => 80000, 'discount_percent' => 10, 'product_category_id' => $emax->id]);
 
-        $this->get(route('osif.companies.show', $company))
-            ->assertOk()
-            ->assertSeeInOrder(['كل التصنيفات', 'ايماكس', '1']);
+        $response = $this->get(route('osif.companies.show', $company))->assertOk();
+
+        $response->assertSeeInOrder(['تصفية المنتجات', 'الكل', 'العروض', 'ايماكس', '</div>']);
+        $this->assertSame(1, substr_count($response->getContent(), 'role="group" aria-label="تصفية المنتجات"'));
     }
 
     public function test_products_without_categories_show_no_filter(): void
@@ -129,7 +130,7 @@ class OsifCompaniesTest extends TestCase
 
         $this->get(route('osif.companies.show', $company))
             ->assertOk()
-            ->assertDontSee('كل التصنيفات')
+            ->assertDontSee('تصفية المنتجات')
             // Nothing else to show either, so no empty toolbar box.
             ->assertDontSee('shop-toolbar');
     }
