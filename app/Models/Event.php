@@ -21,7 +21,7 @@ class Event extends Model
 
     protected $fillable = [
         'title', 'slug', 'description', 'location', 'starts_at', 'ends_at',
-        'is_featured', 'registration_open', 'professional_titles', 'professional_title_limits',
+        'is_featured', 'registration_open', 'registration_limit', 'professional_titles', 'professional_title_limits',
     ];
 
     protected function casts(): array
@@ -31,6 +31,7 @@ class Event extends Model
             'ends_at' => 'datetime',
             'is_featured' => 'boolean',
             'registration_open' => 'boolean',
+            'registration_limit' => 'integer',
             'professional_titles' => 'array',
             'professional_title_limits' => 'array',
         ];
@@ -99,10 +100,18 @@ class Event extends Model
             ->all();
     }
 
-    /** Every professional title has used up its seats, so there is nothing left to register for. */
+    /** Nothing left to register for: the overall limit is reached, or every professional title is full. */
     public function isFullyBooked(): bool
     {
-        return array_diff($this->professionalTitleOptions(), $this->fullProfessionalTitles()) === [];
+        return $this->hasReachedRegistrationLimit()
+            || array_diff($this->professionalTitleOptions(), $this->fullProfessionalTitles()) === [];
+    }
+
+    /** The overall limit set from the dashboard (e.g. 600) is reached; no limit means never. */
+    public function hasReachedRegistrationLimit(): bool
+    {
+        return $this->registration_limit !== null
+            && $this->registrations()->count() >= $this->registration_limit;
     }
 
     public function isProfessionalTitleFull(?string $title): bool

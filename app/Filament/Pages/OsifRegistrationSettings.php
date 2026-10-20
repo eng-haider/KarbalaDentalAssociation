@@ -51,6 +51,7 @@ class OsifRegistrationSettings extends Page
 
         $this->form->fill([
             'registration_open' => $event->registration_open,
+            'registration_limit' => $event->registration_limit,
             'professional_titles' => array_map(
                 fn (string $title) => ['title' => $title, 'limit' => $limits[$title] ?? null],
                 $event->professionalTitleOptions(),
@@ -60,7 +61,8 @@ class OsifRegistrationSettings extends Page
 
     public function form(Schema $schema): Schema
     {
-        $counts = $this->event()->professionalTitleCounts();
+        $event = $this->event();
+        $counts = $event->professionalTitleCounts();
 
         return $schema
             ->components([
@@ -69,6 +71,13 @@ class OsifRegistrationSettings extends Page
                         Toggle::make('registration_open')
                             ->label('التسجيل مفتوح')
                             ->helperText('عند الإغلاق يختفي نموذج التسجيل من صفحة الملتقى.'),
+                        TextInput::make('registration_limit')
+                            ->label('الحد الأقصى للتسجيلات')
+                            ->integer()
+                            ->minValue(1)
+                            ->placeholder('بلا حد')
+                            ->suffix('طلب')
+                            ->helperText('مسجّل حالياً: '.$event->registrations()->count().'. عند الوصول إلى هذا العدد يُغلق النموذج تلقائياً ويظهر «اكتمل العدد». اتركه فارغاً ليبقى بلا حد.'),
                     ]),
 
                 Section::make('خيارات «الصفة المهنية أو الأكاديمية» وعدد المقاعد')
@@ -111,6 +120,7 @@ class OsifRegistrationSettings extends Page
 
         $this->event()->update([
             'registration_open' => (bool) $state['registration_open'],
+            'registration_limit' => filled($state['registration_limit'] ?? null) ? (int) $state['registration_limit'] : null,
             'professional_titles' => $titles->pluck('title')->all(),
             'professional_title_limits' => $titles
                 ->filter(fn (array $row) => filled($row['limit']))

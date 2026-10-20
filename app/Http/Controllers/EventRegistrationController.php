@@ -19,8 +19,14 @@ class EventRegistrationController extends Controller
 
         DB::transaction(function () use ($request, $event) {
             // Locking the event makes registrations for it take turns, so the
-            // last seat of a professional title cannot be given out twice.
+            // last seat (overall, or of a professional title) cannot be given out twice.
             $event = Event::query()->lockForUpdate()->findOrFail($event->getKey());
+
+            if ($event->hasReachedRegistrationLimit()) {
+                throw ValidationException::withMessages([
+                    'name' => 'نعتذر، اكتمل العدد المخصص للتسجيل.',
+                ]);
+            }
 
             if ($event->isProfessionalTitleFull($request->validated('professional_title'))) {
                 throw ValidationException::withMessages([

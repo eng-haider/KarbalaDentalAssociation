@@ -17,7 +17,7 @@
         <div class="osif-closed">
             <i class="bi bi-people"></i>
             <h1>اكتمل العدد</h1>
-            <p>نعتذر، اكتمل العدد المخصص للتسجيل في جميع الفئات. تابع صفحة OSIF على إنستغرام لمعرفة آخر التحديثات.</p>
+            <p>نعتذر، اكتمل العدد المخصص للتسجيل في الملتقى. تابع صفحة OSIF على إنستغرام لمعرفة آخر التحديثات.</p>
         </div>
     @elseif ($event->registration_open)
         <div class="osif-form-head">
@@ -66,6 +66,10 @@
                     @error('owns_clinic')<small class="osif-error">{{ $message }}</small>@enderror
                 </fieldset>
             </div>
+            <p class="osif-declaration">
+                <i class="bi bi-shield-exclamation" aria-hidden="true"></i>
+                <strong>يتحمل المتقدم صحة كافة البيانات، وبخلاف ذلك يتحمل المسؤولية القانونية.</strong>
+            </p>
             <button type="submit" class="osif-button osif-button-primary osif-submit">إرسال طلب التسجيل <i class="bi bi-arrow-down-left"></i></button>
         </form>
     @else

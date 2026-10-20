@@ -496,9 +496,59 @@ class OsifRegistrationTest extends TestCase
 
         $this->get(route('osif.register'))
             ->assertOk()
-            ->assertSee('اكتمل العدد المخصص للتسجيل في جميع الفئات')
+            ->assertSee('اكتمل العدد المخصص للتسجيل في الملتقى')
             ->assertDontSee('إرسال طلب التسجيل')
             ->assertDontSee('ماذا يحدث بعد التسجيل؟');
+    }
+
+    public function test_the_form_reminds_applicants_they_answer_for_their_data(): void
+    {
+        $this->osifEvent();
+
+        $this->get(route('osif.register'))
+            ->assertOk()
+            ->assertSeeInOrder(['يتحمل المتقدم صحة كافة البيانات، وبخلاف ذلك يتحمل المسؤولية القانونية.', 'إرسال طلب التسجيل']);
+    }
+
+    public function test_registration_closes_by_itself_at_the_overall_limit(): void
+    {
+        $event = $this->osifEvent(['registration_limit' => 2]);
+        $this->registerAs($event, 'طبيب أسنان خريج جديد', '07801234561');
+
+        $this->get(route('osif.register'))->assertOk()->assertSee('إرسال طلب التسجيل');
+
+        $this->registerAs($event, 'طبيب أسنان خريج جديد', '07801234562');
+
+        $this->get(route('osif.register'))
+            ->assertOk()
+            ->assertSee('اكتمل العدد المخصص للتسجيل في الملتقى')
+            ->assertDontSee('إرسال طلب التسجيل');
+
+        // A form opened before the limit was reached is refused when sent.
+        $this->post(route('events.register', $event), [
+            'name' => 'علي حسين محمد', 'phone' => '07801234568', 'email' => 'ali@example.com', 'owns_clinic' => '0',
+            'professional_title' => 'طبيب أسنان اختصاص',
+        ])->assertSessionHasErrors(['name' => 'نعتذر، اكتمل العدد المخصص للتسجيل.']);
+        $this->assertSame(2, $event->registrations()->count());
+    }
+
+    public function test_coordinators_set_the_overall_limit_or_leave_it_open(): void
+    {
+        $event = $this->osifEvent();
+        $this->actingAsCoordinator();
+
+        Livewire::test(OsifRegistrationSettings::class)
+            ->fillForm(['registration_limit' => '600'])
+            ->call('save')
+            ->assertHasNoErrors();
+        $this->assertSame(600, $event->fresh()->registration_limit);
+
+        Livewire::test(OsifRegistrationSettings::class)
+            ->assertSchemaStateSet(['registration_limit' => 600], 'form')
+            ->fillForm(['registration_limit' => ''])
+            ->call('save')
+            ->assertHasNoErrors();
+        $this->assertNull($event->fresh()->registration_limit);
     }
 
     public function test_the_dashboard_shows_the_seats_left_for_each_title(): void
