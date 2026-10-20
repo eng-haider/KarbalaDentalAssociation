@@ -15,6 +15,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -112,22 +113,35 @@ class EventRegistrationsTable
                 SelectFilter::make('professional_title')
                     ->label('الصفة المهنية أو الأكاديمية')
                     ->options(fn (): array => static::professionalTitleOptions()),
+                TernaryFilter::make('invitation_sent_at')
+                    ->label('الدعوة')
+                    ->nullable()
+                    ->trueLabel('تم إرسالها')
+                    ->falseLabel('لم تُرسل بعد')
+                    ->placeholder('الكل'),
                 TernaryFilter::make('owns_clinic')
                     ->label('يمتلك عيادة')
                     ->trueLabel('نعم')
-                    ->falseLabel('لا'),
+                    ->falseLabel('لا')
+                    ->placeholder('الكل'),
                 TernaryFilter::make('is_vip')
                     ->label('نوع الدعوة')
                     ->trueLabel('VIP')
-                    ->falseLabel('عادية'),
+                    ->falseLabel('عادية')
+                    ->placeholder('الكل'),
                 SelectFilter::make('event_id')
                     ->label('الفعالية')
                     ->relationship('event', 'title')
                     ->visible($inAdminPanel),
                 TernaryFilter::make('is_handled')
                     ->label('تمت المعالجة')
+                    ->placeholder('الكل')
                     ->visible($inAdminPanel),
             ])
+            // Always on show above the list, not tucked behind the filter icon, and applied as soon as one is picked.
+            ->filtersLayout(FiltersLayout::AboveContent)
+            ->deferFilters(false)
+            ->filtersFormColumns(['sm' => 2, 'lg' => 3])
             ->recordActions([
                 SendInvitationAction::make()->button(),
                 EditAction::make()

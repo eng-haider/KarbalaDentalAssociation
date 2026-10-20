@@ -637,6 +637,28 @@ class OsifRegistrationTest extends TestCase
             ->assertMountedActionModalSeeHtml('x-bind:href="chatUrl"');
     }
 
+    public function test_registrations_filter_by_title_and_by_whether_the_invitation_was_sent(): void
+    {
+        $event = $this->osifEvent();
+        $invited = $this->registerAs($event, 'طبيب أسنان اختصاص', '07801234561');
+        $invited->update(['invitation_sent_at' => now()]);
+        $waiting = $this->registerAs($event, 'طبيب أسنان خريج جديد', '07801234562');
+        $this->actingAsCoordinator();
+
+        Livewire::test(ListEventRegistrations::class)
+            ->assertSee('لم تُرسل بعد')
+            ->filterTable('invitation_sent_at', true)
+            ->assertCanSeeTableRecords([$invited])
+            ->assertCanNotSeeTableRecords([$waiting])
+            ->filterTable('invitation_sent_at', false)
+            ->assertCanSeeTableRecords([$waiting])
+            ->assertCanNotSeeTableRecords([$invited])
+            ->resetTableFilters()
+            ->filterTable('professional_title', 'طبيب أسنان خريج جديد')
+            ->assertCanSeeTableRecords([$waiting])
+            ->assertCanNotSeeTableRecords([$invited]);
+    }
+
     public function test_the_card_upload_saves_the_type_it_was_drawn_for(): void
     {
         Storage::fake('public');
