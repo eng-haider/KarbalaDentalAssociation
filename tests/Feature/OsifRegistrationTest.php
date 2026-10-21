@@ -510,6 +510,20 @@ class OsifRegistrationTest extends TestCase
             ->assertSeeInOrder(['يتحمل المتقدم صحة كافة البيانات، وبخلاف ذلك يتحمل المسؤولية القانونية.', 'إرسال طلب التسجيل']);
     }
 
+    public function test_closed_or_full_registration_says_every_seat_is_booked(): void
+    {
+        $event = $this->osifEvent(['registration_open' => false]);
+
+        $this->get(route('osif'))->assertOk()->assertSee('تم حجز كافة المقاعد')->assertDontSee('احجز مقعدك');
+        $this->get(route('osif.register'))->assertOk()->assertSee('تم حجز كافة المقاعد')->assertDontSee('إرسال طلب التسجيل');
+
+        // Open, but the overall limit is reached: the main page's button says so too.
+        $event->update(['registration_open' => true, 'registration_limit' => 1]);
+        $this->registerAs($event, 'طبيب أسنان خريج جديد');
+
+        $this->get(route('osif'))->assertOk()->assertSee('تم حجز كافة المقاعد')->assertDontSee('احجز مقعدك');
+    }
+
     public function test_registration_closes_by_itself_at_the_overall_limit(): void
     {
         $event = $this->osifEvent(['registration_limit' => 2]);

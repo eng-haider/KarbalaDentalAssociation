@@ -75,7 +75,7 @@
     @else
         <div class="osif-closed">
             <i class="bi bi-lock"></i>
-            <h1>التسجيل مغلق حالياً</h1>
+            <h1>تم حجز كافة المقاعد</h1>
             <p>تابع صفحة OSIF على إنستغرام لمعرفة آخر التحديثات.</p>
         </div>
     @endif

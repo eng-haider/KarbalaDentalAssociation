@@ -16,10 +16,10 @@
                     </div>
 
                     <div class="osif-hero-actions">
-                        @if ($event->registration_open)
+                        @if ($event->registration_open && ! $event->isFullyBooked())
                             <a class="osif-button osif-button-primary" href="{{ route('osif.register') }}">احجز مقعدك <i class="bi bi-arrow-down-left"></i></a>
                         @else
-                            <span class="osif-button osif-button-disabled">التسجيل مغلق حالياً</span>
+                            <span class="osif-button osif-button-disabled">تم حجز كافة المقاعد</span>
                         @endif
                         <a class="osif-button osif-button-ghost" href="https://www.instagram.com/osif.karbala/" target="_blank" rel="noopener">تابع المستجدات <i class="bi bi-instagram"></i></a>
                     </div>
