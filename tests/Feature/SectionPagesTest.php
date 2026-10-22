@@ -50,6 +50,19 @@ class SectionPagesTest extends TestCase
         $this->get(route('news.show', $draft))->assertNotFound();
     }
 
+    public function test_a_news_photo_opens_full_size_in_the_lightbox(): void
+    {
+        $news = News::create([
+            'title' => 'اجتماع الهيئة العامة', 'slug' => 'general-assembly', 'body' => '<p>المحتوى</p>',
+            'image' => 'news/assembly.jpg', 'is_published' => true, 'published_at' => now(),
+        ]);
+
+        $this->get(route('news.show', $news))
+            ->assertOk()
+            ->assertSee('<a href="/storage/news/assembly.jpg" class="article-hero-link" data-fancybox="article"', false)
+            ->assertSee('/build/assets/lightbox-', false);
+    }
+
     public function test_course_and_event_detail_load(): void
     {
         $course = Course::create([

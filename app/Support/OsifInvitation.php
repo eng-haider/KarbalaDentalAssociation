@@ -35,7 +35,7 @@ class OsifInvitation
                 'vip' => $chat(static::message($registration, vip: true)),
             ],
             'name' => static::guestName($registration),
-            'title' => $registration->professional_title,
+            'title' => $registration->cardTitle(),
             'event' => $event->title,
             'brand' => trim('OSIF KARBALA '.$event->starts_at?->year),
             'date' => static::date($registration),

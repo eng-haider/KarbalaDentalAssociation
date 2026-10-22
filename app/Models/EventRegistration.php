@@ -10,6 +10,14 @@ use Illuminate\Support\Str;
 
 class EventRegistration extends Model
 {
+    /** Titles the invitation card shows as plain «طبيب أسنان»; only the specialist keeps theirs. */
+    public const TITLES_SHOWN_AS_DENTIST = [
+        'طبيب أسنان مقيم أقدم',
+        'طبيب أسنان مقيم',
+        'طبيب أسنان تدرج',
+        'طبيب أسنان خريج جديد',
+    ];
+
     protected $fillable = [
         'event_id',
         'name',
@@ -101,6 +109,17 @@ class EventRegistration extends Model
     public function whatsappNumber(): ?string
     {
         return WhatsApp::number($this->whatsapp_phone ?: $this->phone);
+    }
+
+    /** The professional title as the invitation card shows it; the registration keeps the full one. */
+    public function cardTitle(): ?string
+    {
+        // «اسنان» or «أسنان», «اقدم» or «أقدم»: the same title however it was typed.
+        $normalise = fn (?string $title): string => Str::squish(str_replace(['أ', 'إ', 'آ'], 'ا', (string) $title));
+
+        return in_array($normalise($this->professional_title), array_map($normalise, self::TITLES_SHOWN_AS_DENTIST), true)
+            ? 'طبيب أسنان'
+            : $this->professional_title;
     }
 
     public function invitationCode(): string

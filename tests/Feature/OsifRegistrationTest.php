@@ -265,6 +265,27 @@ class OsifRegistrationTest extends TestCase
         $this->assertMatchesRegularExpression('/^[A-Za-z0-9]{40}$/', $registration->invitation_token);
     }
 
+    public function test_the_card_shows_residents_graduates_and_rotation_dentists_as_dentists(): void
+    {
+        $event = $this->osifEvent();
+
+        foreach ([...EventRegistration::TITLES_SHOWN_AS_DENTIST, 'طبيب اسنان مقيم اقدم'] as $i => $title) {
+            $registration = $this->registerAs($event, $title, '0780123456'.$i);
+
+            $this->assertSame('طبيب أسنان', $registration->cardTitle(), $title);
+            $this->assertSame('طبيب أسنان', OsifInvitation::payload($registration)['title']);
+            $this->get($registration->invitationUrl())
+                ->assertOk()
+                ->assertSee('<p class="osif-pass-title">طبيب أسنان</p>', false);
+            // The registration itself keeps the full title.
+            $this->assertSame($title, $registration->fresh()->professional_title);
+        }
+
+        // The specialist keeps theirs.
+        $specialist = $this->registerAs($event, 'طبيب أسنان اختصاص', '07801234599');
+        $this->assertSame('طبيب أسنان اختصاص', $specialist->cardTitle());
+    }
+
     public function test_unknown_invitation_codes_say_so_instead_of_a_bare_404(): void
     {
         $this->osifRegistration();

@@ -1,4 +1,8 @@
 <x-layouts.site :title="$item->title . ' | ' . config('app.name')" :description="$item->excerpt">
+    @push('scripts')
+        @vite('resources/js/lightbox.js')
+    @endpush
+
     <x-site.page-header title="{{ $item->title }}" eyebrow="خبر" />
 
     <article class="article-page">

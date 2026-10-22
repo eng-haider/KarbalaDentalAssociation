@@ -1573,6 +1573,9 @@ a.ad-card:hover .ad-bg { transform: scale(1.04); }
     width: 100%; max-height: 26rem; object-fit: cover;
     border-radius: var(--radius); margin-bottom: 1.75rem;
 }
+/* Article photos open full size in the lightbox. */
+.article-hero-link { display: block; cursor: zoom-in; }
+.article-body img[data-fancybox] { cursor: zoom-in; }
 .article-meta {
     display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;
     font-size: .9rem; color: var(--muted); font-weight: 600;

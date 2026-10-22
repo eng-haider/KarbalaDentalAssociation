@@ -16,5 +16,8 @@
         @endif
     </div>
 @elseif ($item->image)
-    <img src="{{ Storage::url($item->image) }}" alt="{{ $item->title }}" class="article-hero">
+    {{-- Opens full size (uncropped) in the lightbox; see resources/js/lightbox.js. --}}
+    <a href="{{ Storage::url($item->image) }}" class="article-hero-link" data-fancybox="article" data-caption="{{ $item->title }}">
+        <img src="{{ Storage::url($item->image) }}" alt="{{ $item->title }}" class="article-hero">
+    </a>
 @endif

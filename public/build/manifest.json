@@ -35,7 +35,7 @@
     "isEntry": true
   },
   "resources/css/site.css": {
-    "file": "assets/site-AOwKjJkt.css",
+    "file": "assets/site-C6EfFB_j.css",
     "name": "site",
     "names": [
       "site.css"
@@ -59,6 +59,15 @@
     "isEntry": true,
     "imports": [
       "_share-N-98QgFR.js"
+    ]
+  },
+  "resources/js/lightbox.js": {
+    "file": "assets/lightbox-Djzi_UJC.js",
+    "name": "lightbox",
+    "src": "resources/js/lightbox.js",
+    "isEntry": true,
+    "css": [
+      "assets/lightbox-BnGLgMVy.css"
     ]
   },
   "resources/js/osif-invitation.js": {

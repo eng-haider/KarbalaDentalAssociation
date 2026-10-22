@@ -16,6 +16,7 @@ export default defineConfig({
                 'resources/css/osif-shop.css',
                 'resources/js/osif-shop.js',
                 'resources/js/dashboard-share.js',
+                'resources/js/lightbox.js',
             ],
             refresh: true,
         }),

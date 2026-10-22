@@ -31,7 +31,7 @@
                 <p class="osif-pass-kicker">{{ $label }} · {{ $registration->invitationCode() }}</p>
                 <h1 id="osif-pass-name">{{ $guest }}</h1>
                 @if ($registration->professional_title && ! $registration->is_vip)
-                    <p class="osif-pass-title">{{ $registration->professional_title }}</p>
+                    <p class="osif-pass-title">{{ $registration->cardTitle() }}</p>
                 @endif
 
                 <dl class="osif-pass-details">
