@@ -6,13 +6,13 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { readLoadedImage } from './browser-image.mjs';
-import { DISCOUNTS_URL, OFFERS_ASSETS, VIEWPORT, chromePath } from './company-offers-config.mjs';
+import { OSIF_COMPANIES_URL, OFFERS_ASSETS, VIEWPORT, chromePath } from './company-offers-config.mjs';
 
 await mkdir(OFFERS_ASSETS, { recursive: true });
 
 const browser = await chromium.launch({ executablePath: chromePath(), headless: true });
 const manifest = {
-  source: DISCOUNTS_URL,
+  source: OSIF_COMPANIES_URL,
   capturedAt: new Date().toISOString(),
   viewport: VIEWPORT,
   deviceScaleFactor: 2,
@@ -59,16 +59,14 @@ try {
     console.log(`Captured ${file}`);
   }
 
-  console.log(`Opening ${DISCOUNTS_URL}`);
-  const response = await page.goto(DISCOUNTS_URL, { waitUntil: 'domcontentloaded', timeout: 90000 });
-  if (!response?.ok()) throw new Error(`Discounts page returned HTTP ${response?.status()}`);
-  await page.locator('#osif-companies').waitFor({ state: 'visible', timeout: 90000 });
+  console.log(`Opening ${OSIF_COMPANIES_URL}`);
+  const response = await page.goto(OSIF_COMPANIES_URL, { waitUntil: 'domcontentloaded', timeout: 90000 });
+  if (!response?.ok()) throw new Error(`OSIF companies page returned HTTP ${response?.status()}`);
+  await page.locator('.shop-companies').waitFor({ state: 'visible', timeout: 90000 });
   await page.waitForLoadState('networkidle', { timeout: 45000 });
   await page.addStyleTag({ content: `
     html, body, * { cursor: none !important; }
     ::-webkit-scrollbar { display: none; }
-    /* Match the compact banner treatment in the production stylesheet. */
-    .ad-bg { max-height: 420px !important; margin-inline: auto !important; }
   ` });
   await waitForImages();
 
@@ -81,9 +79,9 @@ try {
 
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await paint();
-  await record('discounts.png', { url: page.url(), scrollY: 0 });
+  await record('companies.png', { url: page.url(), scrollY: 0 });
 
-  const companies = page.locator('#osif-companies a[href*="/osif/companies/"]');
+  const companies = page.locator('.shop-companies a.shop-company-card[href*="/osif/companies/"]');
   const choices = await companies.evaluateAll(links => links.map(link => ({
     href: link.href,
     text: (link.textContent || '').replace(/\s+/g, ' ').trim(),
@@ -91,8 +89,8 @@ try {
   const selected = choices.find(choice => /\d+\s*منتجات/.test(choice.text) && !choice.text.includes('المنتجات قريباً'));
   if (!selected) throw new Error('No public company with products is available for the guide.');
 
-  await page.locator('#osif-companies').scrollIntoViewIfNeeded();
-  await waitForImages('#osif-companies');
+  await page.locator('.shop-companies').scrollIntoViewIfNeeded();
+  await waitForImages('.shop-companies');
   await record('participating-companies.png', { url: page.url(), selectedCompany: selected.text, selectedCompanyUrl: selected.href, scrollY: await page.evaluate(() => window.scrollY) });
 
   const companyResponse = await page.goto(selected.href, { waitUntil: 'domcontentloaded', timeout: 90000 });

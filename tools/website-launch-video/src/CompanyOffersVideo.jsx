@@ -56,7 +56,7 @@ function Intro() {
       <Emblem src="company-offers/sums-c.svg" size={154} ring="#9fc2fb" />
     </div>
     <div dir="rtl" style={{ position: 'absolute', top: 516, width: '100%', color: GOLD, fontSize: 28, fontWeight: 800, opacity: appear(frame, 5, 16) }}>OSIF KARBALA 2026</div>
-    <div dir="rtl" style={{ position: 'absolute', top: 660, width: '100%', fontSize: 84, fontWeight: 900, lineHeight: 1.45, opacity: appear(frame, 10, 20), transform: `translateY(${28 * (1 - appear(frame, 10, 20))}px)` }}>عروض الشركات<br />المشاركة</div>
+    <div dir="rtl" style={{ position: 'absolute', top: 660, width: '100%', fontSize: 84, fontWeight: 900, lineHeight: 1.45, opacity: appear(frame, 10, 20), transform: `translateY(${28 * (1 - appear(frame, 10, 20))}px)` }}>الشركات<br />المشاركة</div>
     <div dir="rtl" style={{ position: 'absolute', top: 965, width: '100%', fontSize: 38, fontWeight: 600, color: '#e2e9f3', opacity: appear(frame, 18, 18) }}>اختَر الشركة، أضف المنتجات، وأرسل طلبك</div>
   </AbsoluteFill>;
 }
@@ -105,7 +105,7 @@ export function CompanyOffersVideo() {
   return <AbsoluteFill style={{ fontFamily: 'Cairo, sans-serif', color: '#fff', overflow: 'hidden' }}>
     <Fonts /><Background />
     <Sequence from={0} durationInFrames={90}><Intro /></Sequence>
-    <Scene from={66} duration={120}><BrowserFrame src="discounts.png" step={OFFER_SCENES[0].step} label={OFFER_SCENES[0].title} zoom={0.995} /></Scene>
+    <Scene from={66} duration={120}><BrowserFrame src="companies.png" step={OFFER_SCENES[0].step} label={OFFER_SCENES[0].title} zoom={0.995} /></Scene>
     <Scene from={156} duration={150}><BrowserFrame src="participating-companies.png" step={OFFER_SCENES[1].step} label={OFFER_SCENES[1].title} zoom={0.99} /></Scene>
     <Scene from={276} duration={150}><BrowserFrame src="product-added.png" step={OFFER_SCENES[2].step} label={OFFER_SCENES[2].title} zoom={1.01} /></Scene>
     <Scene from={396} duration={150}><BrowserFrame src="cart.png" step={OFFER_SCENES[3].step} label={OFFER_SCENES[3].title} zoom={1.01} /></Scene>

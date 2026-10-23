@@ -85,6 +85,10 @@ class OsifInvitation
             ...($withLink
                 ? [$vip ? 'بطاقة دعوتكم الخاصة (VIP) ورمز الدخول (QR):' : 'بطاقة الدعوة الخاصة بك ورمز الدخول (QR):', $registration->invitationShareUrl()]
                 : ['بطاقة الدعوة الخاصة بك مرفقة، يرجى إبراز الدعوة للدخول من البوابة الرئيسية، ورمز QR لاستلام وجبة الغداء.']),
+            // After the invitation link, so WhatsApp still previews the card.
+            '',
+            'عروض وخصومات الشركات المشاركة:',
+            route('discounts'),
         ], fn (?string $line) => $line !== null));
     }
 

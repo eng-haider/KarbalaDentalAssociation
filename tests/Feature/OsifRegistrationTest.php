@@ -217,6 +217,10 @@ class OsifRegistrationTest extends TestCase
         $this->assertStringContainsString('تشمل الدعوة وجبة غداء', $payload['message']);
         $this->assertStringContainsString('يرجى إبراز رمز QR لاستلام وجبة الغداء', $payload['message']);
         $this->assertStringContainsString('يرجى إبراز الدعوة للدخول من البوابة الرئيسية', OsifInvitation::message($registration, false));
+        // The discounts page follows the invitation link, which stays first for the card preview.
+        $this->assertStringContainsString(route('discounts'), $payload['message']);
+        $this->assertLessThan(strpos($payload['message'], route('discounts')), strpos($payload['message'], $registration->invitationShareUrl()));
+        $this->assertStringContainsString(rawurlencode(route('discounts')), $payload['chatUrls']['vip']);
 
         Livewire::test(ListEventRegistrations::class)
             ->assertCanSeeTableRecords([$registration])
