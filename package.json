@@ -6,7 +6,9 @@
         "build": "vite build",
         "dev": "vite",
         "launch-video": "npm --prefix tools/website-launch-video run launch-video",
-        "render-launch-video": "npm --prefix tools/website-launch-video run render"
+        "render-launch-video": "npm --prefix tools/website-launch-video run render",
+        "company-offers-video": "npm --prefix tools/website-launch-video run company-offers-video",
+        "render-company-offers-video": "npm --prefix tools/website-launch-video run render-company-offers"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

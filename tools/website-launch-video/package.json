@@ -7,7 +7,11 @@
     "capture": "node capture.mjs",
     "render": "node render.mjs && node verify.mjs",
     "verify": "node verify.mjs",
-    "launch-video": "node capture.mjs && node render.mjs && node verify.mjs"
+    "launch-video": "node capture.mjs && node render.mjs && node verify.mjs",
+    "capture-company-offers": "node capture-company-offers.mjs",
+    "render-company-offers": "node render-company-offers.mjs && node verify-company-offers.mjs",
+    "verify-company-offers": "node verify-company-offers.mjs",
+    "company-offers-video": "node capture-company-offers.mjs && node render-company-offers.mjs && node verify-company-offers.mjs"
   },
   "dependencies": {
     "@remotion/bundler": "4.0.352",

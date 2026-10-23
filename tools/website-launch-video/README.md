@@ -50,6 +50,31 @@ before sharing a capture. The final CTA always points to the official live URL.
 install Chrome/Chromium, or run `npx playwright install chromium` inside the
 `tools/website-launch-video` directory if no system browser is available.
 
+## Participating-company offers guide
+
+The 20-second companion walkthrough is captured from the live `/discounts`
+page and an available public company with products. It shows the exact public
+flow: find **عروض الشركات المشاركة**, choose a company, add a product, open
+the cart, then hand the ready-written request to WhatsApp.
+
+```sh
+npm run company-offers-video
+```
+
+It creates:
+
+```text
+output/karbala-dental-association-company-offers.mp4
+```
+
+The recording never submits a request, payment, or WhatsApp message. It stops
+at the site's own **طلبك جاهز في واتساب** state, which tells the viewer to press
+**إرسال** inside WhatsApp. To re-render from an already verified capture:
+
+```sh
+npm run render-company-offers-video
+```
+
 ## Edit and render again
 
 The composition lives in `src/LaunchVideo.jsx`; shared timing is in `timing.mjs`.

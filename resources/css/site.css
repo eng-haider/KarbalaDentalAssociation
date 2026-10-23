@@ -840,7 +840,7 @@ a.ad-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
 
 .ad-bg {
     display: block; width: 100%; height: auto;
-    max-height: 640px; object-fit: contain; /* very tall images letterbox instead of stretching the page */
+    max-height: 420px; margin-inline: auto; object-fit: contain; /* Keep uploaded banners compact and centred without cropping them. */
     transition: transform .6s ease;
 }
 a.ad-card:hover .ad-bg { transform: scale(1.04); }
