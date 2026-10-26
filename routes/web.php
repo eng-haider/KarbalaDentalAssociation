@@ -95,6 +95,11 @@ Route::get('/osif/invitation/{token}/pdf/download', [OsifInvitationController::c
     ->name('osif.invitation.pdf.download');
 Route::post('/osif/invitations/{registration}/files', [OsifInvitationController::class, 'storeFiles'])
     ->name('osif.invitation.files');
+// «إرسال للجميع» in the dashboard: each card's data, then its WhatsApp API send.
+Route::get('/osif/invitations/{registration}/payload', [OsifInvitationController::class, 'payload'])
+    ->name('osif.invitation.payload');
+Route::post('/osif/invitations/{registration}/send', [OsifInvitationController::class, 'send'])
+    ->name('osif.invitation.send');
 
 // Public form submissions
 Route::post('/complaints', [ComplaintController::class, 'store'])

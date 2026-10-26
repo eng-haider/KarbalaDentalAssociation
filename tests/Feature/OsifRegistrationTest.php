@@ -14,7 +14,9 @@ use App\Support\OsifInvitation;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -33,6 +35,16 @@ class OsifRegistrationTest extends TestCase
             'registration_open' => true,
             ...$attributes,
         ]);
+    }
+
+    /** The only role that sends through the WhatsApp API. */
+    private function actingAsWhatsAppAdmin(): User
+    {
+        $user = User::factory()->create(['role' => User::ROLE_WHATSAPP_ADMIN]);
+        $this->actingAs($user);
+        Filament::setCurrentPanel(Filament::getPanel('osif'));
+
+        return $user;
     }
 
     private function actingAsCoordinator(): User
@@ -718,5 +730,191 @@ class OsifRegistrationTest extends TestCase
 
         $upload(['vip' => '0']);
         $this->assertFalse($registration->refresh()->is_vip);
+    }
+
+    public function test_the_invitation_can_be_sent_through_the_whatsapp_api(): void
+    {
+        Storage::fake('public');
+        config(['services.adscientist.key' => 'test-key', 'services.adscientist.invitation_template' => 'oct_26']);
+        Http::preventStrayRequests();
+        Http::fake(['ai.adscientist.iq/*' => Http::response(['success' => true])]);
+        $registration = $this->osifRegistration();
+        $registration->update(['name' => 'د. حيدر عبد عون كاظم']);
+        Storage::disk('public')->put($registration->invitationFilePath(OsifInvitation::CARD), 'png');
+        $this->actingAsWhatsAppAdmin();
+
+        Livewire::test(ListEventRegistrations::class)
+            ->mountAction(TestAction::make('sendInvitation')->table($registration))
+            ->assertMountedActionModalSee('إرسال الدعوة تلقائياً')
+            ->callMountedAction(['api' => true])
+            ->assertHasNoErrors();
+
+        Http::assertSent(function (Request $request) use ($registration): bool {
+            $components = collect($request['components'])->keyBy('type');
+
+            return $request->url() === 'https://ai.adscientist.iq/v1/messages/send-template'
+                && $request->hasHeader('x-api-key', 'test-key')
+                && $request['phoneNumber'] === '9647801234567'
+                && $request['templateName'] === 'oct_26'
+                && $request['languageCode'] === 'ar'
+                && str_starts_with($components['header']['parameters'][0]['image']['link'], route('osif.invitation.card.image', $registration->invitation_token))
+                // The template already says «مرحباً د», so the typed title is dropped.
+                && $components['body']['parameters'][0]['text'] === 'حيدر عبد عون كاظم'
+                && $components['body']['parameters'][1]['text'] === $registration->invitationUrl()
+                && $components['button']['index'] === 2;
+        });
+        $this->assertNotNull($registration->refresh()->invitation_sent_at);
+    }
+
+    public function test_a_refused_api_send_leaves_the_invitation_unsent(): void
+    {
+        Storage::fake('public');
+        config(['services.adscientist.key' => 'test-key']);
+        Http::preventStrayRequests();
+        Http::fake(['ai.adscientist.iq/*' => Http::response(['success' => false, 'error' => 'Template not approved'], 400)]);
+        $registration = $this->osifRegistration();
+        Storage::disk('public')->put($registration->invitationFilePath(OsifInvitation::CARD), 'png');
+        $this->actingAsWhatsAppAdmin();
+
+        Livewire::test(ListEventRegistrations::class)
+            ->mountAction(TestAction::make('sendInvitation')->table($registration))
+            ->callMountedAction(['api' => true])
+            ->assertNotified('تعذّر إرسال الدعوة');
+
+        $this->assertNull($registration->refresh()->invitation_sent_at);
+
+        // Without a drawn card, or for a VIP guest, nothing is sent at all.
+        Storage::disk('public')->delete($registration->invitationFilePath(OsifInvitation::CARD));
+        Livewire::test(ListEventRegistrations::class)
+            ->mountAction(TestAction::make('sendInvitation')->table($registration))
+            ->callMountedAction(['api' => true])
+            ->assertNotified('تعذّر إرسال الدعوة');
+        Http::assertSentCount(1);
+        $this->assertNull($registration->refresh()->invitation_sent_at);
+    }
+
+    public function test_the_automatic_send_is_hidden_without_an_api_key(): void
+    {
+        config(['services.adscientist.key' => null]);
+        $registration = $this->osifRegistration();
+        $this->actingAsWhatsAppAdmin();
+
+        Livewire::test(ListEventRegistrations::class)
+            ->mountAction(TestAction::make('sendInvitation')->table($registration))
+            ->assertMountedActionModalDontSee('إرسال الدعوة تلقائياً')
+            ->assertMountedActionModalSee('إرسال رابط الدعوة');
+    }
+
+    public function test_send_to_all_lists_only_attendees_not_invited_yet(): void
+    {
+        config(['services.adscientist.key' => 'test-key']);
+        $event = $this->osifEvent();
+        $person = fn (string $name, array $extra = []) => $event->registrations()->create([
+            'name' => $name,
+            'phone' => '07801234567',
+            'professional_title' => 'طبيب أسنان اختصاص',
+            ...$extra,
+        ]);
+        $waiting = $person('زينب علي');
+        $person('علي حسن', ['invitation_sent_at' => now()]);
+        $person('سارة كريم', ['is_vip' => true]);
+        $person('محمد جواد', ['phone' => '—']);
+        $this->actingAsWhatsAppAdmin();
+
+        Livewire::test(ListEventRegistrations::class)
+            ->assertActionVisible('sendAllInvitations')
+            ->mountAction('sendAllInvitations')
+            ->assertMountedActionModalSee('ستُرسل الدعوة إلى 1 مسجّل لم تُرسل لهم بعد')
+            ->assertMountedActionModalSee('1 بدعوة VIP')
+            ->assertMountedActionModalSee('1 بلا رقم واتساب صالح')
+            ->assertMountedActionModalSeeHtml('د. زينب علي')
+            ->assertMountedActionModalDontSeeHtml('د. علي حسن');
+
+        $this->getJson(route('osif.invitation.payload', $waiting))
+            ->assertOk()
+            ->assertJsonPath('name', 'د. زينب علي')
+            ->assertJsonPath('sendUrl', route('osif.invitation.send', $waiting, absolute: false));
+    }
+
+    public function test_send_to_all_needs_the_api_key(): void
+    {
+        config(['services.adscientist.key' => null]);
+        $this->actingAsWhatsAppAdmin();
+
+        Livewire::test(ListEventRegistrations::class)->assertActionHidden('sendAllInvitations');
+    }
+
+    public function test_send_to_all_invites_each_attendee_only_once(): void
+    {
+        Storage::fake('public');
+        config(['services.adscientist.key' => 'test-key']);
+        Http::preventStrayRequests();
+        Http::fake(['ai.adscientist.iq/*' => Http::response(['success' => true])]);
+        $registration = $this->osifRegistration();
+        Storage::disk('public')->put($registration->invitationFilePath(OsifInvitation::CARD), 'png');
+
+        $this->postJson(route('osif.invitation.send', $registration))->assertUnauthorized();
+
+        $this->actingAsWhatsAppAdmin();
+        $this->postJson(route('osif.invitation.send', $registration))->assertOk()->assertJson(['sent' => true]);
+        $this->assertNotNull($registration->refresh()->invitation_sent_at);
+        $this->assertTrue($registration->is_handled);
+
+        $this->postJson(route('osif.invitation.send', $registration))->assertStatus(409);
+        Http::assertSentCount(1);
+    }
+
+    public function test_a_failed_send_to_all_leaves_the_attendee_waiting(): void
+    {
+        Storage::fake('public');
+        config(['services.adscientist.key' => 'test-key']);
+        Http::preventStrayRequests();
+        Http::fake(['ai.adscientist.iq/*' => Http::response(['success' => false, 'error' => ['code' => 'TEMPLATE', 'message' => 'Template not approved']], 400)]);
+        $registration = $this->osifRegistration();
+        $this->actingAsWhatsAppAdmin();
+
+        // No card has been drawn yet, so nothing is sent.
+        $this->postJson(route('osif.invitation.send', $registration))
+            ->assertStatus(422)
+            ->assertJson(['message' => 'لم تُجهَّز بطاقة الدعوة بعد.']);
+        Http::assertNothingSent();
+
+        Storage::disk('public')->put($registration->invitationFilePath(OsifInvitation::CARD), 'png');
+        $this->postJson(route('osif.invitation.send', $registration))
+            ->assertStatus(422)
+            ->assertJson(['message' => 'Template not approved']);
+
+        $registration->refresh();
+        $this->assertNull($registration->invitation_sent_at);
+        $this->assertFalse($registration->is_handled);
+    }
+
+    public function test_only_the_whatsapp_admin_role_sends_through_the_api(): void
+    {
+        Storage::fake('public');
+        config(['services.adscientist.key' => 'test-key']);
+        Http::preventStrayRequests();
+        Http::fake();
+        $registration = $this->osifRegistration();
+        Storage::disk('public')->put($registration->invitationFilePath(OsifInvitation::CARD), 'png');
+
+        foreach ([User::ROLE_OSIF_COORDINATOR, User::ROLE_ADMIN] as $role) {
+            $this->actingAs(User::factory()->create(['role' => $role]));
+            Filament::setCurrentPanel(Filament::getPanel('osif'));
+
+            Livewire::test(ListEventRegistrations::class)
+                ->assertActionHidden('sendAllInvitations')
+                ->mountAction(TestAction::make('sendInvitation')->table($registration))
+                ->assertMountedActionModalDontSee('إرسال الدعوة تلقائياً')
+                // The wa.me link stays for everyone.
+                ->assertMountedActionModalSee('إرسال رابط الدعوة')
+                ->callMountedAction(['api' => true])
+                ->assertNotified('تعذّر إرسال الدعوة');
+
+            $this->postJson(route('osif.invitation.send', $registration))->assertForbidden();
+        }
+
+        Http::assertNothingSent();
+        $this->assertNull($registration->refresh()->invitation_sent_at);
     }
 }

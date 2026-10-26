@@ -4,7 +4,7 @@
 // VIP guests get a black-and-gold version of the card. Canvas text is
 // shaped by the browser, so Arabic renders correctly without a headless Chrome
 // on the server. Used by the "إرسال الدعوة" modal
-// (resources/views/filament/osif/invitation-modal.blade.php).
+// (resources/views/filament/osif/invitation-modal.blade.php) and «إرسال للجميع».
 
 import qrcode from 'qrcode-generator';
 
@@ -643,6 +643,47 @@ const toBlob = (element, type, quality) => new Promise((resolve, reject) => {
     element.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Could not export the card.'))), type, quality);
 });
 
+const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+/** The card, its print PDF and the wide link preview for one attendee. */
+async function drawFiles(data, vip) {
+    const [, osif, syndicate, university] = await Promise.all([
+        ensureFonts(data.font),
+        loadImage(data.logos.osif),
+        loadImage(data.logos.syndicate),
+        loadImage(data.logos.university),
+    ]);
+    const logos = { osif, syndicate, university };
+    const card = { ...data, vip };
+
+    const image = await toBlob(drawCard(card, logos), 'image/png');
+    // The PDF is drawn at twice the size so it stays sharp when printed.
+    const print = await toBlob(drawCard(card, logos, 2), 'image/jpeg', 0.9);
+    const pdf = await pdfFrom(print, 2160, 2700, `${label(card)} — ${card.name}`);
+    const preview = await toBlob(drawPreview(card, logos), 'image/jpeg', 0.88);
+
+    return { card: image, pdf: new File([pdf], data.pdfName, { type: 'application/pdf' }), preview };
+}
+
+async function uploadFiles(url, files, vip) {
+    const body = new FormData();
+    body.append('card', files.card, 'card.png');
+    body.append('preview', files.preview, 'preview.jpg');
+    body.append('pdf', files.pdf, 'invitation.pdf');
+    body.append('vip', vip ? '1' : '0');
+
+    const response = await fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+        body,
+    });
+
+    if (! response.ok) {
+        throw new Error(`Upload failed with ${response.status}`);
+    }
+}
+
 window.osifInvitation = (data) => ({
     data,
     vip: data.vip,
@@ -681,26 +722,14 @@ window.osifInvitation = (data) => ({
         this.discardPreview();
 
         try {
-            const [, osif, syndicate, university] = await Promise.all([
-                ensureFonts(this.data.font),
-                loadImage(this.data.logos.osif),
-                loadImage(this.data.logos.syndicate),
-                loadImage(this.data.logos.university),
-            ]);
-            const logos = { osif, syndicate, university };
-            const card = { ...this.data, vip: this.vip };
-
-            this.blob = await toBlob(drawCard(card, logos), 'image/png');
+            const files = await drawFiles(this.data, this.vip);
+            this.blob = files.card;
+            this.pdf = files.pdf;
             this.previewUrl = URL.createObjectURL(this.blob);
-
-            // The PDF is drawn at twice the size so it stays sharp when printed.
-            const print = await toBlob(drawCard(card, logos, 2), 'image/jpeg', 0.9);
-            const pdf = await pdfFrom(print, 2160, 2700, `${label(card)} — ${card.name}`);
-            this.pdf = new File([pdf], this.data.pdfName, { type: 'application/pdf' });
             this.status = 'uploading';
 
-            const preview = await toBlob(drawPreview(card, logos), 'image/jpeg', 0.88);
-            await this.upload(preview);
+            // Toggling is locked while busy, so this is the type just drawn.
+            await uploadFiles(this.data.uploadUrl, files, this.vip);
         } catch (error) {
             console.error(error);
             this.uploadFailed = Boolean(this.blob);
@@ -717,29 +746,6 @@ window.osifInvitation = (data) => ({
         if (this.previewUrl) {
             URL.revokeObjectURL(this.previewUrl);
             this.previewUrl = null;
-        }
-    },
-
-    async upload(preview) {
-        const body = new FormData();
-        body.append('card', this.blob, 'card.png');
-        body.append('preview', preview, 'preview.jpg');
-        body.append('pdf', this.pdf, 'invitation.pdf');
-        // Toggling is locked while busy, so this is the type just drawn.
-        body.append('vip', this.vip ? '1' : '0');
-
-        const response = await fetch(this.data.uploadUrl, {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                Accept: 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-            },
-            body,
-        });
-
-        if (! response.ok) {
-            throw new Error(`Upload failed with ${response.status}`);
         }
     },
 
@@ -760,5 +766,105 @@ window.osifInvitation = (data) => ({
         document.body.append(link);
         link.click();
         link.remove();
+    },
+});
+
+/** After this many failures in a row the API is likely refusing everything, so the run stops. */
+const STOP_AFTER_FAILURES = 3;
+
+/**
+ * «إرسال للجميع»: goes through the attendees still waiting for an invitation,
+ * drawing and uploading each card here (only the browser shapes the Arabic
+ * text) before the server sends it with the WhatsApp template. The server
+ * skips anyone already invited, so a stopped run can simply be started again.
+ * Used by resources/views/filament/osif/bulk-invitations-modal.blade.php.
+ */
+window.osifBulkInvitations = ({ queue }) => ({
+    queue,
+    status: 'idle', // idle → running → done | stopped
+    next: 0,
+    sent: 0,
+    skipped: 0,
+    failures: [],
+    current: null,
+    stopReason: null,
+
+    get percent() {
+        return this.queue.length ? Math.round((this.next / this.queue.length) * 100) : 0;
+    },
+
+    init() {
+        this.warnOnLeave = (event) => {
+            if (this.status === 'running') {
+                event.preventDefault();
+                event.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', this.warnOnLeave);
+    },
+
+    destroy() {
+        // Closing the dialog ends the run after the attendee in progress.
+        this.status = this.status === 'running' ? 'stopped' : this.status;
+        window.removeEventListener('beforeunload', this.warnOnLeave);
+    },
+
+    stop() {
+        this.stopReason = 'إيقاف يدوي';
+        this.status = 'stopped';
+    },
+
+    async start() {
+        this.status = 'running';
+        this.stopReason = null;
+        let failuresInARow = 0;
+
+        while (this.status === 'running' && this.next < this.queue.length) {
+            const item = this.queue[this.next];
+            this.current = item.name;
+
+            try {
+                const response = await fetch(item.payload, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+
+                if (! response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                await uploadFiles(data.uploadUrl, await drawFiles(data, false), false);
+
+                const sent = await fetch(data.sendUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+                });
+
+                if (sent.status === 409) {
+                    this.skipped++;
+                } else if (! sent.ok) {
+                    const { message } = await sent.json().catch(() => ({}));
+                    throw new Error(message || `HTTP ${sent.status}`);
+                } else {
+                    this.sent++;
+                }
+
+                failuresInARow = 0;
+            } catch (error) {
+                console.error(error);
+                this.failures.push({ name: item.name, message: error.message });
+
+                if (++failuresInARow >= STOP_AFTER_FAILURES) {
+                    this.stopReason = error.message;
+                    this.status = 'stopped';
+                }
+            }
+
+            this.next++;
+        }
+
+        this.current = null;
+        this.status = this.next >= this.queue.length ? 'done' : 'stopped';
+        // The list behind the dialog shows the new statuses and counts.
+        this.$wire.$refresh();
     },
 });

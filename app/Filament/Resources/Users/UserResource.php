@@ -99,7 +99,7 @@ class UserResource extends Resource
                     ->label('الدور')
                     ->formatStateUsing(fn (string $state): string => User::roleLabels()[$state] ?? $state)
                     ->badge()
-                    ->color(fn (string $state): string => $state === User::ROLE_ADMIN ? 'warning' : 'primary'),
+                    ->color(fn (string $state): string => in_array($state, [User::ROLE_ADMIN, User::ROLE_WHATSAPP_ADMIN], true) ? 'warning' : 'primary'),
                 TextColumn::make('created_at')->label('أُنشئ في')->dateTime('Y-m-d H:i')->sortable(),
             ])
             ->defaultSort('created_at', 'desc')

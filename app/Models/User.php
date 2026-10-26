@@ -19,6 +19,9 @@ class User extends Authenticatable implements FilamentUser
 {
     public const ROLE_ADMIN = 'admin';
 
+    /** An administrator who may also send OSIF invitations through the WhatsApp API. */
+    public const ROLE_WHATSAPP_ADMIN = 'whatsapp_admin';
+
     public const ROLE_OSIF_COORDINATOR = 'osif_coordinator';
 
     /** An exhibiting company's login; it reaches only that company's dashboard. */
@@ -45,6 +48,7 @@ class User extends Authenticatable implements FilamentUser
     {
         return [
             self::ROLE_ADMIN => 'مدير النظام',
+            self::ROLE_WHATSAPP_ADMIN => 'مدير النظام (إرسال واتساب)',
             self::ROLE_OSIF_COORDINATOR => 'منسق OSIF',
         ];
     }
@@ -69,7 +73,13 @@ class User extends Authenticatable implements FilamentUser
     {
         // Existing accounts created before roles were introduced retain their
         // administration access when the migration is deployed.
-        return ($this->role ?? self::ROLE_ADMIN) === self::ROLE_ADMIN;
+        return in_array($this->role ?? self::ROLE_ADMIN, [self::ROLE_ADMIN, self::ROLE_WHATSAPP_ADMIN], true);
+    }
+
+    /** Sending through the WhatsApp API costs money and reaches every attendee, so it is one role's alone. */
+    public function canSendWhatsAppInvitations(): bool
+    {
+        return $this->role === self::ROLE_WHATSAPP_ADMIN;
     }
 
     public function canManageOsif(): bool

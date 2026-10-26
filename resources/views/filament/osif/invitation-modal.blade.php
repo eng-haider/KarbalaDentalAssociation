@@ -62,6 +62,24 @@
             </x-filament::tabs>
         </div>
 
+        @if ($payload['chatUrl'] && \App\Support\OsifInvitation::canSendByApi(auth()->user()))
+            {{-- The WhatsApp Business template carries the standard wording, so VIP cards keep the link below. --}}
+            <div class="osif-invite__panel" x-data="{ sending: false }">
+                <strong>إرسال الدعوة تلقائياً إلى {{ $record->name }}</strong>
+                <p x-show="! vip">تصل البطاقة ورابط الدعوة إلى واتساب المسجّل من رقم النقابة مباشرةً، دون فتح واتساب على جهازك.</p>
+                <p x-show="vip" x-cloak>الإرسال التلقائي خاص بدعوة الحضور؛ أرسل دعوة VIP عبر الرابط أدناه.</p>
+                {{-- x-show on its own element: a bound style would overwrite the display it sets. --}}
+                <div x-show="! vip">
+                    <div x-bind:style="status === 'ready' && ! uploadFailed && ! sending ? '' : 'pointer-events: none; opacity: .5'">
+                        <x-filament::button color="success" icon="heroicon-m-paper-airplane" x-on:click="sending = true; $wire.callMountedAction({ api: true }).finally(() => sending = false)">
+                            <span x-show="! sending">إرسال الآن</span>
+                            <span x-show="sending" x-cloak>جارٍ الإرسال…</span>
+                        </x-filament::button>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         @if ($payload['chatUrl'])
             <div class="osif-invite__panel">
                 <strong>إرسال رابط الدعوة إلى {{ $record->name }}</strong>

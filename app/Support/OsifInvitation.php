@@ -2,8 +2,13 @@
 
 namespace App\Support;
 
+use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use RuntimeException;
 
 /**
  * Data for one attendee's invitation. The card is drawn in the browser
@@ -18,6 +23,9 @@ class OsifInvitation
     public const PREVIEW = 'preview.jpg';
 
     public const PDF = 'invitation.pdf';
+
+    /** A title typed before the name: د. / د / دكتور / الدكتور / Dr. */
+    private const TITLE = '/^(?:د\s*[.\/]|د\s|(?:ال)?دكتور|dr\b)/iu';
 
     /** @return array<string, mixed> */
     public static function payload(EventRegistration $registration): array
@@ -51,6 +59,8 @@ class OsifInvitation
             // the invitation card as a rich preview.
             'chatUrl' => $chat($message),
             'uploadUrl' => route('osif.invitation.files', $registration, absolute: false),
+            // «إرسال للجميع» sends each card through the WhatsApp API once it is uploaded.
+            'sendUrl' => route('osif.invitation.send', $registration, absolute: false),
             // Same-origin paths keep the canvas exportable even when APP_URL
             // differs from the host the dashboard is opened on.
             'font' => static::path('fonts/cairo/cairo.css'),
@@ -93,6 +103,66 @@ class OsifInvitation
     }
 
     /**
+     * Everyone registered for OSIF who has not been sent an invitation yet,
+     * oldest registration first.
+     *
+     * @return Collection<int, EventRegistration>
+     */
+    public static function waiting(): Collection
+    {
+        return EventRegistration::query()
+            ->whereNull('invitation_sent_at')
+            ->whereHas('event', fn ($event) => $event->where('slug', Event::OSIF_SLUG))
+            ->with('event')
+            ->oldest('id')
+            ->get();
+    }
+
+    /** Whether this user may send invitations through the WhatsApp API. */
+    public static function canSendByApi(?User $user): bool
+    {
+        return AdScientist::configured() && (bool) $user?->canSendWhatsAppInvitations();
+    }
+
+    /**
+     * Sends the «دعوة حضور» WhatsApp template through the API: the uploaded
+     * card as its image, then the guest's name and invitation link.
+     *
+     * @return array<string, mixed> The API's response.
+     *
+     * @throws RuntimeException when the invitation cannot be sent this way.
+     */
+    public static function send(EventRegistration $registration): array
+    {
+        $number = $registration->whatsappNumber();
+        $card = static::fileUrl($registration, static::CARD);
+
+        if (! $number) {
+            throw new RuntimeException('لا يوجد رقم واتساب صالح لهذا المسجّل.');
+        }
+
+        // The template's wording is the standard invitation's, not the VIP one.
+        if ($registration->is_vip) {
+            throw new RuntimeException('الإرسال التلقائي خاص بدعوة الحضور؛ أرسل دعوة VIP عبر الرابط.');
+        }
+
+        if (! $card) {
+            throw new RuntimeException('لم تُجهَّز بطاقة الدعوة بعد.');
+        }
+
+        return AdScientist::sendTemplate($number, config('services.adscientist.invitation_template'), [
+            ['type' => 'header', 'parameters' => [['type' => 'image', 'image' => ['link' => $card]]]],
+            ['type' => 'body', 'parameters' => [
+                // The template writes «مرحباً د» before the name itself.
+                ['type' => 'text', 'text' => static::plainName($registration)],
+                ['type' => 'text', 'text' => $registration->invitationUrl()],
+            ]],
+            // «التحدث مع موظف النقابة»
+            ['type' => 'button', 'sub_type' => 'quick_reply', 'index' => 2, 'parameters' => [['type' => 'payload', 'payload' => 'BTN_QUICK_REPLY']]],
+        ]);
+    }
+
+    /**
      * The name as the invitation addresses the guest: «د.» first, unless they
      * already typed a title themselves (د. / د / دكتور / الدكتور / Dr).
      */
@@ -100,11 +170,19 @@ class OsifInvitation
     {
         $name = trim($registration->name);
 
-        if (preg_match('/^(?:د\s*[.\/]|د\s|(?:ال)?دكتور|dr\b)/iu', $name)) {
+        if (preg_match(self::TITLE, $name)) {
             return $name;
         }
 
         return 'د. '.$name;
+    }
+
+    /** The name without a title the guest typed, for text that adds «د» itself. */
+    public static function plainName(EventRegistration $registration): string
+    {
+        $name = Str::squish($registration->name);
+
+        return ltrim(preg_replace(self::TITLE, '', $name), ' .') ?: $name;
     }
 
     /**

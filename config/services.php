@@ -28,6 +28,14 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // WhatsApp Business templates, sent through Ad Scientist.
+    'adscientist' => [
+        'url' => env('ADSCIENTIST_URL', 'https://ai.adscientist.iq/v1'),
+        'key' => env('ADSCIENTIST_API_KEY'),
+        // «دعوة حضور»: the card as its image, then the guest's name and invitation link.
+        'invitation_template' => env('ADSCIENTIST_INVITATION_TEMPLATE', 'oct_26'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

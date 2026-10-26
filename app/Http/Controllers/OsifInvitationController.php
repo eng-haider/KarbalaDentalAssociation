@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class OsifInvitationController extends Controller
 {
@@ -97,9 +98,7 @@ class OsifInvitationController extends Controller
      */
     public function storeFiles(Request $request, EventRegistration $registration): JsonResponse
     {
-        // Checked here rather than with the auth middleware: the app has no generic login route.
-        abort_unless($request->user(), 401);
-        abort_unless($request->user()->canManageOsif() && $registration->event?->isOsif(), 403);
+        $this->authorizeCoordinator($request, $registration);
 
         $request->validate([
             'card' => ['required', 'file', 'mimetypes:image/png', 'max:4096'],
@@ -124,6 +123,53 @@ class OsifInvitationController extends Controller
         return response()->json(collect($files)
             ->mapWithKeys(fn (string $field, string $name) => [$field => OsifInvitation::fileUrl($registration, $name)])
             ->all());
+    }
+
+    /** What «إرسال للجميع» draws the next card from. */
+    public function payload(Request $request, EventRegistration $registration): JsonResponse
+    {
+        $this->authorizeCoordinator($request, $registration);
+
+        return response()->json(OsifInvitation::payload($registration));
+    }
+
+    /**
+     * Sends one attendee's uploaded card through the WhatsApp API for
+     * «إرسال للجميع». Anyone already invited is skipped with a 409.
+     */
+    public function send(Request $request, EventRegistration $registration): JsonResponse
+    {
+        $this->authorizeCoordinator($request, $registration);
+        abort_unless(OsifInvitation::canSendByApi($request->user()), 403);
+
+        // Claimed before sending, so two runs at once never invite anyone twice.
+        $wasHandled = $registration->is_handled;
+        $claimed = EventRegistration::query()
+            ->whereKey($registration->getKey())
+            ->whereNull('invitation_sent_at')
+            ->update(['invitation_sent_at' => now(), 'is_handled' => true]);
+
+        if (! $claimed) {
+            return response()->json(['message' => 'أُرسلت الدعوة سابقاً.'], 409);
+        }
+
+        try {
+            OsifInvitation::send($registration->refresh());
+        } catch (Throwable $exception) {
+            report($exception);
+            $registration->forceFill(['invitation_sent_at' => null, 'is_handled' => $wasHandled])->save();
+
+            return response()->json(['message' => $exception->getMessage()], 422);
+        }
+
+        return response()->json(['sent' => true]);
+    }
+
+    /** Checked here rather than with the auth middleware: the app has no generic login route. */
+    private function authorizeCoordinator(Request $request, EventRegistration $registration): void
+    {
+        abort_unless($request->user(), 401);
+        abort_unless($request->user()->canManageOsif() && $registration->event?->isOsif(), 403);
     }
 
     private function registrationFor(string $token): ?EventRegistration

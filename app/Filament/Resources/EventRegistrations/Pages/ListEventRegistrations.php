@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EventRegistrations\Pages;
 
+use App\Filament\Resources\EventRegistrations\Actions\SendAllInvitationsAction;
 use App\Filament\Resources\EventRegistrations\EventRegistrationResource;
 use App\Filament\Widgets\OsifProfessionalTitleCountsWidget;
 use App\Filament\Widgets\OsifRegistrationStatsWidget;
@@ -19,6 +20,8 @@ class ListEventRegistrations extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            SendAllInvitationsAction::make()
+                ->hidden(fn (): bool => ! $this->inOsifPanel()),
             CreateAction::make()
                 ->label('إضافة تسجيل')
                 ->icon(Heroicon::OutlinedUserPlus),
