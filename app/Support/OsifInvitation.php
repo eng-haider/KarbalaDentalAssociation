@@ -150,7 +150,8 @@ class OsifInvitation
 
     /**
      * Sends the «دعوة حضور» WhatsApp template through the API: the uploaded
-     * card as its image, then the guest's name and invitation link.
+     * card as its image (uploaded to the API's media library first, as it
+     * takes no image links), then the guest's name and invitation link.
      *
      * @return array<string, mixed> The API's response.
      *
@@ -159,7 +160,8 @@ class OsifInvitation
     public static function send(EventRegistration $registration): array
     {
         $number = $registration->whatsappNumber();
-        $card = static::fileUrl($registration, static::CARD);
+        $card = $registration->invitationFilePath(static::CARD);
+        $disk = Storage::disk('public');
 
         if (! $number) {
             throw new RuntimeException('لا يوجد رقم واتساب صالح لهذا المسجّل.');
@@ -170,12 +172,14 @@ class OsifInvitation
             throw new RuntimeException('الإرسال التلقائي خاص بدعوة الحضور؛ أرسل دعوة VIP عبر الرابط.');
         }
 
-        if (! $card) {
+        if (! $disk->exists($card)) {
             throw new RuntimeException('لم تُجهَّز بطاقة الدعوة بعد.');
         }
 
+        $media = AdScientist::uploadMedia($disk->get($card), static::downloadFilename($registration, static::CARD), 'image/png');
+
         return AdScientist::sendTemplate($number, config('services.adscientist.invitation_template'), [
-            ['type' => 'header', 'parameters' => [['type' => 'image', 'image' => ['link' => $card]]]],
+            ['type' => 'header', 'parameters' => [['type' => 'image', 'image' => ['media_id' => $media]]]],
             ['type' => 'body', 'parameters' => [
                 // The template writes «مرحباً د» before the name itself.
                 ['type' => 'text', 'text' => static::plainName($registration)],

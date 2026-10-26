@@ -737,7 +737,7 @@ class OsifRegistrationTest extends TestCase
         Storage::fake('public');
         config(['services.adscientist.key' => 'test-key', 'services.adscientist.invitation_template' => 'oct_26']);
         Http::preventStrayRequests();
-        Http::fake(['ai.adscientist.iq/*' => Http::response(['success' => true])]);
+        Http::fake(['ai.adscientist.iq/v1/media/upload' => Http::response(['success' => true, 'data' => ['id' => 'media-123']]), 'ai.adscientist.iq/*' => Http::response(['success' => true])]);
         $registration = $this->osifRegistration();
         $registration->update(['name' => 'د. حيدر عبد عون كاظم']);
         Storage::disk('public')->put($registration->invitationFilePath(OsifInvitation::CARD), 'png');
@@ -749,15 +749,23 @@ class OsifRegistrationTest extends TestCase
             ->callMountedAction(['api' => true])
             ->assertHasNoErrors();
 
+        // The card goes to the media library first: the API takes no image links.
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://ai.adscientist.iq/v1/media/upload'
+            && $request->hasHeader('x-api-key', 'test-key')
+            && $request->hasFile('file', 'png'));
+
         Http::assertSent(function (Request $request) use ($registration): bool {
+            if ($request->url() !== 'https://ai.adscientist.iq/v1/messages/send-template') {
+                return false;
+            }
+
             $components = collect($request['components'])->keyBy('type');
 
-            return $request->url() === 'https://ai.adscientist.iq/v1/messages/send-template'
-                && $request->hasHeader('x-api-key', 'test-key')
+            return $request->hasHeader('x-api-key', 'test-key')
                 && $request['phoneNumber'] === '9647801234567'
                 && $request['templateName'] === 'oct_26'
                 && $request['languageCode'] === 'ar'
-                && str_starts_with($components['header']['parameters'][0]['image']['link'], route('osif.invitation.card.image', $registration->invitation_token))
+                && $components['header']['parameters'][0]['image'] === ['media_id' => 'media-123']
                 // The template already says «مرحباً د», so the typed title is dropped.
                 && $components['body']['parameters'][0]['text'] === 'حيدر عبد عون كاظم'
                 && $components['body']['parameters'][1]['text'] === $registration->invitationUrl()
@@ -854,7 +862,7 @@ class OsifRegistrationTest extends TestCase
         Storage::fake('public');
         config(['services.adscientist.key' => 'test-key']);
         Http::preventStrayRequests();
-        Http::fake(['ai.adscientist.iq/*' => Http::response(['success' => true])]);
+        Http::fake(['ai.adscientist.iq/v1/media/upload' => Http::response(['success' => true, 'data' => ['id' => 'media-123']]), 'ai.adscientist.iq/*' => Http::response(['success' => true])]);
         $registration = $this->osifRegistration();
         Storage::disk('public')->put($registration->invitationFilePath(OsifInvitation::CARD), 'png');
 
@@ -866,7 +874,7 @@ class OsifRegistrationTest extends TestCase
         $this->assertTrue($registration->is_handled);
 
         $this->postJson(route('osif.invitation.send', $registration))->assertStatus(409);
-        Http::assertSentCount(1);
+        Http::assertSentCount(2);
     }
 
     public function test_a_failed_send_to_all_leaves_the_attendee_waiting(): void
