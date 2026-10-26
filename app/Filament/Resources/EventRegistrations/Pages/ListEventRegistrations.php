@@ -20,8 +20,7 @@ class ListEventRegistrations extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            SendAllInvitationsAction::make()
-                ->hidden(fn (): bool => ! $this->inOsifPanel()),
+            SendAllInvitationsAction::make(),
             CreateAction::make()
                 ->label('إضافة تسجيل')
                 ->icon(Heroicon::OutlinedUserPlus),

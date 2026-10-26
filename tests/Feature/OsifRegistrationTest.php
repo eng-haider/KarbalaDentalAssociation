@@ -841,7 +841,12 @@ class OsifRegistrationTest extends TestCase
         config(['services.adscientist.key' => null]);
         $this->actingAsWhatsAppAdmin();
 
-        Livewire::test(ListEventRegistrations::class)->assertActionHidden('sendAllInvitations');
+        // The button stays, and its dialog says what the server is missing.
+        Livewire::test(ListEventRegistrations::class)
+            ->assertActionVisible('sendAllInvitations')
+            ->mountAction('sendAllInvitations')
+            ->assertMountedActionModalSee('مفتاح الـ API غير مضبوط على السيرفر')
+            ->assertMountedActionModalDontSee('ابدأ الإرسال');
     }
 
     public function test_send_to_all_invites_each_attendee_only_once(): void
@@ -903,7 +908,6 @@ class OsifRegistrationTest extends TestCase
             Filament::setCurrentPanel(Filament::getPanel('osif'));
 
             Livewire::test(ListEventRegistrations::class)
-                ->assertActionHidden('sendAllInvitations')
                 ->mountAction(TestAction::make('sendInvitation')->table($registration))
                 ->assertMountedActionModalDontSee('إرسال الدعوة تلقائياً')
                 // The wa.me link stays for everyone.
@@ -916,5 +920,29 @@ class OsifRegistrationTest extends TestCase
 
         Http::assertNothingSent();
         $this->assertNull($registration->refresh()->invitation_sent_at);
+
+        // Coordinators never see «إرسال للجميع»; other administrators see why they cannot use it.
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_OSIF_COORDINATOR]));
+        Livewire::test(ListEventRegistrations::class)->assertActionHidden('sendAllInvitations');
+
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]));
+        Livewire::test(ListEventRegistrations::class)
+            ->assertActionVisible('sendAllInvitations')
+            ->mountAction('sendAllInvitations')
+            ->assertMountedActionModalSee('ودور حسابك الآن: «مدير النظام» (admin)')
+            ->assertMountedActionModalDontSee('ابدأ الإرسال');
+    }
+
+    public function test_send_to_all_is_also_in_the_admin_panel(): void
+    {
+        config(['services.adscientist.key' => 'test-key']);
+        $this->osifRegistration();
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_WHATSAPP_ADMIN]));
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+        Livewire::test(ListEventRegistrations::class)
+            ->assertActionVisible('sendAllInvitations')
+            ->mountAction('sendAllInvitations')
+            ->assertMountedActionModalSee('ستُرسل الدعوة إلى 1 مسجّل لم تُرسل لهم بعد');
     }
 }

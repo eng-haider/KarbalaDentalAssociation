@@ -27,13 +27,18 @@ class SendAllInvitationsAction extends Action
         $this
             ->label('إرسال الدعوات للجميع')
             ->icon(Heroicon::OutlinedPaperAirplane)
-            ->color('success')
-            // Only the «مدير النظام (إرسال واتساب)» role sends through the API.
-            ->visible(fn (): bool => OsifInvitation::canSendByApi(auth()->user()))
+            ->color(fn (): string => OsifInvitation::canSendByApi(auth()->user()) ? 'success' : 'gray')
+            // Only the «مدير النظام (إرسال واتساب)» role sends through the API; other
+            // administrators still see the button, and its dialog says what is missing.
+            ->visible(fn (): bool => (bool) auth()->user()?->isAdmin())
             ->modalHeading('إرسال الدعوات للجميع')
-            ->modalDescription('تُرسل دعوة الحضور عبر واتساب تلقائياً إلى كل من لم تُرسل له الدعوة بعد، ولا تُعاد لمن أُرسلت له سابقاً.')
+            ->modalDescription('تُرسل دعوة الحضور لملتقى OSIF عبر واتساب تلقائياً إلى كل من لم تُرسل له الدعوة بعد، ولا تُعاد لمن أُرسلت له سابقاً.')
             ->modalWidth(Width::TwoExtraLarge)
             ->modalContent(function () {
+                if ($reasons = OsifInvitation::apiUnavailableReasons(auth()->user())) {
+                    return view('filament.osif.bulk-invitations-unavailable', ['reasons' => $reasons]);
+                }
+
                 $waiting = OsifInvitation::waiting();
                 // VIP guests are invited by hand: the template carries the standard wording.
                 [$vip, $standard] = $waiting->partition(fn (EventRegistration $registration): bool => $registration->is_vip);

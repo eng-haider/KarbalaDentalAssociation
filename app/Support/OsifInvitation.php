@@ -121,7 +121,31 @@ class OsifInvitation
     /** Whether this user may send invitations through the WhatsApp API. */
     public static function canSendByApi(?User $user): bool
     {
-        return AdScientist::configured() && (bool) $user?->canSendWhatsAppInvitations();
+        return static::apiUnavailableReasons($user) === [];
+    }
+
+    /**
+     * What stops this user sending through the WhatsApp API, in words an
+     * administrator can act on without a server terminal.
+     *
+     * @return list<string>
+     */
+    public static function apiUnavailableReasons(?User $user): array
+    {
+        $reasons = [];
+
+        if (! AdScientist::configured()) {
+            $reasons[] = 'مفتاح الـ API غير مضبوط على السيرفر: أضف ADSCIENTIST_API_KEY إلى ملف .env ثم نفّذ php artisan config:cache.';
+        }
+
+        if (! $user?->canSendWhatsAppInvitations()) {
+            // The stored value is shown too, so a mistyped role is plain to see.
+            $role = $user?->role;
+            $reasons[] = 'الإرسال لدور «'.User::roleLabels()[User::ROLE_WHATSAPP_ADMIN].'» فقط، ودور حسابك الآن: «'
+                .(User::roleLabels()[$role] ?? 'غير معروف').'» ('.($role ?? '—').').';
+        }
+
+        return $reasons;
     }
 
     /**
