@@ -910,6 +910,8 @@ class OsifRegistrationTest extends TestCase
             Livewire::test(ListEventRegistrations::class)
                 ->mountAction(TestAction::make('sendInvitation')->table($registration))
                 ->assertMountedActionModalDontSee('إرسال الدعوة تلقائياً')
+                // Administrators are told why; coordinators are not shown the feature at all.
+                ->{$role === User::ROLE_ADMIN ? 'assertMountedActionModalSee' : 'assertMountedActionModalDontSee'}('الإرسال التلقائي غير متاح لحسابك الآن')
                 // The wa.me link stays for everyone.
                 ->assertMountedActionModalSee('إرسال رابط الدعوة')
                 ->callMountedAction(['api' => true])

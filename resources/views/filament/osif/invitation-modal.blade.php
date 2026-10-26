@@ -1,6 +1,7 @@
 @php
     /** @var \App\Models\EventRegistration $record */
     $payload = \App\Support\OsifInvitation::payload($record);
+    $apiReasons = \App\Support\OsifInvitation::apiUnavailableReasons(auth()->user());
 @endphp
 
 <div x-data="osifInvitation(@js($payload))" class="osif-invite">
@@ -62,7 +63,7 @@
             </x-filament::tabs>
         </div>
 
-        @if ($payload['chatUrl'] && \App\Support\OsifInvitation::canSendByApi(auth()->user()))
+        @if ($payload['chatUrl'] && ! $apiReasons)
             {{-- The WhatsApp Business template carries the standard wording, so VIP cards keep the link below. --}}
             <div class="osif-invite__panel" x-data="{ sending: false }">
                 <strong>إرسال الدعوة تلقائياً إلى {{ $record->name }}</strong>
@@ -77,6 +78,11 @@
                         </x-filament::button>
                     </div>
                 </div>
+            </div>
+        @elseif ($payload['chatUrl'] && auth()->user()?->isAdmin())
+            {{-- Administrators see why automatic sending is off, rather than nothing at all. --}}
+            <div class="osif-invite__panel">
+                @include('filament.osif.whatsapp-api-unavailable', ['reasons' => $apiReasons])
             </div>
         @endif
 

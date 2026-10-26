@@ -36,7 +36,7 @@ class SendAllInvitationsAction extends Action
             ->modalWidth(Width::TwoExtraLarge)
             ->modalContent(function () {
                 if ($reasons = OsifInvitation::apiUnavailableReasons(auth()->user())) {
-                    return view('filament.osif.bulk-invitations-unavailable', ['reasons' => $reasons]);
+                    return view('filament.osif.whatsapp-api-unavailable', ['reasons' => $reasons]);
                 }
 
                 $waiting = OsifInvitation::waiting();
