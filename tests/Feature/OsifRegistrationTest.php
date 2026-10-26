@@ -1001,4 +1001,63 @@ class OsifRegistrationTest extends TestCase
                 && $components[0]['parameters'][1]['text'] === $registration->invitationUrl();
         });
     }
+
+    public function test_cards_are_uploaded_signed_in_when_a_dashboard_login_is_set(): void
+    {
+        Storage::fake('public');
+        config([
+            'services.adscientist.key' => 'test-key',
+            'services.adscientist.invitation_template' => 'oct_26',
+            'services.adscientist.email' => 'site@example.test',
+            'services.adscientist.password' => 'secret',
+        ]);
+        // Registered first, so these answer before the general fake below.
+        Http::fake([
+            'ai.adscientist.iq/v1/auth/login' => Http::response(['success' => true, 'data' => ['tokens' => ['accessToken' => 'session-token']]]),
+            // The first session has expired; the upload signs in again and retries.
+            'ai.adscientist.iq/v1/media/upload' => Http::sequence()
+                ->push(['success' => false, 'error' => ['message' => 'Token expired']], 401)
+                ->push(['success' => true, 'data' => ['id' => 'media-456']]),
+        ]);
+        $this->fakeWhatsAppApi();
+        $registration = $this->osifRegistration();
+        Storage::disk('public')->put($registration->invitationFilePath(OsifInvitation::CARD), 'png');
+
+        OsifInvitation::send($registration);
+
+        Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/auth/login')
+            && $request['email'] === 'site@example.test' && $request['password'] === 'secret');
+        // Uploads go as the signed-in user only: with the API key, Ad Scientist's upload fails.
+        Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/media/upload')
+            && $request->hasHeader('Authorization', 'Bearer session-token')
+            && ! $request->hasHeader('x-api-key'));
+        Http::assertSent(function (Request $request): bool {
+            if (! str_ends_with($request->url(), '/messages/send-template')) {
+                return false;
+            }
+
+            return $request->hasHeader('x-api-key', 'test-key')
+                && collect($request['components'])->firstWhere('type', 'header')['parameters'][0]['image'] === ['media_id' => 'media-456'];
+        });
+        $this->assertCount(2, Http::recorded(fn (Request $request): bool => str_ends_with($request->url(), '/auth/login')));
+    }
+
+    public function test_a_dashboard_login_that_needs_a_code_says_so(): void
+    {
+        Storage::fake('public');
+        config([
+            'services.adscientist.key' => 'test-key',
+            'services.adscientist.invitation_template' => 'oct_26',
+            'services.adscientist.email' => 'site@example.test',
+            'services.adscientist.password' => 'secret',
+        ]);
+        Http::fake(['ai.adscientist.iq/v1/auth/login' => Http::response(['success' => true, 'data' => ['mfaRequired' => true, 'mfaToken' => 'x']])]);
+        $this->fakeWhatsAppApi();
+        $registration = $this->osifRegistration();
+        Storage::disk('public')->put($registration->invitationFilePath(OsifInvitation::CARD), 'png');
+
+        $this->expectExceptionMessage('يطلب تحققاً إضافياً');
+
+        OsifInvitation::send($registration);
+    }
 }

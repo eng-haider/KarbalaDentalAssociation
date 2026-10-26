@@ -47,13 +47,30 @@ class AdScientist
      * Uploads a file to the media library. A template's image header refers
      * to it by the returned id; Ad Scientist does not accept image links.
      *
+     * Their upload fails for API keys (it records the uploader as a user and
+     * stores "api-key", which is not one), so when a dashboard login is
+     * configured the file is uploaded signed in as that user, as their own
+     * dashboard does.
+     *
      * @throws RuntimeException when the upload is refused.
      */
     public static function uploadMedia(string $contents, string $filename, string $mimeType): string
     {
-        $response = static::request()
+        $upload = fn (PendingRequest $request): Response => $request
             ->attach('file', $contents, $filename, ['Content-Type' => $mimeType])
             ->post(static::url('media/upload'));
+
+        if (static::canSignIn()) {
+            $response = $upload(static::signedIn());
+
+            // An expired session signs in again, once.
+            if ($response->status() === 401) {
+                Cache::forget('adscientist.session');
+                $response = $upload(static::signedIn());
+            }
+        } else {
+            $response = $upload(static::request());
+        }
 
         $id = $response->json('data.id');
 
@@ -84,6 +101,40 @@ class AdScientist
         }
 
         return $response->json() ?? [];
+    }
+
+    private static function canSignIn(): bool
+    {
+        return filled(config('services.adscientist.email')) && filled(config('services.adscientist.password'));
+    }
+
+    /** Requests as the dashboard user, with a session kept for a few minutes. */
+    private static function signedIn(): PendingRequest
+    {
+        $token = Cache::remember('adscientist.session', now()->addMinutes(10), fn (): string => static::signIn());
+
+        return Http::withToken($token)->acceptJson()->timeout(30);
+    }
+
+    private static function signIn(): string
+    {
+        $response = Http::acceptJson()->timeout(30)->post(static::url('auth/login'), [
+            'email' => config('services.adscientist.email'),
+            'password' => config('services.adscientist.password'),
+        ]);
+
+        if ($response->failed() || $response->json('success') === false) {
+            static::fail($response);
+        }
+
+        $token = $response->json('data.tokens.accessToken');
+
+        // A verification code or a password change cannot be completed by the website.
+        if (blank($token)) {
+            throw new RuntimeException('حساب Ad Scientist المستخدم لرفع البطاقات يطلب تحققاً إضافياً (رمز تحقق أو تغيير كلمة المرور)؛ استخدم حساباً بلا تحقق ثنائي.');
+        }
+
+        return $token;
     }
 
     private static function request(): PendingRequest

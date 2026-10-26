@@ -32,6 +32,10 @@ return [
     'adscientist' => [
         'url' => env('ADSCIENTIST_URL', 'https://ai.adscientist.iq/v1'),
         'key' => env('ADSCIENTIST_API_KEY'),
+        // A dashboard login for uploading invitation cards: Ad Scientist's
+        // media upload fails for API keys, but works signed in as a user.
+        'email' => env('ADSCIENTIST_EMAIL'),
+        'password' => env('ADSCIENTIST_PASSWORD'),
         // «دعوة حضور»: the card as its image, then the guest's name and invitation link.
         'invitation_template' => env('ADSCIENTIST_INVITATION_TEMPLATE', 'oct_26'),
     ],
