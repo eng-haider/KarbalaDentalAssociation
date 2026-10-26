@@ -149,9 +149,10 @@ class OsifInvitation
     }
 
     /**
-     * Sends the «دعوة حضور» WhatsApp template through the API: the uploaded
-     * card as its image (uploaded to the API's media library first, as it
-     * takes no image links), then the guest's name and invitation link.
+     * Sends the «دعوة حضور» WhatsApp template through the API: the guest's
+     * name and invitation link, and the card itself when the template has an
+     * image header (uploaded to the API's media library first, as it takes no
+     * image links). A text-only template needs no upload at all.
      *
      * @return array<string, mixed> The API's response.
      *
@@ -176,18 +177,39 @@ class OsifInvitation
             throw new RuntimeException('لم تُجهَّز بطاقة الدعوة بعد.');
         }
 
-        $media = AdScientist::uploadMedia($disk->get($card), static::downloadFilename($registration, static::CARD), 'image/png');
+        $name = config('services.adscientist.invitation_template');
+        $template = AdScientist::template($name, 'ar');
 
-        return AdScientist::sendTemplate($number, config('services.adscientist.invitation_template'), [
-            ['type' => 'header', 'parameters' => [['type' => 'image', 'image' => ['media_id' => $media]]]],
-            ['type' => 'body', 'parameters' => [
-                // The template writes «مرحباً د» before the name itself.
-                ['type' => 'text', 'text' => static::plainName($registration)],
-                ['type' => 'text', 'text' => $registration->invitationUrl()],
-            ]],
-            // «التحدث مع موظف النقابة»
-            ['type' => 'button', 'sub_type' => 'quick_reply', 'index' => 2, 'parameters' => [['type' => 'payload', 'payload' => 'BTN_QUICK_REPLY']]],
-        ]);
+        if (! $template) {
+            throw new RuntimeException("لا يوجد قالب باسم {$name} باللغة العربية في Ad Scientist.");
+        }
+
+        if ($template['status'] !== 'APPROVED') {
+            throw new RuntimeException("القالب {$name} لم تتم الموافقة عليه بعد ({$template['status']}).");
+        }
+
+        $parts = collect($template['components']);
+        $components = [];
+
+        if (($parts->firstWhere('type', 'HEADER')['format'] ?? null) === 'IMAGE') {
+            $media = AdScientist::uploadMedia($disk->get($card), static::downloadFilename($registration, static::CARD), 'image/png');
+            $components[] = ['type' => 'header', 'parameters' => [['type' => 'image', 'image' => ['media_id' => $media]]]];
+        }
+
+        $components[] = ['type' => 'body', 'parameters' => [
+            // The template writes «مرحباً د» before the name itself.
+            ['type' => 'text', 'text' => static::plainName($registration)],
+            ['type' => 'text', 'text' => $registration->invitationUrl()],
+        ]];
+
+        // Quick replies such as «التحدث مع موظف النقابة», wherever the template puts them.
+        foreach ($parts->firstWhere('type', 'BUTTONS')['buttons'] ?? [] as $index => $button) {
+            if ($button['type'] === 'QUICK_REPLY') {
+                $components[] = ['type' => 'button', 'sub_type' => 'quick_reply', 'index' => $index, 'parameters' => [['type' => 'payload', 'payload' => 'BTN_QUICK_REPLY']]];
+            }
+        }
+
+        return AdScientist::sendTemplate($number, $name, $components);
     }
 
     /**

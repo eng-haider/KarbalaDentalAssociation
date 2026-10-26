@@ -37,6 +37,30 @@ class OsifRegistrationTest extends TestCase
         ]);
     }
 
+    /**
+     * Ad Scientist's answers: the template's layout (an image header and three
+     * buttons, the last a quick reply, like oct_26), an id for uploaded media,
+     * and success for sends.
+     */
+    private function fakeWhatsAppApi(?string $header = 'IMAGE'): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'ai.adscientist.iq/v1/templates' => Http::response(['success' => true, 'data' => [[
+                'name' => 'oct_26',
+                'language' => 'ar',
+                'status' => 'APPROVED',
+                'components' => array_values(array_filter([
+                    $header ? ['type' => 'HEADER', 'format' => $header] : null,
+                    ['type' => 'BODY', 'text' => 'مرحباً د {{1}} … {{2}}'],
+                    ['type' => 'BUTTONS', 'buttons' => [['type' => 'URL'], ['type' => 'PHONE_NUMBER'], ['type' => 'QUICK_REPLY']]],
+                ])),
+            ]]]),
+            'ai.adscientist.iq/v1/media/upload' => Http::response(['success' => true, 'data' => ['id' => 'media-123']]),
+            'ai.adscientist.iq/*' => Http::response(['success' => true]),
+        ]);
+    }
+
     /** The only role that sends through the WhatsApp API. */
     private function actingAsWhatsAppAdmin(): User
     {
@@ -736,8 +760,7 @@ class OsifRegistrationTest extends TestCase
     {
         Storage::fake('public');
         config(['services.adscientist.key' => 'test-key', 'services.adscientist.invitation_template' => 'oct_26']);
-        Http::preventStrayRequests();
-        Http::fake(['ai.adscientist.iq/v1/media/upload' => Http::response(['success' => true, 'data' => ['id' => 'media-123']]), 'ai.adscientist.iq/*' => Http::response(['success' => true])]);
+        $this->fakeWhatsAppApi();
         $registration = $this->osifRegistration();
         $registration->update(['name' => 'د. حيدر عبد عون كاظم']);
         Storage::disk('public')->put($registration->invitationFilePath(OsifInvitation::CARD), 'png');
@@ -860,9 +883,8 @@ class OsifRegistrationTest extends TestCase
     public function test_send_to_all_invites_each_attendee_only_once(): void
     {
         Storage::fake('public');
-        config(['services.adscientist.key' => 'test-key']);
-        Http::preventStrayRequests();
-        Http::fake(['ai.adscientist.iq/v1/media/upload' => Http::response(['success' => true, 'data' => ['id' => 'media-123']]), 'ai.adscientist.iq/*' => Http::response(['success' => true])]);
+        config(['services.adscientist.key' => 'test-key', 'services.adscientist.invitation_template' => 'oct_26']);
+        $this->fakeWhatsAppApi();
         $registration = $this->osifRegistration();
         Storage::disk('public')->put($registration->invitationFilePath(OsifInvitation::CARD), 'png');
 
@@ -874,7 +896,8 @@ class OsifRegistrationTest extends TestCase
         $this->assertTrue($registration->is_handled);
 
         $this->postJson(route('osif.invitation.send', $registration))->assertStatus(409);
-        Http::assertSentCount(2);
+        // The template's layout, the card upload and the message: nothing more for the second try.
+        Http::assertSentCount(3);
     }
 
     public function test_a_failed_send_to_all_leaves_the_attendee_waiting(): void
@@ -954,5 +977,28 @@ class OsifRegistrationTest extends TestCase
             ->assertActionVisible('sendAllInvitations')
             ->mountAction('sendAllInvitations')
             ->assertMountedActionModalSee('ستُرسل الدعوة إلى 1 مسجّل لم تُرسل لهم بعد');
+    }
+
+    public function test_a_text_only_template_is_sent_without_uploading_the_card(): void
+    {
+        Storage::fake('public');
+        config(['services.adscientist.key' => 'test-key', 'services.adscientist.invitation_template' => 'oct_26']);
+        $this->fakeWhatsAppApi(header: null);
+        $registration = $this->osifRegistration();
+        Storage::disk('public')->put($registration->invitationFilePath(OsifInvitation::CARD), 'png');
+
+        OsifInvitation::send($registration);
+
+        Http::assertNotSent(fn (Request $request): bool => str_ends_with($request->url(), '/media/upload'));
+        Http::assertSent(function (Request $request) use ($registration): bool {
+            if (! str_ends_with($request->url(), '/messages/send-template')) {
+                return false;
+            }
+
+            $components = collect($request['components']);
+
+            return $components->pluck('type')->all() === ['body', 'button']
+                && $components[0]['parameters'][1]['text'] === $registration->invitationUrl();
+        });
     }
 }

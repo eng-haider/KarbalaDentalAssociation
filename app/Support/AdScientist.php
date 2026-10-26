@@ -4,6 +4,7 @@ namespace App\Support;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -17,6 +18,29 @@ class AdScientist
     public static function configured(): bool
     {
         return filled(config('services.adscientist.key'));
+    }
+
+    /**
+     * A template's definition (status, header, buttons) as Ad Scientist holds
+     * it, so a message is built for the template's actual layout. Kept for a
+     * few minutes; a template edited in the dashboard is picked up after that.
+     *
+     * @return array<string, mixed>|null Null when no template has that name and language.
+     *
+     * @throws RuntimeException when the templates cannot be read.
+     */
+    public static function template(string $name, string $language): ?array
+    {
+        return Cache::remember("adscientist.template.{$name}.{$language}", now()->addMinutes(5), function () use ($name, $language): ?array {
+            $response = static::request()->get(static::url('templates'));
+
+            if ($response->failed() || $response->json('success') === false) {
+                static::fail($response);
+            }
+
+            return collect($response->json('data'))
+                ->first(fn (array $template): bool => $template['name'] === $name && $template['language'] === $language);
+        });
     }
 
     /**
