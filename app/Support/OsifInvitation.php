@@ -177,17 +177,8 @@ class OsifInvitation
             throw new RuntimeException('لم تُجهَّز بطاقة الدعوة بعد.');
         }
 
-        $name = config('services.adscientist.invitation_template');
-        $template = AdScientist::template($name, 'ar');
-
-        if (! $template) {
-            throw new RuntimeException("لا يوجد قالب باسم {$name} باللغة العربية في Ad Scientist.");
-        }
-
-        if ($template['status'] !== 'APPROVED') {
-            throw new RuntimeException("القالب {$name} لم تتم الموافقة عليه بعد ({$template['status']}).");
-        }
-
+        $template = static::approvedTemplate();
+        $name = $template['name'];
         $parts = collect($template['components']);
         $components = [];
 
@@ -210,6 +201,38 @@ class OsifInvitation
         }
 
         return AdScientist::sendTemplate($number, $name, $components);
+    }
+
+    /**
+     * The «دعوة حضور» template to send: the one with the card as its image,
+     * or the text-only fallback while Meta has not approved it, so sending
+     * goes on during a review and returns to the card once it is approved.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws RuntimeException when neither template is approved.
+     */
+    private static function approvedTemplate(): array
+    {
+        $names = array_unique(array_filter([
+            config('services.adscientist.invitation_template'),
+            config('services.adscientist.invitation_fallback_template'),
+        ]));
+        $problems = [];
+
+        foreach ($names as $name) {
+            $template = AdScientist::template($name, 'ar');
+
+            if ($template && $template['status'] === 'APPROVED') {
+                return $template;
+            }
+
+            $problems[] = $template
+                ? "القالب {$name} لم تتم الموافقة عليه بعد ({$template['status']})"
+                : "لا يوجد قالب باسم {$name} باللغة العربية في Ad Scientist";
+        }
+
+        throw new RuntimeException(implode('، و', $problems).'.');
     }
 
     /**

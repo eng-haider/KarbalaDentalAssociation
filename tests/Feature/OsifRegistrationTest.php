@@ -16,6 +16,7 @@ use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -309,7 +310,7 @@ class OsifRegistrationTest extends TestCase
     {
         $event = $this->osifEvent();
 
-        foreach ([...EventRegistration::TITLES_SHOWN_AS_DENTIST, 'طبيب اسنان مقيم اقدم'] as $i => $title) {
+        foreach ([...EventRegistration::TITLES_SHOWN_AS_DENTIST, 'طبيب اسنان مقيم اقدم', 'طبيب اسنان متدرب / تدرج'] as $i => $title) {
             $registration = $this->registerAs($event, $title, '0780123456'.$i);
 
             $this->assertSame('طبيب أسنان', $registration->cardTitle(), $title);
@@ -321,9 +322,11 @@ class OsifRegistrationTest extends TestCase
             $this->assertSame($title, $registration->fresh()->professional_title);
         }
 
-        // The specialist keeps theirs.
+        // The specialist and the practitioner keep theirs.
         $specialist = $this->registerAs($event, 'طبيب أسنان اختصاص', '07801234599');
         $this->assertSame('طبيب أسنان اختصاص', $specialist->cardTitle());
+        $practitioner = $this->registerAs($event, 'طبيب أسنان ممارس', '07801234598');
+        $this->assertSame('طبيب أسنان ممارس', $practitioner->cardTitle());
     }
 
     public function test_unknown_invitation_codes_say_so_instead_of_a_bare_404(): void
@@ -1000,6 +1003,59 @@ class OsifRegistrationTest extends TestCase
             return $components->pluck('type')->all() === ['body', 'button']
                 && $components[0]['parameters'][1]['text'] === $registration->invitationUrl();
         });
+    }
+
+    public function test_the_text_template_is_sent_while_the_card_template_is_under_review(): void
+    {
+        Storage::fake('public');
+        config([
+            'services.adscientist.key' => 'test-key',
+            'services.adscientist.invitation_template' => 'oct_26',
+            'services.adscientist.invitation_fallback_template' => 'osif_invitation_text',
+        ]);
+        $template = fn (string $name, string $status, ?array $header) => [
+            'name' => $name,
+            'language' => 'ar',
+            'status' => $status,
+            'components' => array_values(array_filter([
+                $header,
+                ['type' => 'BODY', 'text' => 'مرحباً د {{1}} … {{2}}'],
+                ['type' => 'BUTTONS', 'buttons' => [['type' => 'QUICK_REPLY'], ['type' => 'URL'], ['type' => 'PHONE_NUMBER']]],
+            ])),
+        ];
+        Http::preventStrayRequests();
+        Http::fake([
+            'ai.adscientist.iq/v1/templates' => Http::sequence()
+                // Editing oct_26's button sent it back to Meta for review.
+                ->push(['success' => true, 'data' => [
+                    $template('oct_26', 'PENDING', ['type' => 'HEADER', 'format' => 'IMAGE']),
+                    $template('osif_invitation_text', 'APPROVED', null),
+                ]])
+                ->push(['success' => true, 'data' => [
+                    $template('oct_26', 'PENDING', ['type' => 'HEADER', 'format' => 'IMAGE']),
+                    $template('osif_invitation_text', 'REJECTED', null),
+                ]]),
+            'ai.adscientist.iq/*' => Http::response(['success' => true]),
+        ]);
+        $registration = $this->osifRegistration();
+        Storage::disk('public')->put($registration->invitationFilePath(OsifInvitation::CARD), 'png');
+
+        OsifInvitation::send($registration);
+
+        Http::assertNotSent(fn (Request $request): bool => str_ends_with($request->url(), '/media/upload'));
+        Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/messages/send-template')
+            && $request['templateName'] === 'osif_invitation_text'
+            && collect($request['components'])->firstWhere('type', 'button')['index'] === 0);
+
+        // With neither approved, nothing is sent and both are named.
+        Cache::flush();
+        $this->expectExceptionMessage('القالب oct_26 لم تتم الموافقة عليه بعد (PENDING)، والقالب osif_invitation_text لم تتم الموافقة عليه بعد (REJECTED).');
+
+        try {
+            OsifInvitation::send($registration);
+        } finally {
+            $this->assertCount(1, Http::recorded(fn (Request $request): bool => str_ends_with($request->url(), '/messages/send-template')));
+        }
     }
 
     public function test_cards_are_uploaded_signed_in_when_a_dashboard_login_is_set(): void

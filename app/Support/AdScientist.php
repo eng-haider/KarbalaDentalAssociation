@@ -31,16 +31,18 @@ class AdScientist
      */
     public static function template(string $name, string $language): ?array
     {
-        return Cache::remember("adscientist.template.{$name}.{$language}", now()->addMinutes(5), function () use ($name, $language): ?array {
+        $templates = Cache::remember('adscientist.templates', now()->addMinutes(5), function (): array {
             $response = static::request()->get(static::url('templates'));
 
             if ($response->failed() || $response->json('success') === false) {
                 static::fail($response);
             }
 
-            return collect($response->json('data'))
-                ->first(fn (array $template): bool => $template['name'] === $name && $template['language'] === $language);
+            return $response->json('data') ?? [];
         });
+
+        return collect($templates)
+            ->first(fn (array $template): bool => $template['name'] === $name && $template['language'] === $language);
     }
 
     /**

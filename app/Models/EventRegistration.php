@@ -10,12 +10,15 @@ use Illuminate\Support\Str;
 
 class EventRegistration extends Model
 {
-    /** Titles the invitation card shows as plain «طبيب أسنان»; only the specialist keeps theirs. */
+    /** Titles the invitation card shows as plain «طبيب أسنان»; the specialist and the practitioner keep theirs. */
     public const TITLES_SHOWN_AS_DENTIST = [
         'طبيب أسنان مقيم أقدم',
         'طبيب أسنان مقيم',
         'طبيب أسنان تدرج',
+        'طبيب أسنان متدرب',
+        'طبيب أسنان متدرب/تدرج',
         'طبيب أسنان خريج جديد',
+        'طبيب أسنان حديث التخرج',
     ];
 
     protected $fillable = [
@@ -114,8 +117,10 @@ class EventRegistration extends Model
     /** The professional title as the invitation card shows it; the registration keeps the full one. */
     public function cardTitle(): ?string
     {
-        // «اسنان» or «أسنان», «اقدم» or «أقدم»: the same title however it was typed.
-        $normalise = fn (?string $title): string => Str::squish(str_replace(['أ', 'إ', 'آ'], 'ا', (string) $title));
+        // «اسنان» or «أسنان», «اقدم» or «أقدم», «متدرب / تدرج» or «متدرب/تدرج»: the same title however it was typed.
+        $normalise = fn (?string $title): string => Str::squish(preg_replace(
+            '/\s*\/\s*/u', '/', str_replace(['أ', 'إ', 'آ'], 'ا', (string) $title)
+        ));
 
         return in_array($normalise($this->professional_title), array_map($normalise, self::TITLES_SHOWN_AS_DENTIST), true)
             ? 'طبيب أسنان'

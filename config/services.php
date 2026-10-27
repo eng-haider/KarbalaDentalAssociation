@@ -38,6 +38,9 @@ return [
         'password' => env('ADSCIENTIST_PASSWORD'),
         // «دعوة حضور»: the card as its image, then the guest's name and invitation link.
         'invitation_template' => env('ADSCIENTIST_INVITATION_TEMPLATE', 'oct_26'),
+        // The same wording without the image, sent while Meta reviews the
+        // one above (an edited template goes back to review).
+        'invitation_fallback_template' => env('ADSCIENTIST_INVITATION_FALLBACK_TEMPLATE', 'osif_invitation_text'),
     ],
 
     'slack' => [
