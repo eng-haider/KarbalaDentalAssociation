@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Tests\TestCase;
 
 class OsifRegistrationTest extends TestCase
@@ -980,6 +982,91 @@ class OsifRegistrationTest extends TestCase
             ->assertActionVisible('sendAllInvitations')
             ->mountAction('sendAllInvitations')
             ->assertMountedActionModalSee('ستُرسل الدعوة إلى 1 مسجّل لم تُرسل لهم بعد');
+    }
+
+    public function test_invitations_whatsapp_did_not_deliver_go_back_to_waiting(): void
+    {
+        $event = $this->osifEvent();
+        $register = fn (string $phone, ?string $sentAt = '2026-10-27 23:00:00'): EventRegistration => $event->registrations()->create([
+            'name' => 'مسجّل '.$phone,
+            'phone' => $phone,
+            'whatsapp_phone' => $phone,
+            'professional_title' => 'طبيب أسنان',
+            'owns_clinic' => false,
+            'invitation_sent_at' => $sentAt,
+        ]);
+        $rateLimited = $register('07730331911');
+        $notOnWhatsApp = $register('+964 788 776 7441');
+        $reachedLater = $register('07801234567');
+        $delivered = $register('07701112233');
+        $neverSent = $register('07711112233', null);
+        $otherEvent = Event::create(['title' => 'ندوة علمية', 'starts_at' => now()->addWeek()])->registrations()->create([
+            'name' => 'مصطفى كريم جاسم',
+            'phone' => '07730331911',
+            'invitation_sent_at' => '2026-10-27 23:00:00',
+        ]);
+
+        // As exported from the Ad Scientist dashboard.
+        $report = UploadedFile::fake()->createWithContent('External_Executions_All_2026-10-28.csv', implode("\n", [
+            'execution_name,execution_created_at,template_name,template_category,execution_status,phone_number,recipient_status,sent_at,delivered_at,read_at,wa_message_id,error_code,error_message',
+            '"oct_26 — 2026-10-28","28/10/2026, 03:01:50","oct_26","MARKETING","partial","9647730331911","failed","28/10/2026, 03:01:50","","","wamid.1","131048","Spam Rate limit hit"',
+            '"oct_26 — 2026-10-28","28/10/2026, 03:01:25","oct_26","MARKETING","partial","9647887767441","failed","28/10/2026, 03:01:25","","","wamid.2","131026","Message undeliverable"',
+            '"oct_26 — 2026-10-27","28/10/2026, 02:59:49","oct_26","MARKETING","partial","9647801234567","failed","28/10/2026, 02:59:49","","","wamid.3","131048","Spam Rate limit hit"',
+            '"oct_26 — 2026-10-28","28/10/2026, 09:00:00","oct_26","MARKETING","completed","9647801234567","delivered","28/10/2026, 09:00:00","28/10/2026, 09:00:02","","wamid.4","",""',
+            '"oct_26 — 2026-10-28","28/10/2026, 09:00:10","oct_26","MARKETING","completed","9647701112233","read","28/10/2026, 09:00:10","28/10/2026, 09:00:11","28/10/2026, 09:05:00","wamid.5","",""',
+            '"oct_26 — 2026-10-28","28/10/2026, 09:00:20","oct_26","MARKETING","partial","9647799999999","failed","28/10/2026, 09:00:20","","","wamid.6","131026","Message undeliverable"',
+        ]));
+
+        // Like «إرسال للجميع», only administrators see it.
+        $this->actingAsCoordinator();
+        Livewire::test(ListEventRegistrations::class)->assertActionHidden('returnUndeliveredInvitations');
+
+        $this->actingAsWhatsAppAdmin();
+        Livewire::test(ListEventRegistrations::class)
+            ->assertActionVisible('returnUndeliveredInvitations')
+            ->callAction('returnUndeliveredInvitations', data: ['report' => $report])
+            ->assertHasNoActionErrors()
+            ->assertNotified('عادت 2 دعوة إلى «بانتظار الدعوة»');
+
+        $this->assertNull($rateLimited->refresh()->invitation_sent_at);
+        $this->assertNull($notOnWhatsApp->refresh()->invitation_sent_at);
+        $this->assertNotNull($reachedLater->refresh()->invitation_sent_at);
+        $this->assertNotNull($delivered->refresh()->invitation_sent_at);
+        $this->assertNull($neverSent->refresh()->invitation_sent_at);
+        $this->assertNotNull($otherEvent->refresh()->invitation_sent_at);
+        $this->assertTrue(OsifInvitation::waiting()->contains($rateLimited));
+    }
+
+    public function test_an_excel_copy_of_the_report_works_and_other_files_are_refused(): void
+    {
+        $registration = $this->osifRegistration();
+        $registration->update(['invitation_sent_at' => now()]);
+
+        $spreadsheet = new Spreadsheet;
+        $spreadsheet->getActiveSheet()->fromArray([
+            ['Phone Number', 'Recipient Status', 'Error Message'],
+            [9647801234567, 'Failed', 'Spam Rate limit hit'],
+        ]);
+        $excel = tempnam(sys_get_temp_dir(), 'report');
+        (new Xlsx($spreadsheet))->save($excel);
+
+        $this->actingAsWhatsAppAdmin();
+
+        Livewire::test(ListEventRegistrations::class)
+            ->callAction('returnUndeliveredInvitations', data: [
+                'report' => UploadedFile::fake()->createWithContent('registrations.csv', "name,phone\nزينب,07801234567"),
+            ])
+            ->assertNotified('تعذّرت قراءة التقرير');
+
+        $this->assertNotNull($registration->refresh()->invitation_sent_at);
+
+        Livewire::test(ListEventRegistrations::class)
+            ->callAction('returnUndeliveredInvitations', data: [
+                'report' => UploadedFile::fake()->createWithContent('report.xlsx', file_get_contents($excel)),
+            ])
+            ->assertNotified('عادت 1 دعوة إلى «بانتظار الدعوة»');
+
+        $this->assertNull($registration->refresh()->invitation_sent_at);
     }
 
     public function test_a_text_only_template_is_sent_without_uploading_the_card(): void

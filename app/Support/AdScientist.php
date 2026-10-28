@@ -6,6 +6,7 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use RuntimeException;
 
 /**
@@ -103,6 +104,50 @@ class AdScientist
         }
 
         return $response->json() ?? [];
+    }
+
+    /**
+     * The numbers a sending report exported from the Ad Scientist dashboard
+     * (CSV or Excel) lists as failed. The API accepts a message before Meta
+     * decides whether to deliver it, so a refused one only shows up there.
+     * A number the report also shows as delivered or read is left out: a
+     * later send reached it.
+     *
+     * @return list<string> As WhatsApp::number() writes them.
+     *
+     * @throws RuntimeException when the file is not such a report.
+     */
+    public static function failedNumbers(string $path): array
+    {
+        $rows = IOFactory::load($path, 0, [IOFactory::READER_CSV, IOFactory::READER_XLSX])
+            ->getActiveSheet()
+            ->toArray(null, false, false);
+
+        // «phone_number» in their CSV; a copy saved from Excel may read «Phone Number».
+        $columns = array_map(fn ($heading): string => str_replace(' ', '_', strtolower(trim((string) $heading))), array_shift($rows) ?? []);
+        $phoneColumn = array_search('phone_number', $columns, true);
+        $statusColumn = array_search('recipient_status', $columns, true);
+
+        if ($phoneColumn === false || $statusColumn === false) {
+            throw new RuntimeException('هذا الملف ليس تقرير إرسال من Ad Scientist: لا يحتوي على عمودي phone_number و recipient_status.');
+        }
+
+        $failed = $reached = [];
+
+        foreach ($rows as $row) {
+            // Excel keeps a long number as a float.
+            $phone = $row[$phoneColumn] ?? null;
+            $number = WhatsApp::number(is_float($phone) ? number_format($phone, 0, '', '') : (string) $phone);
+            $status = strtolower(trim((string) ($row[$statusColumn] ?? '')));
+
+            if ($number && $status === 'failed') {
+                $failed[] = $number;
+            } elseif ($number && in_array($status, ['delivered', 'read'], true)) {
+                $reached[] = $number;
+            }
+        }
+
+        return array_values(array_unique(array_diff($failed, $reached)));
     }
 
     private static function canSignIn(): bool

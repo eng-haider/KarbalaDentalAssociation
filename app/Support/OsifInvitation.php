@@ -118,6 +118,25 @@ class OsifInvitation
             ->get();
     }
 
+    /**
+     * Puts the invitations WhatsApp did not deliver back with those waiting,
+     * so «إرسال الدعوات للجميع» sends them again.
+     *
+     * @param  list<string>  $numbers  As WhatsApp::number() writes them.
+     * @return int How many registrations went back.
+     */
+    public static function returnUndelivered(array $numbers): int
+    {
+        $ids = EventRegistration::query()
+            ->whereNotNull('invitation_sent_at')
+            ->whereHas('event', fn ($event) => $event->where('slug', Event::OSIF_SLUG))
+            ->get(['id', 'phone', 'whatsapp_phone'])
+            ->filter(fn (EventRegistration $registration): bool => in_array($registration->whatsappNumber(), $numbers, true))
+            ->modelKeys();
+
+        return EventRegistration::query()->whereKey($ids)->update(['invitation_sent_at' => null]);
+    }
+
     /** Whether this user may send invitations through the WhatsApp API. */
     public static function canSendByApi(?User $user): bool
     {

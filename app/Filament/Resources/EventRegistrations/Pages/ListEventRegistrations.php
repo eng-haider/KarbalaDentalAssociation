@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EventRegistrations\Pages;
 
+use App\Filament\Resources\EventRegistrations\Actions\ReturnUndeliveredInvitationsAction;
 use App\Filament\Resources\EventRegistrations\Actions\SendAllInvitationsAction;
 use App\Filament\Resources\EventRegistrations\EventRegistrationResource;
 use App\Filament\Widgets\OsifProfessionalTitleCountsWidget;
@@ -21,6 +22,7 @@ class ListEventRegistrations extends ListRecords
     {
         return [
             SendAllInvitationsAction::make(),
+            ReturnUndeliveredInvitationsAction::make(),
             CreateAction::make()
                 ->label('إضافة تسجيل')
                 ->icon(Heroicon::OutlinedUserPlus),
