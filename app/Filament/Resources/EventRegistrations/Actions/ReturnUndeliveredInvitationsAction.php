@@ -15,7 +15,8 @@ use Throwable;
  * «إرسال الدعوات للجميع» sends them again. The API accepts an invitation
  * before Meta decides (a spam limit, a number not on WhatsApp), so it was
  * recorded as sent; the sending report exported from the Ad Scientist
- * dashboard is what lists the ones that failed.
+ * dashboard is what lists the ones that failed. A list of numbers alone
+ * (a phone_number column) works too: all of them go back.
  */
 class ReturnUndeliveredInvitationsAction extends Action
 {
@@ -34,10 +35,10 @@ class ReturnUndeliveredInvitationsAction extends Action
             ->color('warning')
             ->visible(fn (): bool => (bool) auth()->user()?->isAdmin())
             ->modalHeading('إرجاع الدعوات التي لم تصل')
-            ->modalDescription('ارفع تقرير الإرسال من لوحة Ad Scientist (ملف CSV أو Excel). كل دعوة فشل وصولها تعود إلى «بانتظار الدعوة» لتُرسل من جديد.')
+            ->modalDescription('ارفع تقرير الإرسال من لوحة Ad Scientist، فتعود الدعوات الفاشلة فيه فقط. أو ارفع ملف أرقام فيه عمود phone_number (مثل ملف «تصدير الأرقام»)، فتعود دعوات كل أرقامه. تعود الدعوات إلى «بانتظار الدعوة» لتُرسل من جديد.')
             ->schema([
                 FileUpload::make('report')
-                    ->label('تقرير الإرسال')
+                    ->label('تقرير الإرسال أو ملف الأرقام (CSV أو Excel)')
                     ->acceptedFileTypes([
                         'text/csv',
                         'text/plain',
@@ -55,7 +56,7 @@ class ReturnUndeliveredInvitationsAction extends Action
                     $numbers = AdScientist::failedNumbers($data['report']->getRealPath());
                 } catch (Throwable $exception) {
                     Notification::make()
-                        ->title('تعذّرت قراءة التقرير')
+                        ->title('تعذّرت قراءة الملف')
                         ->body($exception->getMessage())
                         ->danger()
                         ->send();
@@ -70,8 +71,8 @@ class ReturnUndeliveredInvitationsAction extends Action
                 Notification::make()
                     ->title($returned
                         ? "عادت {$returned} دعوة إلى «بانتظار الدعوة»"
-                        : 'لا توجد دعوات مُرسلة لأرقام هذا التقرير')
-                    ->body('في التقرير '.count($numbers).' رقماً لم تصله الدعوة.')
+                        : 'لا توجد دعوات مُرسلة لأرقام هذا الملف')
+                    ->body('في الملف '.count($numbers).' رقماً لم تصله الدعوة.')
                     ->status($returned ? 'success' : 'warning')
                     ->send();
             });

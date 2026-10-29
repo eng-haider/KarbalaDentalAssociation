@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -996,22 +997,22 @@ class OsifRegistrationTest extends TestCase
             'owns_clinic' => false,
             'invitation_sent_at' => $sentAt,
         ]);
-        $rateLimited = $register('07730331911');
-        $notOnWhatsApp = $register('+964 788 776 7441');
+        $rateLimited = $register('07700000001');
+        $notOnWhatsApp = $register('+964 780 000 0002');
         $reachedLater = $register('07801234567');
         $delivered = $register('07701112233');
         $neverSent = $register('07711112233', null);
         $otherEvent = Event::create(['title' => 'ندوة علمية', 'starts_at' => now()->addWeek()])->registrations()->create([
             'name' => 'مصطفى كريم جاسم',
-            'phone' => '07730331911',
+            'phone' => '07700000001',
             'invitation_sent_at' => '2026-10-27 23:00:00',
         ]);
 
         // As exported from the Ad Scientist dashboard.
         $report = UploadedFile::fake()->createWithContent('External_Executions_All_2026-10-28.csv', implode("\n", [
             'execution_name,execution_created_at,template_name,template_category,execution_status,phone_number,recipient_status,sent_at,delivered_at,read_at,wa_message_id,error_code,error_message',
-            '"oct_26 — 2026-10-28","28/10/2026, 03:01:50","oct_26","MARKETING","partial","9647730331911","failed","28/10/2026, 03:01:50","","","wamid.1","131048","Spam Rate limit hit"',
-            '"oct_26 — 2026-10-28","28/10/2026, 03:01:25","oct_26","MARKETING","partial","9647887767441","failed","28/10/2026, 03:01:25","","","wamid.2","131026","Message undeliverable"',
+            '"oct_26 — 2026-10-28","28/10/2026, 03:01:50","oct_26","MARKETING","partial","9647700000001","failed","28/10/2026, 03:01:50","","","wamid.1","131048","Spam Rate limit hit"',
+            '"oct_26 — 2026-10-28","28/10/2026, 03:01:25","oct_26","MARKETING","partial","9647800000002","failed","28/10/2026, 03:01:25","","","wamid.2","131026","Message undeliverable"',
             '"oct_26 — 2026-10-27","28/10/2026, 02:59:49","oct_26","MARKETING","partial","9647801234567","failed","28/10/2026, 02:59:49","","","wamid.3","131048","Spam Rate limit hit"',
             '"oct_26 — 2026-10-28","28/10/2026, 09:00:00","oct_26","MARKETING","completed","9647801234567","delivered","28/10/2026, 09:00:00","28/10/2026, 09:00:02","","wamid.4","",""',
             '"oct_26 — 2026-10-28","28/10/2026, 09:00:10","oct_26","MARKETING","completed","9647701112233","read","28/10/2026, 09:00:10","28/10/2026, 09:00:11","28/10/2026, 09:05:00","wamid.5","",""',
@@ -1057,7 +1058,7 @@ class OsifRegistrationTest extends TestCase
             ->callAction('returnUndeliveredInvitations', data: [
                 'report' => UploadedFile::fake()->createWithContent('registrations.csv', "name,phone\nزينب,07801234567"),
             ])
-            ->assertNotified('تعذّرت قراءة التقرير');
+            ->assertNotified('تعذّرت قراءة الملف');
 
         $this->assertNotNull($registration->refresh()->invitation_sent_at);
 
@@ -1068,6 +1069,43 @@ class OsifRegistrationTest extends TestCase
             ->assertNotified('عادت 1 دعوة إلى «بانتظار الدعوة»');
 
         $this->assertNull($registration->refresh()->invitation_sent_at);
+    }
+
+    public function test_a_list_of_numbers_alone_sends_every_one_of_them_again(): void
+    {
+        $event = $this->osifEvent();
+        $register = fn (string $phone): EventRegistration => $event->registrations()->create([
+            'name' => 'مسجّل '.$phone,
+            'phone' => $phone,
+            'whatsapp_phone' => $phone,
+            'professional_title' => 'طبيب أسنان',
+            'owns_clinic' => false,
+            'invitation_sent_at' => now(),
+        ]);
+        $listed = $register('07801234567');
+        $typedAsNumber = $register('07711112222');
+        $notListed = $register('07722223333');
+
+        // A phone_number column and nothing else, like «تصدير الأرقام» makes;
+        // a number typed into Excel is a number rather than text.
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setCellValue('A1', 'phone_number');
+        $sheet->setCellValueExplicit('A2', '9647801234567', DataType::TYPE_STRING);
+        $sheet->setCellValue('A3', 9647711112222);
+        $list = tempnam(sys_get_temp_dir(), 'numbers');
+        (new Xlsx($spreadsheet))->save($list);
+
+        $this->actingAsWhatsAppAdmin();
+        Livewire::test(ListEventRegistrations::class)
+            ->callAction('returnUndeliveredInvitations', data: [
+                'report' => UploadedFile::fake()->createWithContent('Phone_Not_In_1_or_2.xlsx', file_get_contents($list)),
+            ])
+            ->assertNotified('عادت 2 دعوة إلى «بانتظار الدعوة»');
+
+        $this->assertNull($listed->refresh()->invitation_sent_at);
+        $this->assertNull($typedAsNumber->refresh()->invitation_sent_at);
+        $this->assertNotNull($notListed->refresh()->invitation_sent_at);
     }
 
     public function test_admins_export_the_numbers_the_table_shows_as_excel(): void

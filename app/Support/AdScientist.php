@@ -107,15 +107,17 @@ class AdScientist
     }
 
     /**
-     * The numbers a sending report exported from the Ad Scientist dashboard
-     * (CSV or Excel) lists as failed. The API accepts a message before Meta
-     * decides whether to deliver it, so a refused one only shows up there.
-     * A number the report also shows as delivered or read is left out: a
-     * later send reached it.
+     * The numbers an invitation did not reach, from an uploaded CSV or Excel
+     * file. In a sending report exported from the Ad Scientist dashboard
+     * they are the failed rows (the API accepts a message before Meta
+     * decides whether to deliver it, so a refused one only shows up there),
+     * less any number the report also shows as delivered or read: a later
+     * send reached it. A file without a recipient_status column, such as
+     * «تصدير الأرقام» makes, is already a list of them.
      *
      * @return list<string> As WhatsApp::number() writes them.
      *
-     * @throws RuntimeException when the file is not such a report.
+     * @throws RuntimeException when the file has no phone_number column.
      */
     public static function failedNumbers(string $path): array
     {
@@ -128,8 +130,8 @@ class AdScientist
         $phoneColumn = array_search('phone_number', $columns, true);
         $statusColumn = array_search('recipient_status', $columns, true);
 
-        if ($phoneColumn === false || $statusColumn === false) {
-            throw new RuntimeException('هذا الملف ليس تقرير إرسال من Ad Scientist: لا يحتوي على عمودي phone_number و recipient_status.');
+        if ($phoneColumn === false) {
+            throw new RuntimeException('لا يحتوي الملف على عمود phone_number: ارفع تقرير الإرسال من Ad Scientist، أو ملف أرقام فيه هذا العمود.');
         }
 
         $failed = $reached = [];
@@ -138,7 +140,7 @@ class AdScientist
             // Excel keeps a long number as a float.
             $phone = $row[$phoneColumn] ?? null;
             $number = WhatsApp::number(is_float($phone) ? number_format($phone, 0, '', '') : (string) $phone);
-            $status = strtolower(trim((string) ($row[$statusColumn] ?? '')));
+            $status = $statusColumn === false ? 'failed' : strtolower(trim((string) ($row[$statusColumn] ?? '')));
 
             if ($number && $status === 'failed') {
                 $failed[] = $number;
