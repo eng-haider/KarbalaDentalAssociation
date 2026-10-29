@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Tests\TestCase;
@@ -1025,7 +1026,7 @@ class OsifRegistrationTest extends TestCase
         Livewire::test(ListEventRegistrations::class)
             ->assertActionVisible('returnUndeliveredInvitations')
             ->callAction('returnUndeliveredInvitations', data: ['report' => $report])
-            ->assertHasNoActionErrors()
+            ->assertHasNoFormErrors()
             ->assertNotified('عادت 2 دعوة إلى «بانتظار الدعوة»');
 
         $this->assertNull($rateLimited->refresh()->invitation_sent_at);
@@ -1067,6 +1068,54 @@ class OsifRegistrationTest extends TestCase
             ->assertNotified('عادت 1 دعوة إلى «بانتظار الدعوة»');
 
         $this->assertNull($registration->refresh()->invitation_sent_at);
+    }
+
+    public function test_admins_export_the_numbers_the_table_shows_as_excel(): void
+    {
+        $event = $this->osifEvent();
+        $register = fn (string $phone, $sentAt = null): EventRegistration => $event->registrations()->create([
+            'name' => 'مسجّل '.$phone,
+            'phone' => $phone,
+            'whatsapp_phone' => $phone,
+            'professional_title' => 'طبيب أسنان',
+            'owns_clinic' => false,
+            'invitation_sent_at' => $sentAt,
+        ]);
+        $register('0780 123 4567');
+        $register('07801234567');
+        $register('07711112222', now());
+        $register('+964 772 222 3333');
+        Event::create(['title' => 'ندوة علمية', 'starts_at' => now()->addWeek()])->registrations()->create([
+            'name' => 'مصطفى كريم جاسم',
+            'phone' => '07733334444',
+        ]);
+        $numbersIn = function ($component): array {
+            $file = tempnam(sys_get_temp_dir(), 'numbers');
+            file_put_contents($file, base64_decode(data_get($component->effects, 'download.content')));
+
+            return IOFactory::load($file)->getActiveSheet()->toArray();
+        };
+
+        $this->actingAsCoordinator();
+        Livewire::test(ListEventRegistrations::class)->assertActionHidden('exportNumbers');
+
+        $this->actingAsWhatsAppAdmin();
+
+        // «بانتظار الدعوة»: each number once, as the text WhatsApp tools expect.
+        $pending = Livewire::test(ListEventRegistrations::class)
+            ->set('activeTab', 'pending')
+            ->callAction('exportNumbers')
+            ->assertFileDownloaded('phone-numbers-'.now()->format('Y-m-d').'.xlsx');
+
+        $this->assertEqualsCanonicalizing([['phone_number'], ['9647801234567'], ['9647722223333']], $numbersIn($pending));
+
+        // «الكل» in the OSIF dashboard: OSIF registrations only.
+        $all = Livewire::test(ListEventRegistrations::class)->callAction('exportNumbers');
+
+        $this->assertEqualsCanonicalizing(
+            [['phone_number'], ['9647801234567'], ['9647711112222'], ['9647722223333']],
+            $numbersIn($all),
+        );
     }
 
     public function test_a_text_only_template_is_sent_without_uploading_the_card(): void
