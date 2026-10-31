@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\EventRegistrations\Pages;
 
 use App\Filament\Resources\EventRegistrations\Actions\ExportNumbersAction;
+use App\Filament\Resources\EventRegistrations\Actions\ExportRegistrationsAction;
 use App\Filament\Resources\EventRegistrations\Actions\ReturnUndeliveredInvitationsAction;
 use App\Filament\Resources\EventRegistrations\Actions\SendAllInvitationsAction;
 use App\Filament\Resources\EventRegistrations\EventRegistrationResource;
@@ -25,6 +26,7 @@ class ListEventRegistrations extends ListRecords
             SendAllInvitationsAction::make(),
             ReturnUndeliveredInvitationsAction::make(),
             ExportNumbersAction::make(),
+            ExportRegistrationsAction::make(),
             CreateAction::make()
                 ->label('إضافة تسجيل')
                 ->icon(Heroicon::OutlinedUserPlus),

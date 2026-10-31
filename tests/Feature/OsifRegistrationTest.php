@@ -1156,6 +1156,57 @@ class OsifRegistrationTest extends TestCase
         );
     }
 
+    public function test_admins_export_every_registrant_with_their_details_as_excel(): void
+    {
+        $event = $this->osifEvent();
+        $sent = $event->registrations()->create([
+            'name' => 'علي حسين كاظم',
+            'phone' => '07801234567',
+            'whatsapp_phone' => '07711112222',
+            'email' => 'ali@example.com',
+            'professional_title' => 'طبيب أسنان اختصاص',
+            'owns_clinic' => true,
+            'workplace' => 'مستشفى كربلاء',
+            'city' => 'كربلاء',
+            'attendance_type' => 'workshop',
+            'is_vip' => true,
+            'invitation_sent_at' => now(),
+        ]);
+        $event->registrations()->create(['name' => 'زينب علي', 'phone' => '07722223333', 'owns_clinic' => false]);
+        Event::create(['title' => 'ندوة علمية', 'starts_at' => now()->addWeek()])->registrations()->create([
+            'name' => 'مصطفى كريم جاسم',
+            'phone' => '07733334444',
+        ]);
+
+        $this->actingAsCoordinator();
+        Livewire::test(ListEventRegistrations::class)->assertActionHidden('exportRegistrations');
+
+        $this->actingAsWhatsAppAdmin();
+        $component = Livewire::test(ListEventRegistrations::class)
+            ->callAction('exportRegistrations')
+            ->assertFileDownloaded('osif-registrations-'.now()->format('Y-m-d').'.xlsx');
+
+        $file = tempnam(sys_get_temp_dir(), 'registrations');
+        file_put_contents($file, base64_decode(data_get($component->effects, 'download.content')));
+        $rows = collect(IOFactory::load($file)->getActiveSheet()->toArray());
+        $headings = $rows->shift();
+        $byName = $rows->keyBy(fn (array $row): string => $row[array_search('الاسم الثلاثي', $headings)]);
+        $cell = fn (string $name, string $heading) => $byName[$name][array_search($heading, $headings)];
+
+        // «الكل» in the OSIF dashboard: OSIF registrants only.
+        $this->assertEqualsCanonicalizing(['علي حسين كاظم', 'زينب علي'], $byName->keys()->all());
+        $this->assertSame($sent->invitationCode(), $cell('علي حسين كاظم', 'رمز الدعوة'));
+        $this->assertSame('07801234567', $cell('علي حسين كاظم', 'رقم الهاتف'));
+        $this->assertSame('07711112222', $cell('علي حسين كاظم', 'رقم الواتساب'));
+        $this->assertSame('طبيب أسنان اختصاص', $cell('علي حسين كاظم', 'الصفة المهنية أو الأكاديمية'));
+        $this->assertSame('نعم', $cell('علي حسين كاظم', 'يمتلك عيادة'));
+        $this->assertSame('مهتم بالورش', $cell('علي حسين كاظم', 'نوع الحضور'));
+        $this->assertSame('VIP', $cell('علي حسين كاظم', 'نوع الدعوة'));
+        $this->assertNotEmpty($cell('علي حسين كاظم', 'أُرسلت الدعوة في'));
+        $this->assertSame('لا', $cell('زينب علي', 'يمتلك عيادة'));
+        $this->assertSame('عادية', $cell('زينب علي', 'نوع الدعوة'));
+    }
+
     public function test_a_text_only_template_is_sent_without_uploading_the_card(): void
     {
         Storage::fake('public');
