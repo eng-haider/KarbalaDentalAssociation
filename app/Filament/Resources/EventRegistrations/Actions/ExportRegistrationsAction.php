@@ -14,9 +14,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Downloads the registrations the table shows (its tab, filters and search)
- * as an Excel file: one registrant per row with everything they entered and
- * where their invitation stands. On the «الكل» tab with no filters, that is
- * everyone registered.
+ * as an Excel file: one registrant per row with everything they entered.
+ * On the «الكل» tab with no filters, that is everyone registered.
  */
 class ExportRegistrationsAction extends Action
 {
@@ -59,8 +58,6 @@ class ExportRegistrationsAction extends Action
                     'المحافظة' => fn (EventRegistration $r) => $r->city,
                     'نوع الحضور' => fn (EventRegistration $r) => self::ATTENDANCE_TYPES[$r->attendance_type] ?? $r->attendance_type,
                     'نوع الدعوة' => fn (EventRegistration $r) => $r->is_vip ? 'VIP' : 'عادية',
-                    'أُرسلت الدعوة في' => fn (EventRegistration $r) => $r->invitation_sent_at?->format('Y-m-d H:i'),
-                    'تمت المعالجة' => fn (EventRegistration $r) => $r->is_handled ? 'نعم' : 'لا',
                     'الفعالية' => fn (EventRegistration $r) => $r->event?->title,
                     'ملاحظات' => fn (EventRegistration $r) => $r->notes,
                     'تاريخ التسجيل' => fn (EventRegistration $r) => $r->created_at?->format('Y-m-d H:i'),

@@ -1202,7 +1202,8 @@ class OsifRegistrationTest extends TestCase
         $this->assertSame('نعم', $cell('علي حسين كاظم', 'يمتلك عيادة'));
         $this->assertSame('مهتم بالورش', $cell('علي حسين كاظم', 'نوع الحضور'));
         $this->assertSame('VIP', $cell('علي حسين كاظم', 'نوع الدعوة'));
-        $this->assertNotEmpty($cell('علي حسين كاظم', 'أُرسلت الدعوة في'));
+        $this->assertNotContains('أُرسلت الدعوة في', $headings);
+        $this->assertNotContains('تمت المعالجة', $headings);
         $this->assertSame('لا', $cell('زينب علي', 'يمتلك عيادة'));
         $this->assertSame('عادية', $cell('زينب علي', 'نوع الدعوة'));
     }
