@@ -11,6 +11,8 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+
+
 /**
  * Downloads the WhatsApp numbers of the registrations the table shows (its
  * tab, filters and search) as an Excel file: one number per row, each once,
