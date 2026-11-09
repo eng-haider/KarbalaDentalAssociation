@@ -160,4 +160,7 @@
         <button type="button" class="btn" data-result-close>مسح التالي</button>
     </section>
 </body>
+
+
 </html>
+
