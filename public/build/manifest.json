@@ -3,6 +3,10 @@
     "file": "assets/module.esm-eTHrBq0G.js",
     "name": "module.esm"
   },
+  "_rolldown-runtime-Bh1tDfsg.js": {
+    "file": "assets/rolldown-runtime-Bh1tDfsg.js",
+    "name": "rolldown-runtime"
+  },
   "_share-N-98QgFR.js": {
     "file": "assets/share-N-98QgFR.js",
     "name": "share"
@@ -70,11 +74,23 @@
       "assets/lightbox-BnGLgMVy.css"
     ]
   },
+  "resources/js/osif-checkin.js": {
+    "file": "assets/osif-checkin-DSZcJL_f.js",
+    "name": "osif-checkin",
+    "src": "resources/js/osif-checkin.js",
+    "isEntry": true,
+    "imports": [
+      "_rolldown-runtime-Bh1tDfsg.js"
+    ]
+  },
   "resources/js/osif-invitation.js": {
-    "file": "assets/osif-invitation-DrHBQabd.js",
+    "file": "assets/osif-invitation-BGy3XL3Y.js",
     "name": "osif-invitation",
     "src": "resources/js/osif-invitation.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_rolldown-runtime-Bh1tDfsg.js"
+    ]
   },
   "resources/js/osif-shop.js": {
     "file": "assets/osif-shop-CofwozcH.js",

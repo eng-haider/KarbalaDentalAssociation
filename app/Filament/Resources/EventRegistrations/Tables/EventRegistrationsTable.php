@@ -71,19 +71,31 @@ class EventRegistrationsTable
                         TextColumn::make('status')
                             ->label('الحالة')
                             ->state(fn (EventRegistration $record): string => match (true) {
+                                $record->event?->isOsif() && $record->checked_in_at !== null => 'checked_in',
                                 $record->event?->isOsif() => $record->invitation_sent_at ? 'sent' : 'pending',
                                 default => $record->is_handled ? 'handled' : 'new',
                             })
                             ->badge()
                             ->formatStateUsing(fn (string $state): string => [
+                                'checked_in' => 'تم تسجيل الدخول للمؤتمر',
                                 'sent' => 'تم إرسال الدعوة — تمت المعالجة',
                                 'pending' => 'بانتظار الدعوة',
                                 'handled' => 'تمت المعالجة',
                                 'new' => 'قيد المتابعة',
                             ][$state])
-                            ->color(fn (string $state): string => in_array($state, ['sent', 'handled'], true) ? 'success' : 'warning')
-                            ->icon(fn (string $state) => in_array($state, ['sent', 'handled'], true) ? Heroicon::OutlinedCheckCircle : Heroicon::OutlinedClock)
-                            ->tooltip(fn (EventRegistration $record): ?string => $record->invitation_sent_at?->translatedFormat('j F Y، g:i A')),
+                            ->color(fn (string $state): string => match ($state) {
+                                'checked_in' => 'info',
+                                'sent', 'handled' => 'success',
+                                default => 'warning',
+                            })
+                            ->icon(fn (string $state) => match ($state) {
+                                'checked_in' => Heroicon::OutlinedCheckBadge,
+                                'sent', 'handled' => Heroicon::OutlinedCheckCircle,
+                                default => Heroicon::OutlinedClock,
+                            })
+                            ->tooltip(fn (EventRegistration $record): ?string => $record->checked_in_at
+                                ? 'دخل الساعة '.$record->checkInTime()
+                                : $record->invitation_sent_at?->translatedFormat('j F Y، g:i A')),
                         TextColumn::make('created_at')
                             ->label('تاريخ التسجيل')
                             ->since()
@@ -118,6 +130,13 @@ class EventRegistrationsTable
                     ->nullable()
                     ->trueLabel('تم إرسالها')
                     ->falseLabel('لم تُرسل بعد')
+                    ->placeholder('الكل'),
+                // Conference day: who has come through the gate (scanned at /osif/checkin).
+                TernaryFilter::make('checked_in_at')
+                    ->label('الحضور يوم المؤتمر')
+                    ->nullable()
+                    ->trueLabel('تم تسجيل الدخول')
+                    ->falseLabel('لم يحضر بعد')
                     ->placeholder('الكل'),
                 TernaryFilter::make('owns_clinic')
                     ->label('يمتلك عيادة')

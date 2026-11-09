@@ -27,7 +27,11 @@
     <main id="main" class="osif-pass-page">
         <div class="osif-container osif-pass-grid">
             <section class="osif-pass-info" aria-labelledby="osif-pass-name">
-                <p class="osif-pass-valid"><i class="bi bi-patch-check-fill" aria-hidden="true"></i> دعوة صالحة</p>
+                @if ($registration->checked_in_at)
+                    <p class="osif-pass-valid"><i class="bi bi-door-open-fill" aria-hidden="true"></i> تم تسجيل الدخول للمؤتمر · {{ $registration->checkInTime() }}</p>
+                @else
+                    <p class="osif-pass-valid"><i class="bi bi-patch-check-fill" aria-hidden="true"></i> دعوة صالحة</p>
+                @endif
                 <p class="osif-pass-kicker">{{ $label }} · {{ $registration->invitationCode() }}</p>
                 <h1 id="osif-pass-name">{{ $guest }}</h1>
                 @if ($registration->professional_title && ! $registration->is_vip)

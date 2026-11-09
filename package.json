@@ -23,6 +23,7 @@
         "@alpinejs/intersect": "^3.15.12",
         "@fancyapps/ui": "^6.1.15",
         "alpinejs": "^3.15.12",
+        "jsqr": "^1.4.0",
         "qrcode-generator": "1.4.4"
     }
 }

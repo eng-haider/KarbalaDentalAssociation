@@ -6,11 +6,13 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentView;
+use Filament\Support\Icons\Heroicon;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
@@ -51,6 +53,13 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
+            // The conference-day QR scanner at the gate (a plain page, not part of the panel).
+            ->navigationItems([
+                NavigationItem::make('تسجيل الحضور (QR)')
+                    ->url(fn (): string => route('osif.checkin'))
+                    ->icon(Heroicon::OutlinedQrCode)
+                    ->sort(-1),
+            ])
             ->pages([
                 Dashboard::class,
             ])

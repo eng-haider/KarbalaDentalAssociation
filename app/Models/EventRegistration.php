@@ -37,6 +37,7 @@ class EventRegistration extends Model
         'whatsapp_consent',
         'is_handled',
         'invitation_sent_at',
+        'checked_in_at',
         'is_vip',
     ];
 
@@ -47,6 +48,7 @@ class EventRegistration extends Model
             'whatsapp_consent' => 'boolean',
             'owns_clinic' => 'boolean',
             'invitation_sent_at' => 'datetime',
+            'checked_in_at' => 'datetime',
             'is_vip' => 'boolean',
         ];
     }
@@ -125,6 +127,14 @@ class EventRegistration extends Model
         return in_array($normalise($this->professional_title), array_map($normalise, self::TITLES_SHOWN_AS_DENTIST), true)
             ? 'طبيب أسنان'
             : $this->professional_title;
+    }
+
+    /** When the guest was checked in at the gate, in Karbala's time: «9:12 صباحاً». */
+    public function checkInTime(): ?string
+    {
+        $at = $this->checked_in_at?->copy()->timezone('Asia/Baghdad');
+
+        return $at ? $at->format('g:i').' '.($at->format('A') === 'AM' ? 'صباحاً' : 'مساءً') : null;
     }
 
     public function invitationCode(): string

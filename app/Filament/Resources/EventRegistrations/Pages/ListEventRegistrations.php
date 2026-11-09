@@ -63,6 +63,12 @@ class ListEventRegistrations extends ListRecords
                 ->badge($count(fn (Builder $query) => $query->whereNotNull('invitation_sent_at')))
                 ->badgeColor('success')
                 ->modifyQueryUsing(fn (Builder $query) => $query->whereNotNull('invitation_sent_at')),
+            // Conference day: checked in at the gate by scanning the card's QR code.
+            'checked_in' => Tab::make('حضروا المؤتمر')
+                ->icon(Heroicon::OutlinedCheckBadge)
+                ->badge($count(fn (Builder $query) => $query->whereNotNull('checked_in_at')))
+                ->badgeColor('info')
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereNotNull('checked_in_at')),
         ];
     }
 

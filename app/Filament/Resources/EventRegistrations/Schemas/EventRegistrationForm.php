@@ -85,6 +85,11 @@ class EventRegistrationForm
                             ->label('أُرسلت الدعوة في')
                             ->disabled()
                             ->visible($filled('invitation_sent_at')),
+                        DateTimePicker::make('checked_in_at')
+                            ->label('تم تسجيل الدخول للمؤتمر في')
+                            ->timezone('Asia/Baghdad')
+                            ->disabled()
+                            ->visible($filled('checked_in_at')),
                         // Changed in the send dialog, which redraws the card to match.
                         ToggleButtons::make('is_vip')
                             ->label('نوع الدعوة')
