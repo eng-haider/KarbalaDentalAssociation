@@ -76,6 +76,7 @@
 
         .manual { padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
         .manual label { display: block; margin-bottom: 8px; font-weight: 800; }
+        .manual .reader-note { margin: 0 0 10px; color: var(--muted); font-size: .82rem; font-weight: 600; line-height: 1.6; }
         .manual div { display: flex; gap: 8px; }
         .manual input {
             flex: 1; min-width: 0; min-height: 48px; padding: 8px 12px;
@@ -142,6 +143,7 @@
 
         <form class="manual" data-manual>
             <label for="manual-code">أو اكتب رمز الدعوة المطبوع على البطاقة</label>
+            <p class="reader-note">قارئ QR عبر USB أو Bluetooth جاهز أيضاً: فعّل هذه الصفحة ثم امسح الرمز. يجب ضبط القارئ على وضع لوحة المفاتيح (HID) مع زر Enter بعد القراءة.</p>
             <div>
                 <input id="manual-code" name="code" inputmode="text" autocomplete="off" placeholder="OSIF-0012" required>
                 <button type="submit" class="btn">تسجيل</button>

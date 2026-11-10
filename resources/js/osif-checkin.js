@@ -37,6 +37,12 @@ function init(root) {
     // The card just handled stays in front of the camera for a moment; don't read it twice.
     let recent = { code: null, until: 0 };
     let closeTimer = null;
+    // USB/Bluetooth QR readers normally act like a keyboard: they type a URL
+    // very quickly, then send Enter. Keep the page ready for that workflow
+    // even when the manual text box is not focused.
+    let readerBuffer = '';
+    let readerLastKeyAt = 0;
+    let clearReaderBufferTimer = null;
 
     setupDetector().finally(startCamera);
 
@@ -51,6 +57,45 @@ function init(root) {
                 input.value = '';
             }
         });
+    });
+
+    document.addEventListener('keydown', (event) => {
+        // Let normal typing in the manual field follow its existing form flow.
+        if (document.activeElement === manual.elements.code) {
+            return;
+        }
+
+        if (event.key === 'Enter') {
+            const code = readerBuffer.trim();
+            readerBuffer = '';
+            clearTimeout(clearReaderBufferTimer);
+
+            if (code) {
+                // Stop Enter from activating a focused button or link after a scan.
+                event.preventDefault();
+                handle(code, true);
+            }
+
+            return;
+        }
+
+        if (event.ctrlKey || event.metaKey || event.altKey || event.key.length !== 1) {
+            return;
+        }
+
+        const now = performance.now();
+
+        // A pause means this was ordinary typing rather than one scanner burst.
+        if (now - readerLastKeyAt > 150) {
+            readerBuffer = '';
+        }
+
+        readerBuffer += event.key;
+        readerLastKeyAt = now;
+        clearTimeout(clearReaderBufferTimer);
+        clearReaderBufferTimer = setTimeout(() => {
+            readerBuffer = '';
+        }, 500);
     });
 
     result.addEventListener('click', close);
