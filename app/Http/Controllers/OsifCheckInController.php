@@ -73,7 +73,9 @@ class OsifCheckInController extends Controller
 
     /**
      * What a scan or the typed box gives: the invitation link from the QR
-     * code, or the code printed on the card (OSIF-0012, or just 12).
+     * code, the code printed on the card (OSIF-0012, or just 12), or the last
+     * characters of the link's token: a QR reader set to type only those
+     * (10 or so instead of the whole 94-character link) is many times faster.
      */
     private function find(string $code): ?EventRegistration
     {
@@ -93,6 +95,13 @@ class OsifCheckInController extends Controller
 
         if (preg_match('~^(?:OSIF\s*-?\s*)?0*(\d{1,9})$~i', $code, $match)) {
             return $query->whereKey((int) $match[1])->first();
+        }
+
+        // The token's end: accepted only when it belongs to exactly one guest.
+        if (preg_match('~^[A-Za-z0-9]{8,19}$~', $code)) {
+            $matches = $query->where('invitation_token', 'like', '%'.$code)->limit(2)->get();
+
+            return $matches->count() === 1 ? $matches->first() : null;
         }
 
         return null;

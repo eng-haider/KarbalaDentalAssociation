@@ -25,6 +25,15 @@ const INVITATION = /\/osif\/invitation\/[A-Za-z0-9]{40}/;
 /** A QR reader types far faster than a person; a longer pause ends its burst. */
 const READER_GAP = 80;
 
+/**
+ * A fast run this long is a reader, not a person. A reader set to type only
+ * the end of the link (its last 10 characters, say) sends about this many.
+ */
+const READER_MIN = 8;
+
+/** A reader that sends no Enter has finished once it pauses this long. */
+const READER_DONE = 150;
+
 function init(root) {
     const csrf = document.querySelector('meta[name="csrf-token"]').content;
     const camera = root.querySelector('[data-camera]');
@@ -48,7 +57,7 @@ function init(root) {
     let recent = { code: null, until: 0 };
     let closeTimer = null;
     // What a keyboard-style QR reader has typed so far.
-    const reader = { text: '', lastAt: 0, swallowUntil: 0 };
+    const reader = { text: '', lastAt: 0, swallowUntil: 0, doneTimer: null };
 
     setupDetector().finally(startCamera);
 
@@ -95,7 +104,7 @@ function init(root) {
         reader.lastAt = now;
 
         // The rest of a scan already handled: its Enter, Tab or anything after the token.
-        if (inBurst && now < reader.swallowUntil) {
+        if (now < reader.swallowUntil && (inBurst || event.key === 'Enter' || event.key === 'Tab')) {
             event.preventDefault();
             return;
         }
@@ -103,9 +112,10 @@ function init(root) {
         if (event.key === 'Enter') {
             const text = reader.text;
             reader.text = '';
+            clearTimeout(reader.doneTimer);
 
             // Anything shorter is someone typing a code in the box: the form handles that.
-            if (inBurst && (text.length >= 15 || (text && document.activeElement !== input))) {
+            if (inBurst && (text.length >= READER_MIN || (text && document.activeElement !== input))) {
                 event.preventDefault();
                 fromReader(text, now);
             }
@@ -120,14 +130,19 @@ function init(root) {
         }
 
         reader.text = (inBurst ? reader.text : '') + char;
+        clearTimeout(reader.doneTimer);
 
         if (INVITATION.test(reader.text)) {
             event.preventDefault();
             fromReader(reader.text, now);
+        } else if (reader.text.length >= READER_MIN) {
+            // A reader without Enter, typing only the end of the link: done when it stops.
+            reader.doneTimer = setTimeout(() => fromReader(reader.text, performance.now()), READER_DONE);
         }
     }
 
     function fromReader(text, at) {
+        clearTimeout(reader.doneTimer);
         reader.text = '';
         reader.swallowUntil = at + 300;
 

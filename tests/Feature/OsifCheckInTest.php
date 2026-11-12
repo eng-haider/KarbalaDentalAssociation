@@ -92,6 +92,25 @@ class OsifCheckInTest extends TestCase
         $this->postJson('/osif/checkin', ['code' => $arabic])->assertJson(['status' => 'checked_in']);
     }
 
+    public function test_a_reader_may_type_only_the_end_of_the_link(): void
+    {
+        $registration = $this->osifRegistration();
+        $registration->forceFill(['invitation_token' => str_repeat('A', 30).'xY12345678'])->save();
+        $other = $this->osifRegistration(['name' => 'ضيف آخر']);
+        $other->forceFill(['invitation_token' => str_repeat('B', 30).'zW12345678'])->save();
+        $this->actingAsCoordinator();
+
+        // Eight characters both tokens end with: refused rather than guessed.
+        $this->postJson('/osif/checkin', ['code' => '12345678'])->assertNotFound();
+        $this->postJson('/osif/checkin', ['code' => 'Q12345678'])->assertNotFound();
+
+        $this->postJson('/osif/checkin', ['code' => 'xY12345678'])
+            ->assertOk()
+            ->assertJson(['status' => 'checked_in', 'code' => $registration->invitationCode()]);
+
+        $this->assertNull($other->refresh()->checked_in_at);
+    }
+
     public function test_cards_from_elsewhere_are_refused(): void
     {
         $this->actingAsCoordinator();
