@@ -13,6 +13,13 @@ const STOP_AFTER_FAILURES = 3;
 
 const MAX_IMAGE = 5 * 1024 * 1024;
 
+/**
+ * Seconds between pressing «ابدأ الإرسال» and the first message, with «تراجع»
+ * on screen: WhatsApp has no recalling a message once it has arrived, so this
+ * is the moment to change one's mind. Nothing is uploaded or sent before it ends.
+ */
+const UNDO_SECONDS = 10;
+
 const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
 /** A refused request in words: the server's own message where it gave one. */
@@ -27,7 +34,7 @@ async function failure(response) {
 }
 
 window.osifBroadcast = ({ storeUrl, total, needsImage, resume }) => ({
-    status: 'idle', // idle → preparing → running → done | stopped
+    status: 'idle', // idle → countdown → (idle on «تراجع») | preparing → running → done | stopped
     queue: [],
     next: 0,
     done: 0,
@@ -38,6 +45,9 @@ window.osifBroadcast = ({ storeUrl, total, needsImage, resume }) => ({
     error: null,
     image: null,
     preview: null,
+    countdown: 0,
+    countdownFor: 0,
+    timer: null,
 
     get percent() {
         return this.queue.length ? Math.round((this.done / this.queue.length) * 100) : 0;
@@ -54,7 +64,11 @@ window.osifBroadcast = ({ storeUrl, total, needsImage, resume }) => ({
     },
 
     destroy() {
-        // Closing the dialog ends the run after the messages in progress.
+        // Closing the dialog during the countdown is an undo; during the run it stops after the messages in progress.
+        if (this.status === 'countdown') {
+            this.undo();
+        }
+
         this.status = this.status === 'running' ? 'stopped' : this.status;
         window.removeEventListener('beforeunload', this.warnOnLeave);
 
@@ -95,6 +109,32 @@ window.osifBroadcast = ({ storeUrl, total, needsImage, resume }) => ({
         this.status = 'stopped';
     },
 
+    /** Counts down with «تراجع» on screen, then does what was asked. */
+    wait(count, then) {
+        this.status = 'countdown';
+        this.countdownFor = count;
+        this.countdown = UNDO_SECONDS;
+        this.timer = setInterval(() => {
+            if (--this.countdown > 0) {
+                return;
+            }
+
+            clearInterval(this.timer);
+            this.timer = null;
+
+            if (this.status === 'countdown') {
+                then();
+            }
+        }, 1000);
+    },
+
+    /** «تراجع»: back to how the dialog was, with nothing uploaded or sent. */
+    undo() {
+        clearInterval(this.timer);
+        this.timer = null;
+        this.status = 'idle';
+    },
+
     /** A new broadcast: everyone gets the message, even those a previous one reached. */
     async start() {
         this.error = null;
@@ -104,10 +144,10 @@ window.osifBroadcast = ({ storeUrl, total, needsImage, resume }) => ({
             return;
         }
 
-        if (!window.confirm(`ستُرسل الرسالة إلى ${total} رقم واتساب، ولا يمكن التراجع بعد الإرسال. هل تريد المتابعة؟`)) {
-            return;
-        }
+        this.wait(total, () => this.upload());
+    },
 
+    async upload() {
         this.status = 'preparing';
         const body = new FormData();
 
@@ -140,13 +180,11 @@ window.osifBroadcast = ({ storeUrl, total, needsImage, resume }) => ({
 
     /** The numbers an earlier broadcast has not reached yet. */
     carryOn() {
-        if (!window.confirm(`ستُرسل الرسالة إلى ${resume.length} رقم لم تصلهم بعد. هل تريد المتابعة؟`)) {
-            return;
-        }
-
         this.error = null;
-        this.queue = resume;
-        this.run();
+        this.wait(resume.length, () => {
+            this.queue = resume;
+            this.run();
+        });
     },
 
     async run() {

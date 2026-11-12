@@ -32,6 +32,10 @@
         .osif-cast__count { color: var(--gray-700); font-size: .85rem; font-weight: 600; }
         .osif-cast__ok { color: rgb(22 163 74); font-size: .85rem; font-weight: 600; }
         .osif-cast__warn { margin: 0; padding: .75rem .875rem; border-radius: .75rem; color: rgb(146 64 14); background: rgb(254 243 199); font-size: .8rem; line-height: 1.7; }
+        .osif-cast__countdown { display: grid; justify-items: center; gap: .5rem; padding: 1rem; border-radius: .75rem; text-align: center; background: rgb(254 242 242); }
+        .osif-cast__countdown strong { color: rgb(153 27 27); font-size: 1.05rem; }
+        .dark .osif-cast__countdown { background: rgb(127 29 29 / .3); }
+        .dark .osif-cast__countdown strong { color: rgb(254 202 202); }
         .osif-cast__error { margin: 0; padding: .75rem .875rem; border-radius: .75rem; color: rgb(153 27 27); background: rgb(254 226 226); font-size: .8rem; line-height: 1.7; }
         .osif-cast__failures { display: grid; gap: .375rem; max-height: 12rem; overflow-y: auto; margin: 0; padding: 0; list-style: none; font-size: .8rem; }
         .osif-cast__failures li { color: var(--gray-600); }
@@ -96,14 +100,23 @@
                 </p>
             @endif
 
-            <div x-show="status !== 'idle' && status !== 'preparing'" x-cloak style="display: grid; gap: .5rem;">
+            <div x-show="['running', 'done', 'stopped'].includes(status)" x-cloak style="display: grid; gap: .5rem;">
                 <div class="osif-cast__bar"><span x-bind:style="`width: ${percent}%`"></span></div>
                 <span class="osif-cast__count" x-text="`تمت معالجة ${done} من ${queue.length} · أُرسلت ${sent}` + (skipped ? ` · سبق إرسال ${skipped}` : '') + (failures.length ? ` · تعذّر ${failures.length}` : '')"></span>
             </div>
 
+            {{-- The undo window: nothing has been uploaded or sent yet. --}}
+            <div x-show="status === 'countdown'" x-cloak class="osif-cast__countdown">
+                <strong x-text="`سيبدأ الإرسال إلى ${countdownFor} رقم بعد ${countdown} ثانية`"></strong>
+                <p>لم يُرسل شيء بعد. اضغط «تراجع» لإلغاء الإرسال.</p>
+                <x-filament::button color="danger" size="lg" icon="heroicon-m-arrow-uturn-right" x-on:click="undo()">
+                    تراجع
+                </x-filament::button>
+            </div>
+
             <p x-show="status === 'preparing'" x-cloak>جارٍ رفع الصورة وتجهيز القائمة…</p>
             <p x-show="error" x-cloak class="osif-cast__error" x-text="error"></p>
-            <p x-show="status === 'running'" x-cloak class="osif-cast__warn">أبقِ هذه النافذة مفتوحة حتى ينتهي الإرسال.</p>
+            <p x-show="status === 'running'" x-cloak class="osif-cast__warn">أبقِ هذه النافذة مفتوحة حتى ينتهي الإرسال. يمكنك إيقافه في أي وقت بزر «إيقاف الإرسال»، فلا تُرسل الرسائل الباقية؛ أما الرسائل التي وصلت فلا يمكن سحبها من واتساب.</p>
             <span x-show="status === 'done'" x-cloak class="osif-cast__ok" x-text="`✓ اكتمل الإرسال: ${sent} رسالة`"></span>
             <p x-show="status === 'stopped'" x-cloak class="osif-cast__warn">
                 توقف الإرسال<span x-show="stopReason" x-text="`: ${stopReason}`"></span>. يمكنك المتابعة الآن أو لاحقاً، ولن تُعاد الرسائل المرسلة.
@@ -123,8 +136,8 @@
                 <x-filament::button x-show="status === 'stopped'" x-cloak color="success" icon="heroicon-m-play" x-on:click="run()">
                     متابعة الإرسال
                 </x-filament::button>
-                <x-filament::button x-show="status === 'running'" x-cloak color="gray" icon="heroicon-m-pause" x-on:click="stop()">
-                    إيقاف
+                <x-filament::button x-show="status === 'running'" x-cloak color="danger" icon="heroicon-m-pause" x-on:click="stop()">
+                    إيقاف الإرسال
                 </x-filament::button>
             </div>
         </div>
