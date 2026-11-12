@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Support\WhatsApp;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -72,6 +74,12 @@ class EventRegistration extends Model
         return $this->belongsTo(Event::class);
     }
 
+    /** The halls the guest entered at the conference, one row each. */
+    public function checkIns(): HasMany
+    {
+        return $this->hasMany(OsifCheckIn::class);
+    }
+
     /** Registrations made before tokens existed get one on first use; the first writer wins. */
     public function invitationToken(): string
     {
@@ -129,12 +137,17 @@ class EventRegistration extends Model
             : $this->professional_title;
     }
 
-    /** When the guest was checked in at the gate, in Karbala's time: «9:12 صباحاً». */
+    /** When the guest first entered the conference (any hall), in Karbala's time: «9:12 صباحاً». */
     public function checkInTime(): ?string
     {
-        $at = $this->checked_in_at?->copy()->timezone('Asia/Baghdad');
+        return $this->checked_in_at ? self::karbalaTime($this->checked_in_at) : null;
+    }
 
-        return $at ? $at->format('g:i').' '.($at->format('A') === 'AM' ? 'صباحاً' : 'مساءً') : null;
+    public static function karbalaTime(CarbonInterface $time): string
+    {
+        $at = $time->copy()->timezone('Asia/Baghdad');
+
+        return $at->format('g:i').' '.($at->format('A') === 'AM' ? 'صباحاً' : 'مساءً');
     }
 
     public function invitationCode(): string

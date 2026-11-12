@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'phone', 'role', 'company_id', 'password'])]
+#[Fillable(['name', 'email', 'phone', 'role', 'osif_hall', 'company_id', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
@@ -23,6 +23,9 @@ class User extends Authenticatable implements FilamentUser
     public const ROLE_WHATSAPP_ADMIN = 'whatsapp_admin';
 
     public const ROLE_OSIF_COORDINATOR = 'osif_coordinator';
+
+    /** Conference day: scans invitations at one hall's door and sees nothing else. */
+    public const ROLE_OSIF_SCANNER = 'osif_scanner';
 
     /** An exhibiting company's login; it reaches only that company's dashboard. */
     public const ROLE_COMPANY = 'company';
@@ -40,6 +43,7 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'osif_hall' => 'integer',
         ];
     }
 
@@ -50,6 +54,7 @@ class User extends Authenticatable implements FilamentUser
             self::ROLE_ADMIN => 'مدير النظام',
             self::ROLE_WHATSAPP_ADMIN => 'مدير النظام (إرسال واتساب)',
             self::ROLE_OSIF_COORDINATOR => 'منسق OSIF',
+            self::ROLE_OSIF_SCANNER => 'ماسح QR (قاعة)',
         ];
     }
 
@@ -87,10 +92,28 @@ class User extends Authenticatable implements FilamentUser
         return $this->isAdmin() || $this->role === self::ROLE_OSIF_COORDINATOR;
     }
 
+    public function isOsifScanner(): bool
+    {
+        return $this->role === self::ROLE_OSIF_SCANNER;
+    }
+
+    /** Who may scan invitations at the conference: the OSIF staff and the hall scanners. */
+    public function canCheckInOsifGuests(): bool
+    {
+        return $this->canManageOsif() || $this->isOsifScanner();
+    }
+
+    /** The hall a scanner is fixed to; staff choose theirs on the scanning page. */
+    public function checkInHall(): ?int
+    {
+        return $this->isOsifScanner() && isset(OsifCheckIn::HALLS[$this->osif_hall]) ? $this->osif_hall : null;
+    }
+
     public function canAccessPanel(Panel $panel): bool
     {
         return match ($panel->getId()) {
-            'osif' => $this->canManageOsif(),
+            // Scanners sign in through the OSIF login, which then sends them to the scanning page alone.
+            'osif' => $this->canCheckInOsifGuests(),
             'company' => $this->isCompany() && $this->company_id !== null,
             default => $this->isAdmin(),
         };

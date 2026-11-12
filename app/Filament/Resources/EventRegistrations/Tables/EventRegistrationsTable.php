@@ -5,6 +5,7 @@ namespace App\Filament\Resources\EventRegistrations\Tables;
 use App\Filament\Resources\EventRegistrations\Actions\SendInvitationAction;
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Models\OsifCheckIn;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -28,7 +29,7 @@ class EventRegistrationsTable
         $inAdminPanel = Filament::getCurrentPanel()?->getId() !== 'osif';
 
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with('event'))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['event', 'checkIns']))
             // A list of cards: one row per person on wide screens, stacked on phones.
             ->columns([
                 Split::make([
@@ -93,8 +94,13 @@ class EventRegistrationsTable
                                 'sent', 'handled' => Heroicon::OutlinedCheckCircle,
                                 default => Heroicon::OutlinedClock,
                             })
+                            // Conference day: each hall the guest entered, with the time.
                             ->tooltip(fn (EventRegistration $record): ?string => $record->checked_in_at
-                                ? 'دخل الساعة '.$record->checkInTime()
+                                ? ($record->checkIns->isEmpty()
+                                    ? 'دخل الساعة '.$record->checkInTime()
+                                    : $record->checkIns->sortBy('hall')
+                                        ->map(fn (OsifCheckIn $checkIn): string => OsifCheckIn::hallName($checkIn->hall).': '.$checkIn->time())
+                                        ->join(' · '))
                                 : $record->invitation_sent_at?->translatedFormat('j F Y، g:i A')),
                         TextColumn::make('created_at')
                             ->label('تاريخ التسجيل')

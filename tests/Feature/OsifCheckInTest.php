@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Models\OsifCheckIn;
 use App\Models\User;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -53,7 +55,7 @@ class OsifCheckInTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => User::ROLE_COMPANY]));
 
         $this->get('/osif/checkin')->assertForbidden();
-        $this->postJson('/osif/checkin', ['code' => 'OSIF-0001'])->assertForbidden();
+        $this->postJson('/osif/checkin', ['hall' => 1, 'code' => 'OSIF-0001'])->assertForbidden();
     }
 
     public function test_scanning_an_invitation_checks_the_guest_in_once(): void
@@ -62,19 +64,19 @@ class OsifCheckInTest extends TestCase
         $this->osifRegistration(['name' => 'ضيف آخر']);
         $this->actingAsCoordinator();
 
-        $this->postJson('/osif/checkin', ['code' => $registration->invitationShareUrl()])
+        $this->postJson('/osif/checkin', ['hall' => 1, 'code' => $registration->invitationShareUrl()])
             ->assertOk()
             ->assertJson([
                 'status' => 'checked_in',
                 'name' => 'د. حيدر عبد عون كاظم',
                 'code' => $registration->invitationCode(),
-                'stats' => ['checkedIn' => 1, 'total' => 2],
+                'stats' => ['mine' => 1, 'hall' => 1, 'total' => 2],
             ]);
 
         $this->assertNotNull($registration->refresh()->checked_in_at);
 
         // The same card again, typed by its code this time.
-        $this->postJson('/osif/checkin', ['code' => $registration->invitationCode()])
+        $this->postJson('/osif/checkin', ['hall' => 1, 'code' => $registration->invitationCode()])
             ->assertOk()
             ->assertJson(['status' => 'already', 'time' => $registration->checkInTime()]);
 
@@ -89,7 +91,7 @@ class OsifCheckInTest extends TestCase
 
         $arabic = strtr((string) $registration->getKey(), ['0' => '٠', '1' => '١', '2' => '٢', '3' => '٣', '4' => '٤', '5' => '٥', '6' => '٦', '7' => '٧', '8' => '٨', '9' => '٩']);
 
-        $this->postJson('/osif/checkin', ['code' => $arabic])->assertJson(['status' => 'checked_in']);
+        $this->postJson('/osif/checkin', ['hall' => 1, 'code' => $arabic])->assertJson(['status' => 'checked_in']);
     }
 
     public function test_a_reader_may_type_only_the_end_of_the_link(): void
@@ -101,10 +103,10 @@ class OsifCheckInTest extends TestCase
         $this->actingAsCoordinator();
 
         // Eight characters both tokens end with: refused rather than guessed.
-        $this->postJson('/osif/checkin', ['code' => '12345678'])->assertNotFound();
-        $this->postJson('/osif/checkin', ['code' => 'Q12345678'])->assertNotFound();
+        $this->postJson('/osif/checkin', ['hall' => 1, 'code' => '12345678'])->assertNotFound();
+        $this->postJson('/osif/checkin', ['hall' => 1, 'code' => 'Q12345678'])->assertNotFound();
 
-        $this->postJson('/osif/checkin', ['code' => 'xY12345678'])
+        $this->postJson('/osif/checkin', ['hall' => 1, 'code' => 'xY12345678'])
             ->assertOk()
             ->assertJson(['status' => 'checked_in', 'code' => $registration->invitationCode()]);
 
@@ -117,13 +119,86 @@ class OsifCheckInTest extends TestCase
         $other = Event::create(['title' => 'ندوة علمية', 'starts_at' => now()->addWeek()])
             ->registrations()->create(['name' => 'ضيف ندوة', 'phone' => '07700000000']);
 
-        $this->postJson('/osif/checkin', ['code' => 'https://example.com/osif/invitation/'.str_repeat('a', 40)])
+        $this->postJson('/osif/checkin', ['hall' => 1, 'code' => 'https://example.com/osif/invitation/'.str_repeat('a', 40)])
             ->assertNotFound()
             ->assertJson(['status' => 'invalid']);
 
-        $this->postJson('/osif/checkin', ['code' => 'OSIF-'.$other->getKey()])->assertNotFound();
-        $this->postJson('/osif/checkin', ['code' => 'مرحبا'])->assertNotFound();
+        $this->postJson('/osif/checkin', ['hall' => 1, 'code' => 'OSIF-'.$other->getKey()])->assertNotFound();
+        $this->postJson('/osif/checkin', ['hall' => 1, 'code' => 'مرحبا'])->assertNotFound();
 
         $this->assertNull($other->refresh()->checked_in_at);
+    }
+
+    private function scanner(int $hall): User
+    {
+        return User::factory()->create(['role' => User::ROLE_OSIF_SCANNER, 'osif_hall' => $hall]);
+    }
+
+    public function test_staff_choose_their_hall_before_scanning(): void
+    {
+        $this->withoutVite();
+        $this->actingAsCoordinator();
+
+        $this->get('/osif/checkin')->assertOk()->assertSee('في أي قاعة أنت؟', false);
+        $this->get('/osif/checkin?hall=2')->assertOk()->assertSee('القاعة الثانية', false)->assertSee('البطاقات التي قرأتها', false);
+
+        $this->postJson('/osif/checkin', ['code' => 'OSIF-0001'])->assertStatus(422);
+    }
+
+    public function test_a_guest_enters_each_hall_once_and_each_scanner_sees_their_own_count(): void
+    {
+        $guest = $this->osifRegistration();
+        $other = $this->osifRegistration(['name' => 'ضيف آخر']);
+        $hallOne = $this->scanner(1);
+        $hallOneToo = $this->scanner(1);
+        $hallTwo = $this->scanner(2);
+
+        $this->actingAs($hallOne)
+            ->postJson('/osif/checkin', ['code' => $guest->invitationCode(), 'hall' => 2])
+            ->assertJson(['status' => 'checked_in', 'stats' => ['mine' => 1, 'hall' => 1, 'total' => 2]]);
+
+        // The scanner's own hall counts, whatever the page sends.
+        $this->assertDatabaseHas('osif_check_ins', ['event_registration_id' => $guest->getKey(), 'hall' => 1, 'user_id' => $hallOne->getKey()]);
+
+        // The other door of the same hall: already in.
+        $this->actingAs($hallOneToo)
+            ->postJson('/osif/checkin', ['code' => $guest->invitationCode()])
+            ->assertJson(['status' => 'already', 'stats' => ['mine' => 0, 'hall' => 1]]);
+
+        $this->actingAs($hallOneToo)
+            ->postJson('/osif/checkin', ['code' => $other->invitationCode()])
+            ->assertJson(['status' => 'checked_in', 'stats' => ['mine' => 1, 'hall' => 2]]);
+
+        // The second hall is a new entry, counted for its own scanner.
+        $this->actingAs($hallTwo)
+            ->postJson('/osif/checkin', ['code' => $guest->invitationCode()])
+            ->assertJson(['status' => 'checked_in', 'stats' => ['mine' => 1, 'hall' => 1, 'total' => 2]]);
+
+        $this->assertSame(3, OsifCheckIn::count());
+        $this->assertNotNull($guest->refresh()->checked_in_at);
+    }
+
+    public function test_scanners_see_only_the_scanning_page(): void
+    {
+        $this->withoutVite();
+        $scanner = $this->scanner(2);
+
+        // Signing in through the OSIF login is allowed…
+        $this->assertTrue($scanner->canAccessPanel(Filament::getPanel('osif')));
+        $this->assertFalse($scanner->canAccessPanel(Filament::getPanel('admin')));
+
+        $this->actingAs($scanner);
+
+        // …but the dashboard sends them back to the scanner.
+        $this->get('/osif-dashboard')->assertRedirect(route('osif.checkin'));
+        $this->get('/osif-dashboard/event-registrations')->assertRedirect(route('osif.checkin'));
+
+        $this->get('/osif/checkin')
+            ->assertOk()
+            ->assertSee('القاعة الثانية', false)
+            ->assertDontSee('تغيير القاعة', false);
+
+        $this->post('/osif-dashboard/logout')->assertRedirect();
+        $this->assertGuest();
     }
 }

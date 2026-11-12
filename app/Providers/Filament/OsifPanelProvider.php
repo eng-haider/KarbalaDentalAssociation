@@ -5,8 +5,10 @@ namespace App\Providers\Filament;
 use App\Filament\Pages\OsifRegistrationSettings;
 use App\Filament\Resources\Companies\CompanyResource;
 use App\Filament\Resources\EventRegistrations\EventRegistrationResource;
+use App\Filament\Widgets\OsifHallAttendanceWidget;
 use App\Filament\Widgets\OsifProfessionalTitleCountsWidget;
 use App\Filament\Widgets\OsifRegistrationStatsWidget;
+use App\Http\Middleware\SendOsifScannersToCheckIn;
 use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -56,6 +58,7 @@ class OsifPanelProvider extends PanelProvider
             ])
             ->widgets([
                 OsifRegistrationStatsWidget::class,
+                OsifHallAttendanceWidget::class,
                 OsifProfessionalTitleCountsWidget::class,
                 AccountWidget::class,
             ])
@@ -72,6 +75,7 @@ class OsifPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                SendOsifScannersToCheckIn::class,
             ]);
     }
 }

@@ -41,6 +41,10 @@ return [
         // The same wording without the image, sent while Meta reviews the
         // one above (an edited template goes back to review).
         'invitation_fallback_template' => env('ADSCIENTIST_INVITATION_FALLBACK_TEMPLATE', 'osif_invitation_text'),
+        // «إرسال رسالة للجميع»: a template with fixed wording (and an image) sent to every registration.
+        'broadcast_template' => env('ADSCIENTIST_BROADCAST_TEMPLATE', 'msg'),
+        // The association's WhatsApp number in Ad Scientist; empty sends from their default number.
+        'phone_number_id' => env('ADSCIENTIST_PHONE_NUMBER_ID'),
     ],
 
     'slack' => [

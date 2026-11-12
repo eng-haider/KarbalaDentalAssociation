@@ -92,12 +92,14 @@ class AdScientist
      */
     public static function sendTemplate(string $phoneNumber, string $template, array $components, string $language = 'ar'): array
     {
-        $response = static::request()->post(static::url('messages/send-template'), [
+        $response = static::request()->post(static::url('messages/send-template'), array_filter([
+            // The association's WhatsApp number to send from; Ad Scientist's default one when not set.
+            'phoneNumberId' => config('services.adscientist.phone_number_id'),
             'phoneNumber' => $phoneNumber,
             'templateName' => $template,
             'languageCode' => $language,
             'components' => $components,
-        ]);
+        ], fn ($value) => filled($value)));
 
         if ($response->failed() || $response->json('success') === false) {
             static::fail($response);

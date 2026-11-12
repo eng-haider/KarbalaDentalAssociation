@@ -8,6 +8,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\MarketplaceController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\OsifBroadcastController;
 use App\Http\Controllers\OsifCheckInController;
 use App\Http\Controllers\OsifCompanyController;
 use App\Http\Controllers\OsifController;
@@ -101,6 +102,13 @@ Route::get('/osif/invitations/{registration}/payload', [OsifInvitationController
     ->name('osif.invitation.payload');
 Route::post('/osif/invitations/{registration}/send', [OsifInvitationController::class, 'send'])
     ->name('osif.invitation.send');
+
+// «إرسال رسالة للجميع»: one WhatsApp template to every OSIF registration, number by number.
+Route::post('/osif/broadcasts', [OsifBroadcastController::class, 'store'])
+    ->middleware('throttle:6,1')
+    ->name('osif.broadcasts.store');
+Route::post('/osif/broadcasts/messages/{message}/send', [OsifBroadcastController::class, 'send'])
+    ->name('osif.broadcasts.send');
 
 // Conference day: staff scan each invitation's QR code at the gate to check the guest in.
 Route::get('/osif/checkin', [OsifCheckInController::class, 'index'])->name('osif.checkin');

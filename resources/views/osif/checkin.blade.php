@@ -46,13 +46,28 @@
 
         main { width: min(100%, 30rem); margin: 0 auto; padding: 16px; display: grid; gap: 14px; }
 
-        .count {
-            display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-            padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff;
+        .hall-name {
+            display: inline-block; margin-top: 2px; padding: 1px 10px; border-radius: 999px;
+            color: var(--violet); background: #fff; font-size: .82rem; font-weight: 800;
         }
-        .count span { color: var(--muted); font-weight: 700; }
-        .count strong { font-size: 1.6rem; font-weight: 900; color: var(--violet); }
-        .count em { font-style: normal; color: var(--muted); font-size: .95rem; font-weight: 700; }
+
+        .count { padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+        .count .mine { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .count .mine span { font-weight: 800; }
+        .count .mine strong { font-size: 2.2rem; font-weight: 900; line-height: 1.1; color: var(--violet); }
+        .count p {
+            margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--line);
+            color: var(--muted); font-size: .9rem; font-weight: 700;
+        }
+        .count p a { float: left; color: var(--violet); }
+
+        .halls { display: grid; gap: 12px; }
+        .halls h2 { margin: 8px 0 0; text-align: center; font-size: 1.2rem; font-weight: 900; }
+        .halls a {
+            display: block; padding: 22px 16px; border: 2px solid var(--violet); border-radius: 14px;
+            text-align: center; text-decoration: none; color: var(--violet); background: #fff;
+            font-size: 1.35rem; font-weight: 900;
+        }
 
         .camera {
             position: relative; aspect-ratio: 1; overflow: hidden;
@@ -117,6 +132,9 @@
         <div>
             <h1>تسجيل الحضور — OSIF</h1>
             <small>{{ auth()->user()->name }}</small>
+            @if ($hall)
+                <span class="hall-name">{{ $halls[$hall] }}</span>
+            @endif
         </div>
         <form method="POST" action="{{ route('filament.osif.auth.logout') }}">
             @csrf
@@ -124,10 +142,29 @@
         </form>
     </header>
 
-    <main data-checkin data-url="{{ route('osif.checkin.store') }}">
+    @if (! $hall)
+    {{-- Staff accounts pick the hall they are standing at; scanner accounts have theirs already. --}}
+    <main>
+        <div class="halls">
+            <h2>في أي قاعة أنت؟</h2>
+            @foreach ($halls as $number => $name)
+                <a href="{{ route('osif.checkin', ['hall' => $number]) }}">{{ $name }}</a>
+            @endforeach
+        </div>
+    </main>
+    @else
+    <main data-checkin data-url="{{ route('osif.checkin.store') }}" data-hall="{{ $hall }}">
         <div class="count" aria-live="polite">
-            <span>الحضور</span>
-            <div><strong data-checked-in>{{ $stats['checkedIn'] }}</strong> <em>من أصل <span data-total>{{ $stats['total'] }}</span> مسجّل</em></div>
+            <div class="mine">
+                <span>البطاقات التي قرأتها</span>
+                <strong data-mine>{{ $stats['mine'] }}</strong>
+            </div>
+            <p>
+                مجموع {{ $halls[$hall] }}: <span data-hall-total>{{ $stats['hall'] }}</span> من أصل <span data-total>{{ $stats['total'] }}</span> مسجّل
+                @if ($canChangeHall)
+                    <a href="{{ route('osif.checkin') }}">تغيير القاعة</a>
+                @endif
+            </p>
         </div>
 
         <div class="camera is-off" data-camera>
@@ -150,6 +187,7 @@
             </div>
         </form>
     </main>
+    @endif
 
     <section class="result" data-result role="alertdialog" aria-modal="true" aria-labelledby="result-title">
         <svg data-icon="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m7.5 12.5 3 3 6-6.5"/></svg>

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Models\OsifCheckIn;
+use App\Models\User;
 use App\Support\OsifInvitation;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -12,9 +14,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 /**
- * The conference-day gate: staff sign in with their OSIF dashboard account,
- * scan each guest's invitation QR code, and the registration is marked as
- * checked in. A guest is checked in once; a second scan says when it was.
+ * The conference-day scanner. Each hall has its own scanner at the door: a
+ * «QR scanner» account fixed to its hall, or OSIF staff who choose the hall
+ * on the page. A guest enters each hall once; a second scan at the same hall
+ * says when it was. Every scanner sees how many cards they have read.
  */
 class OsifCheckInController extends Controller
 {
@@ -25,40 +28,63 @@ class OsifCheckInController extends Controller
             return redirect()->guest(route('filament.osif.auth.login'));
         }
 
-        abort_unless($request->user()->canManageOsif(), 403);
+        abort_unless($request->user()->canCheckInOsifGuests(), 403);
 
-        return response()->view('osif.checkin', ['stats' => $this->stats()]);
+        $hall = $this->hall($request);
+
+        // A scanner account without a hall has to be given one in «المستخدمون والصلاحيات».
+        abort_if($hall === null && $request->user()->isOsifScanner(), 403, 'لم تُحدَّد قاعة لهذا الحساب.');
+
+        return response()->view('osif.checkin', [
+            'hall' => $hall,
+            'halls' => OsifCheckIn::HALLS,
+            'canChangeHall' => ! $request->user()->isOsifScanner(),
+            'stats' => $hall ? $this->stats($request->user(), $hall) : null,
+        ]);
     }
 
     public function store(Request $request): JsonResponse
     {
         abort_unless($request->user(), 401);
-        abort_unless($request->user()->canManageOsif(), 403);
+        abort_unless($request->user()->canCheckInOsifGuests(), 403);
 
         $data = $request->validate(['code' => ['required', 'string', 'max:500']]);
+        $hall = $this->hall($request);
+
+        if ($hall === null) {
+            return response()->json(['status' => 'error', 'message' => 'اختر القاعة أولاً.'], 422);
+        }
+
         $registration = $this->find($data['code']);
 
         if (! $registration) {
             return response()->json([
                 'status' => 'invalid',
                 'message' => 'هذه البطاقة غير موجودة في تسجيلات الملتقى.',
-                'stats' => $this->stats(),
+                'stats' => $this->stats($request->user(), $hall),
             ], 404);
         }
 
-        // Claimed in one statement, so two gates scanning the same card never both admit it.
+        // Claimed in one statement (the hall's unique key), so two scanners never both admit the same card.
         $now = now();
-        $checkedIn = EventRegistration::query()
-            ->whereKey($registration->getKey())
-            ->whereNull('checked_in_at')
-            ->update(['checked_in_at' => $now]);
+        $checkedIn = OsifCheckIn::query()->insertOrIgnore([
+            'event_registration_id' => $registration->getKey(),
+            'hall' => $hall,
+            'user_id' => $request->user()->getKey(),
+            'checked_in_at' => $now,
+        ]) > 0;
 
         if ($checkedIn) {
-            $registration->checked_in_at = $now;
-        } elseif ($registration->checked_in_at === null) {
-            // Another gate got there between the two queries.
-            $registration->refresh();
+            // The guest's first hall is when they entered the conference.
+            EventRegistration::query()
+                ->whereKey($registration->getKey())
+                ->whereNull('checked_in_at')
+                ->update(['checked_in_at' => $now]);
         }
+
+        $time = $checkedIn
+            ? EventRegistration::karbalaTime($now)
+            : $registration->checkIns()->where('hall', $hall)->first()?->time();
 
         return response()->json([
             'status' => $checkedIn ? 'checked_in' : 'already',
@@ -66,9 +92,19 @@ class OsifCheckInController extends Controller
             'title' => $registration->is_vip ? null : $registration->cardTitle(),
             'vip' => (bool) $registration->is_vip,
             'code' => $registration->invitationCode(),
-            'time' => $registration->checkInTime(),
-            'stats' => $this->stats(),
+            'time' => $time,
+            'stats' => $this->stats($request->user(), $hall),
         ]);
+    }
+
+    /** A scanner's own hall; staff send theirs with the page (?hall=1) and each scan. */
+    private function hall(Request $request): ?int
+    {
+        $hall = $request->user()->isOsifScanner()
+            ? $request->user()->checkInHall()
+            : (int) $request->input('hall');
+
+        return isset(OsifCheckIn::HALLS[$hall]) ? $hall : null;
     }
 
     /**
@@ -107,17 +143,19 @@ class OsifCheckInController extends Controller
         return null;
     }
 
-    /** @return array{checkedIn: int, total: int} */
-    private function stats(): array
+    /** @return array{mine: int, hall: int, total: int} */
+    private function stats(User $user, int $hall): array
     {
-        // Both counts in one query: every scan asks for them.
-        $counts = $this->osifRegistrations()->toBase()
-            ->selectRaw('count(*) as total, count(checked_in_at) as checked_in')
+        // Both hall counts in one query: every scan asks for them.
+        $counts = OsifCheckIn::query()->toBase()
+            ->where('hall', $hall)
+            ->selectRaw('count(*) as hall_total, sum(case when user_id = ? then 1 else 0 end) as mine', [$user->getKey()])
             ->first();
 
         return [
-            'checkedIn' => (int) $counts->checked_in,
-            'total' => (int) $counts->total,
+            'mine' => (int) $counts->mine,
+            'hall' => (int) $counts->hall_total,
+            'total' => $this->osifRegistrations()->count(),
         ];
     }
 

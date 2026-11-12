@@ -12,7 +12,7 @@
     "name": "share"
   },
   "resources/css/app.css": {
-    "file": "assets/app-p6g1MeMn.css",
+    "file": "assets/app-CHaSv8b2.css",
     "name": "app",
     "names": [
       "app.css"
@@ -74,8 +74,14 @@
       "assets/lightbox-BnGLgMVy.css"
     ]
   },
+  "resources/js/osif-broadcast.js": {
+    "file": "assets/osif-broadcast-B6jZdycj.js",
+    "name": "osif-broadcast",
+    "src": "resources/js/osif-broadcast.js",
+    "isEntry": true
+  },
   "resources/js/osif-checkin.js": {
-    "file": "assets/osif-checkin-brKNTwbh.js",
+    "file": "assets/osif-checkin-DnwdcLhy.js",
     "name": "osif-checkin",
     "src": "resources/js/osif-checkin.js",
     "isEntry": true,

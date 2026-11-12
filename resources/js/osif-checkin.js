@@ -1,5 +1,5 @@
-// The conference-day gate (resources/views/osif/checkin.blade.php): checks a
-// guest in from the QR code on their invitation, read either by the phone's
+// The conference-day scanner at a hall's door (resources/views/osif/checkin.blade.php):
+// checks a guest into that hall from the QR code on their invitation, read either by the phone's
 // camera or by a USB/Bluetooth QR reader that types like a keyboard.
 // The camera uses the browser's own BarcodeDetector where there is one
 // (Android Chrome), and jsQR everywhere else (iPhone Safari).
@@ -13,8 +13,8 @@ if (root) {
 }
 
 const TITLES = {
-    checked_in: 'تم تسجيل الدخول للمؤتمر',
-    already: 'سبق تسجيل دخوله',
+    checked_in: 'تم تسجيل الدخول',
+    already: 'سبق تسجيل دخوله إلى هذه القاعة',
     invalid: 'بطاقة غير صالحة',
     error: 'لم يتم التسجيل',
 };
@@ -330,7 +330,7 @@ function init(root) {
                     'X-CSRF-TOKEN': csrf,
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify({ code }),
+                body: JSON.stringify({ code, hall: root.dataset.hall }),
             });
 
             // Signed out or the page sat open too long: the reload goes through the login.
@@ -386,7 +386,8 @@ function init(root) {
         }[data.status] ?? (data.message || '');
 
         if (data.stats) {
-            root.querySelector('[data-checked-in]').textContent = data.stats.checkedIn;
+            root.querySelector('[data-mine]').textContent = data.stats.mine;
+            root.querySelector('[data-hall-total]').textContent = data.stats.hall;
             root.querySelector('[data-total]').textContent = data.stats.total;
         }
 

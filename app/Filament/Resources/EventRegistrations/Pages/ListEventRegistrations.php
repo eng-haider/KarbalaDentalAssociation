@@ -6,6 +6,7 @@ use App\Filament\Resources\EventRegistrations\Actions\ExportNumbersAction;
 use App\Filament\Resources\EventRegistrations\Actions\ExportRegistrationsAction;
 use App\Filament\Resources\EventRegistrations\Actions\ReturnUndeliveredInvitationsAction;
 use App\Filament\Resources\EventRegistrations\Actions\SendAllInvitationsAction;
+use App\Filament\Resources\EventRegistrations\Actions\SendBroadcastAction;
 use App\Filament\Resources\EventRegistrations\EventRegistrationResource;
 use App\Filament\Widgets\OsifProfessionalTitleCountsWidget;
 use App\Filament\Widgets\OsifRegistrationStatsWidget;
@@ -24,6 +25,7 @@ class ListEventRegistrations extends ListRecords
     {
         return [
             SendAllInvitationsAction::make(),
+            SendBroadcastAction::make(),
             ReturnUndeliveredInvitationsAction::make(),
             ExportNumbersAction::make(),
             ExportRegistrationsAction::make(),

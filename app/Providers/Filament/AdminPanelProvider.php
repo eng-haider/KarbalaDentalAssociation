@@ -34,10 +34,11 @@ class AdminPanelProvider extends PanelProvider
             fn (): string => view('filament.heic-upload')->render(),
         );
 
-        // Draws OSIF invitation cards for the "إرسال الدعوة" action (both panels).
+        // Draws OSIF invitation cards for the "إرسال الدعوة" action, and runs
+        // «إرسال رسالة للجميع» (both panels).
         FilamentView::registerRenderHook(
             PanelsRenderHook::BODY_END,
-            fn () => app(Vite::class)('resources/js/osif-invitation.js'),
+            fn () => app(Vite::class)(['resources/js/osif-invitation.js', 'resources/js/osif-broadcast.js']),
         );
     }
 

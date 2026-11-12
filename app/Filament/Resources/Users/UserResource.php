@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Users;
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
+use App\Models\OsifCheckIn;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\EditAction;
@@ -12,6 +13,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -59,7 +61,7 @@ class UserResource extends Resource
     {
         return $schema->components([
             Section::make('حساب المستخدم')
-                ->description('أنشئ حساب منسق OSIF ليصل إلى تسجيلات الملتقى فقط، أو حساب مدير للنظام كاملاً.')
+                ->description('أنشئ حساب منسق OSIF ليصل إلى تسجيلات الملتقى فقط، أو حساب ماسح QR لقاعة واحدة يوم المؤتمر (يرى صفحة المسح فقط)، أو حساب مدير للنظام كاملاً.')
                 ->schema([
                     TextInput::make('name')
                         ->label('الاسم')
@@ -75,7 +77,15 @@ class UserResource extends Resource
                         ->label('الدور')
                         ->options(User::roleOptions())
                         ->default(User::ROLE_OSIF_COORDINATOR)
+                        ->live()
                         ->required(),
+                    // Conference day: the hall this scanner stands at; the scanning page counts their cards there.
+                    Select::make('osif_hall')
+                        ->label('القاعة')
+                        ->options(OsifCheckIn::HALLS)
+                        ->helperText('يمسح بطاقات الضيوف عند باب هذه القاعة، ويرى عدد البطاقات التي قرأها.')
+                        ->visible(fn (Get $get): bool => $get('role') === User::ROLE_OSIF_SCANNER)
+                        ->required(fn (Get $get): bool => $get('role') === User::ROLE_OSIF_SCANNER),
                     TextInput::make('password')
                         ->label('كلمة المرور')
                         ->password()
@@ -97,7 +107,10 @@ class UserResource extends Resource
                 TextColumn::make('email')->label('البريد الإلكتروني')->searchable(),
                 TextColumn::make('role')
                     ->label('الدور')
-                    ->formatStateUsing(fn (string $state): string => User::roleLabels()[$state] ?? $state)
+                    ->formatStateUsing(fn (string $state, User $record): string => collect([
+                        User::roleLabels()[$state] ?? $state,
+                        $record->isOsifScanner() ? OsifCheckIn::hallName($record->osif_hall) : null,
+                    ])->filter()->join(' — '))
                     ->badge()
                     ->color(fn (string $state): string => in_array($state, [User::ROLE_ADMIN, User::ROLE_WHATSAPP_ADMIN], true) ? 'warning' : 'primary'),
                 TextColumn::make('created_at')->label('أُنشئ في')->dateTime('Y-m-d H:i')->sortable(),
