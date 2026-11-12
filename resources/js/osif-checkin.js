@@ -385,10 +385,6 @@ function init(root) {
             already: [data.time ? 'دخل الساعة ' + data.time : null, data.code].filter(Boolean).join(' · '),
         }[data.status] ?? (data.message || '');
 
-        if (ok) {
-            addScanned(data);
-        }
-
         if (data.stats) {
             root.querySelector('[data-mine]').textContent = data.stats.mine;
             root.querySelector('[data-hall-total]').textContent = data.stats.hall;
@@ -404,31 +400,6 @@ function init(root) {
         if (ok) {
             closeTimer = setTimeout(close, 1500);
         }
-    }
-
-    /** The guest just let in, at the top of «الضيوف الذين قرأت بطاقاتهم». */
-    function addScanned(data) {
-        const item = document.createElement('li');
-        const name = document.createElement('b');
-        const meta = document.createElement('span');
-
-        name.textContent = data.name || '';
-
-        if (data.vip) {
-            const vip = document.createElement('em');
-            vip.textContent = 'VIP';
-            meta.append(vip);
-        }
-
-        // Each part kept whole: «12:53 صباحاً» and «OSIF-0007» go opposite ways.
-        [data.time, data.code].filter(Boolean).forEach((part, index) => {
-            const piece = document.createElement('bdi');
-            piece.textContent = part;
-            meta.append(...(index ? [' · ', piece] : [piece]));
-        });
-        item.append(name, meta);
-        root.querySelector('[data-scanned]').prepend(item);
-        root.querySelector('[data-scanned-empty]').hidden = true;
     }
 
     function close() {

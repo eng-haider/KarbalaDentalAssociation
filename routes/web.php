@@ -112,6 +112,7 @@ Route::post('/osif/broadcasts/messages/{message}/send', [OsifBroadcastController
 
 // Conference day: staff scan each invitation's QR code at the gate to check the guest in.
 Route::get('/osif/checkin', [OsifCheckInController::class, 'index'])->name('osif.checkin');
+Route::get('/osif/checkin/scanned', [OsifCheckInController::class, 'scanned'])->name('osif.checkin.scanned');
 Route::post('/osif/checkin', [OsifCheckInController::class, 'store'])
     ->middleware('throttle:120,1')
     ->name('osif.checkin.store');

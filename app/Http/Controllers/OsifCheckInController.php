@@ -40,7 +40,32 @@ class OsifCheckInController extends Controller
             'halls' => OsifCheckIn::HALLS,
             'canChangeHall' => ! $request->user()->isOsifScanner(),
             'stats' => $hall ? $this->stats($request->user(), $hall) : null,
-            'scanned' => $hall ? $this->scannedBy($request->user(), $hall) : [],
+        ]);
+    }
+
+    /** «الضيوف الذين قرأت بطاقاتهم»: a page of its own, so the scanner stays short. */
+    public function scanned(Request $request): Response|RedirectResponse
+    {
+        if (! $request->user()) {
+            return redirect()->guest(route('filament.osif.auth.login'));
+        }
+
+        abort_unless($request->user()->canCheckInOsifGuests(), 403);
+
+        $hall = $this->hall($request);
+
+        // Staff who have not chosen a hall choose it on the scanner first.
+        if ($hall === null) {
+            abort_if($request->user()->isOsifScanner(), 403, 'لم تُحدَّد قاعة لهذا الحساب.');
+
+            return redirect()->route('osif.checkin');
+        }
+
+        return response()->view('osif.checkin-scanned', [
+            'hall' => $hall,
+            'halls' => OsifCheckIn::HALLS,
+            'canChangeHall' => ! $request->user()->isOsifScanner(),
+            'scanned' => $this->scannedBy($request->user(), $hall),
         ]);
     }
 
@@ -145,8 +170,7 @@ class OsifCheckInController extends Controller
     }
 
     /**
-     * The guests this scanner let into this hall, newest first: the list
-     * under their scanner, which each new scan adds to.
+     * The guests this scanner let into this hall, newest first.
      *
      * @return list<array{name: string, code: string, time: string, vip: bool}>
      */

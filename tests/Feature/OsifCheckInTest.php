@@ -46,6 +46,7 @@ class OsifCheckInTest extends TestCase
         $this->withoutVite();
 
         $this->get('/osif/checkin')->assertRedirect(route('filament.osif.auth.login'));
+        $this->get('/osif/checkin/scanned')->assertRedirect(route('filament.osif.auth.login'));
 
         $this->actingAsCoordinator();
 
@@ -145,6 +146,13 @@ class OsifCheckInTest extends TestCase
         $this->get('/osif/checkin?hall=2')->assertOk()->assertSee('القاعة الثانية', false)->assertSee('البطاقات التي قرأتها', false);
 
         $this->postJson('/osif/checkin', ['code' => 'OSIF-0001'])->assertStatus(422);
+
+        // The list page needs a hall too, and keeps the one chosen.
+        $this->get('/osif/checkin/scanned')->assertRedirect(route('osif.checkin'));
+        $this->get('/osif/checkin/scanned?hall=2')
+            ->assertOk()
+            ->assertSee('لم تقرأ أي بطاقة بعد.', false)
+            ->assertSee(route('osif.checkin', ['hall' => 2]), false);
     }
 
     public function test_a_guest_enters_each_hall_once_and_each_scanner_sees_their_own_count(): void
@@ -178,13 +186,17 @@ class OsifCheckInTest extends TestCase
 
         $this->assertSame(3, OsifCheckIn::count());
 
-        // Each scanner's page lists the guests they let in, and no one else's.
+        // Each scanner's list page shows the guests they let in, and no one else's.
         $this->withoutVite();
         $this->actingAs($hallOneToo)->get('/osif/checkin')
+            ->assertSee(route('osif.checkin.scanned'), false)
+            ->assertDontSee($other->invitationCode(), false);
+        $this->actingAs($hallOneToo)->get('/osif/checkin/scanned')
+            ->assertOk()
             ->assertSee('ضيف آخر', false)
             ->assertSee($other->invitationCode(), false)
             ->assertDontSee($guest->invitationCode(), false);
-        $this->actingAs($hallTwo)->get('/osif/checkin')
+        $this->actingAs($hallTwo)->get('/osif/checkin/scanned')
             ->assertSee($guest->invitationCode(), false)
             ->assertDontSee($other->invitationCode(), false);
         $this->assertNotNull($guest->refresh()->checked_in_at);

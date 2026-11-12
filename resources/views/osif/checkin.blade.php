@@ -62,19 +62,6 @@
         .count p a { float: left; color: var(--violet); }
         .count .mine span a { margin-inline-start: 6px; color: var(--violet); font-size: .82rem; font-weight: 700; }
 
-        .scanned { padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; scroll-margin-top: 12px; }
-        .scanned h2 { margin: 0 0 8px; font-size: 1rem; font-weight: 900; }
-        .scanned-empty { margin: 0; color: var(--muted); font-weight: 700; }
-        .scanned ol { margin: 0; padding: 0; list-style: none; }
-        .scanned li { display: grid; gap: 2px; padding: 10px 0; border-top: 1px solid var(--line); }
-        .scanned li:first-child { border-top: 0; }
-        .scanned li b { font-weight: 800; overflow-wrap: anywhere; }
-        .scanned li span { color: var(--muted); font-size: .85rem; font-weight: 700; direction: rtl; }
-        .scanned li em {
-            margin-inline-end: 6px; padding: 0 8px; border-radius: 999px;
-            font-style: normal; color: #3b2300; background: #fcd34d; font-weight: 900;
-        }
-
         .halls { display: grid; gap: 12px; }
         .halls h2 { margin: 8px 0 0; text-align: center; font-size: 1.2rem; font-weight: 900; }
         .halls a {
@@ -170,7 +157,7 @@
     <main data-checkin data-url="{{ route('osif.checkin.store') }}" data-hall="{{ $hall }}">
         <div class="count" aria-live="polite">
             <div class="mine">
-                <span>البطاقات التي قرأتها <a href="#scanned">عرض القائمة</a></span>
+                <span>البطاقات التي قرأتها <a href="{{ route('osif.checkin.scanned', $canChangeHall ? ['hall' => $hall] : []) }}">عرض القائمة</a></span>
                 <strong data-mine>{{ $stats['mine'] }}</strong>
             </div>
             <p>
@@ -200,24 +187,6 @@
                 <button type="submit" class="btn">تسجيل</button>
             </div>
         </form>
-
-        {{-- Everyone this scanner let into the hall, newest first; each new scan is added at the top. --}}
-        <section class="scanned" id="scanned">
-            <h2>الضيوف الذين قرأت بطاقاتهم</h2>
-            <p class="scanned-empty" data-scanned-empty @if ($scanned) hidden @endif>لم تقرأ أي بطاقة بعد.</p>
-            <ol data-scanned>
-                @foreach ($scanned as $guest)
-                    <li>
-                        <b>{{ $guest['name'] }}</b>
-                        <span>
-                            {{-- Each part kept whole: «12:53 صباحاً» and «OSIF-0007» go opposite ways. --}}
-                            @if ($guest['vip'])<em>VIP</em>@endif
-                            <bdi>{{ $guest['time'] }}</bdi> · <bdi>{{ $guest['code'] }}</bdi>
-                        </span>
-                    </li>
-                @endforeach
-            </ol>
-        </section>
     </main>
     @endif
 
