@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\EventRegistrations\Pages\ListEventRegistrations;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Models\OsifCheckIn;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class OsifCheckInTest extends TestCase
@@ -175,6 +177,16 @@ class OsifCheckInTest extends TestCase
             ->assertJson(['status' => 'checked_in', 'stats' => ['mine' => 1, 'hall' => 1, 'total' => 2]]);
 
         $this->assertSame(3, OsifCheckIn::count());
+
+        // Each scanner's page lists the guests they let in, and no one else's.
+        $this->withoutVite();
+        $this->actingAs($hallOneToo)->get('/osif/checkin')
+            ->assertSee('ضيف آخر', false)
+            ->assertSee($other->invitationCode(), false)
+            ->assertDontSee($guest->invitationCode(), false);
+        $this->actingAs($hallTwo)->get('/osif/checkin')
+            ->assertSee($guest->invitationCode(), false)
+            ->assertDontSee($other->invitationCode(), false);
         $this->assertNotNull($guest->refresh()->checked_in_at);
     }
 
@@ -200,5 +212,27 @@ class OsifCheckInTest extends TestCase
 
         $this->post('/osif-dashboard/logout')->assertRedirect();
         $this->assertGuest();
+    }
+
+    public function test_the_registrations_list_filters_by_hall_and_by_scanner(): void
+    {
+        $guest = $this->osifRegistration();
+        $other = $this->osifRegistration(['name' => 'ضيف آخر']);
+        $hallOne = $this->scanner(1);
+        $hallTwo = $this->scanner(2);
+        OsifCheckIn::create(['event_registration_id' => $guest->getKey(), 'hall' => 1, 'user_id' => $hallOne->getKey(), 'checked_in_at' => now()]);
+        OsifCheckIn::create(['event_registration_id' => $other->getKey(), 'hall' => 2, 'user_id' => $hallTwo->getKey(), 'checked_in_at' => now()]);
+
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]));
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+        Livewire::test(ListEventRegistrations::class)
+            ->filterTable('scanned_by', $hallOne->getKey())
+            ->assertCanSeeTableRecords([$guest])
+            ->assertCanNotSeeTableRecords([$other])
+            ->resetTableFilters()
+            ->filterTable('hall', 2)
+            ->assertCanSeeTableRecords([$other])
+            ->assertCanNotSeeTableRecords([$guest]);
     }
 }

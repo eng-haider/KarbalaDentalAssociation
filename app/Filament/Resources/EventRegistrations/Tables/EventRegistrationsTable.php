@@ -6,6 +6,7 @@ use App\Filament\Resources\EventRegistrations\Actions\SendInvitationAction;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Models\OsifCheckIn;
+use App\Models\User;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -144,6 +145,24 @@ class EventRegistrationsTable
                     ->trueLabel('تم تسجيل الدخول')
                     ->falseLabel('لم يحضر بعد')
                     ->placeholder('الكل'),
+                // Conference day: the guests one hall let in, or one scanner read (their list on the scanning page).
+                SelectFilter::make('hall')
+                    ->label('القاعة')
+                    ->options(OsifCheckIn::HALLS)
+                    ->query(fn (Builder $query, array $data): Builder => filled($data['value'] ?? null)
+                        ? $query->whereHas('checkIns', fn (Builder $checkIns) => $checkIns->where('hall', $data['value']))
+                        : $query),
+                SelectFilter::make('scanned_by')
+                    ->label('قرأ بطاقته')
+                    ->options(fn (): array => User::query()
+                        ->whereIn('id', OsifCheckIn::query()->whereNotNull('user_id')->select('user_id'))
+                        ->orderBy('name')
+                        ->get()
+                        ->mapWithKeys(fn (User $user): array => [$user->getKey() => $user->name.(OsifCheckIn::hallName($user->checkInHall()) ? ' — '.OsifCheckIn::hallName($user->checkInHall()) : '')])
+                        ->all())
+                    ->query(fn (Builder $query, array $data): Builder => filled($data['value'] ?? null)
+                        ? $query->whereHas('checkIns', fn (Builder $checkIns) => $checkIns->where('user_id', $data['value']))
+                        : $query),
                 TernaryFilter::make('owns_clinic')
                     ->label('يمتلك عيادة')
                     ->trueLabel('نعم')

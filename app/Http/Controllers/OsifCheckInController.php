@@ -40,6 +40,7 @@ class OsifCheckInController extends Controller
             'halls' => OsifCheckIn::HALLS,
             'canChangeHall' => ! $request->user()->isOsifScanner(),
             'stats' => $hall ? $this->stats($request->user(), $hall) : null,
+            'scanned' => $hall ? $this->scannedBy($request->user(), $hall) : [],
         ]);
     }
 
@@ -141,6 +142,32 @@ class OsifCheckInController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * The guests this scanner let into this hall, newest first: the list
+     * under their scanner, which each new scan adds to.
+     *
+     * @return list<array{name: string, code: string, time: string, vip: bool}>
+     */
+    private function scannedBy(User $user, int $hall): array
+    {
+        return OsifCheckIn::query()
+            ->where('hall', $hall)
+            ->where('user_id', $user->getKey())
+            ->with('registration')
+            ->latest('checked_in_at')
+            ->latest('id')
+            ->get()
+            ->filter(fn (OsifCheckIn $checkIn): bool => $checkIn->registration !== null)
+            ->map(fn (OsifCheckIn $checkIn): array => [
+                'name' => OsifInvitation::guestName($checkIn->registration),
+                'code' => $checkIn->registration->invitationCode(),
+                'time' => $checkIn->time(),
+                'vip' => (bool) $checkIn->registration->is_vip,
+            ])
+            ->values()
+            ->all();
     }
 
     /** @return array{mine: int, hall: int, total: int} */
