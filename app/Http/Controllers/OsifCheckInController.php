@@ -47,12 +47,18 @@ class OsifCheckInController extends Controller
         }
 
         // Claimed in one statement, so two gates scanning the same card never both admit it.
+        $now = now();
         $checkedIn = EventRegistration::query()
             ->whereKey($registration->getKey())
             ->whereNull('checked_in_at')
-            ->update(['checked_in_at' => now()]);
+            ->update(['checked_in_at' => $now]);
 
-        $registration->refresh();
+        if ($checkedIn) {
+            $registration->checked_in_at = $now;
+        } elseif ($registration->checked_in_at === null) {
+            // Another gate got there between the two queries.
+            $registration->refresh();
+        }
 
         return response()->json([
             'status' => $checkedIn ? 'checked_in' : 'already',
@@ -95,11 +101,14 @@ class OsifCheckInController extends Controller
     /** @return array{checkedIn: int, total: int} */
     private function stats(): array
     {
-        $registrations = $this->osifRegistrations();
+        // Both counts in one query: every scan asks for them.
+        $counts = $this->osifRegistrations()->toBase()
+            ->selectRaw('count(*) as total, count(checked_in_at) as checked_in')
+            ->first();
 
         return [
-            'checkedIn' => (clone $registrations)->whereNotNull('checked_in_at')->count(),
-            'total' => $registrations->count(),
+            'checkedIn' => (int) $counts->checked_in,
+            'total' => (int) $counts->total,
         ];
     }
 
@@ -107,7 +116,6 @@ class OsifCheckInController extends Controller
     private function osifRegistrations(): Builder
     {
         return EventRegistration::query()
-            ->whereHas('event', fn ($event) => $event->where('slug', Event::OSIF_SLUG))
-            ->with('event');
+            ->whereHas('event', fn ($event) => $event->where('slug', Event::OSIF_SLUG));
     }
 }

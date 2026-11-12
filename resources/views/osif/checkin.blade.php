@@ -143,7 +143,7 @@
 
         <form class="manual" data-manual>
             <label for="manual-code">أو اكتب رمز الدعوة المطبوع على البطاقة</label>
-            <p class="reader-note">قارئ QR عبر USB أو Bluetooth جاهز أيضاً: فعّل هذه الصفحة ثم امسح الرمز. يجب ضبط القارئ على وضع لوحة المفاتيح (HID) مع زر Enter بعد القراءة.</p>
+            <p class="reader-note">قارئ QR عبر USB أو Bluetooth جاهز أيضاً: امسح الرمز مباشرة دون الضغط على هذا الحقل، ولو كانت لغة لوحة المفاتيح عربية. يكفي أن يكون القارئ على وضع لوحة المفاتيح (HID).</p>
             <div>
                 <input id="manual-code" name="code" inputmode="text" autocomplete="off" placeholder="OSIF-0012" required>
                 <button type="submit" class="btn">تسجيل</button>

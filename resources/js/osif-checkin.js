@@ -1,7 +1,8 @@
-// The conference-day gate (resources/views/osif/checkin.blade.php): reads the
-// QR code on a guest's invitation with the phone's camera and checks them in.
-// Uses the browser's own BarcodeDetector where there is one (Android Chrome),
-// and jsQR everywhere else (iPhone Safari).
+// The conference-day gate (resources/views/osif/checkin.blade.php): checks a
+// guest in from the QR code on their invitation, read either by the phone's
+// camera or by a USB/Bluetooth QR reader that types like a keyboard.
+// The camera uses the browser's own BarcodeDetector where there is one
+// (Android Chrome), and jsQR everywhere else (iPhone Safari).
 
 import jsQR from 'jsqr';
 
@@ -18,6 +19,12 @@ const TITLES = {
     error: 'لم يتم التسجيل',
 };
 
+/** An invitation link is complete once its 40-character token has arrived. */
+const INVITATION = /\/osif\/invitation\/[A-Za-z0-9]{40}/;
+
+/** A QR reader types far faster than a person; a longer pause ends its burst. */
+const READER_GAP = 80;
+
 function init(root) {
     const csrf = document.querySelector('meta[name="csrf-token"]').content;
     const camera = root.querySelector('[data-camera]');
@@ -25,6 +32,7 @@ function init(root) {
     const cameraMessage = root.querySelector('[data-camera-message]');
     const startButton = root.querySelector('[data-camera-start]');
     const manual = root.querySelector('[data-manual]');
+    const input = manual.elements.code;
     const result = document.querySelector('[data-result]');
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d', { willReadFrequently: true });
@@ -32,17 +40,15 @@ function init(root) {
     let detector = null;
     let scanning = false;
     let lastFrame = 0;
-    // While a request is out or a result is on screen, nothing else is scanned.
-    let busy = false;
+    // One check at a time; a result on screen does not stop the next card.
+    let pending = false;
+    let queued = null;
+    let shownAt = 0;
     // The card just handled stays in front of the camera for a moment; don't read it twice.
     let recent = { code: null, until: 0 };
     let closeTimer = null;
-    // USB/Bluetooth QR readers normally act like a keyboard: they type a URL
-    // very quickly, then send Enter. Keep the page ready for that workflow
-    // even when the manual text box is not focused.
-    let readerBuffer = '';
-    let readerLastKeyAt = 0;
-    let clearReaderBufferTimer = null;
+    // What a keyboard-style QR reader has typed so far.
+    const reader = { text: '', lastAt: 0, swallowUntil: 0 };
 
     setupDetector().finally(startCamera);
 
@@ -50,53 +56,16 @@ function init(root) {
 
     manual.addEventListener('submit', (event) => {
         event.preventDefault();
-        const input = manual.elements.code;
         input.blur();
-        handle(input.value, true).then((status) => {
+        handle(input.value, 'typed').then((status) => {
             if (status === 'checked_in') {
                 input.value = '';
             }
         });
     });
 
-    document.addEventListener('keydown', (event) => {
-        // Let normal typing in the manual field follow its existing form flow.
-        if (document.activeElement === manual.elements.code) {
-            return;
-        }
-
-        if (event.key === 'Enter') {
-            const code = readerBuffer.trim();
-            readerBuffer = '';
-            clearTimeout(clearReaderBufferTimer);
-
-            if (code) {
-                // Stop Enter from activating a focused button or link after a scan.
-                event.preventDefault();
-                handle(code, true);
-            }
-
-            return;
-        }
-
-        if (event.ctrlKey || event.metaKey || event.altKey || event.key.length !== 1) {
-            return;
-        }
-
-        const now = performance.now();
-
-        // A pause means this was ordinary typing rather than one scanner burst.
-        if (now - readerLastKeyAt > 150) {
-            readerBuffer = '';
-        }
-
-        readerBuffer += event.key;
-        readerLastKeyAt = now;
-        clearTimeout(clearReaderBufferTimer);
-        clearReaderBufferTimer = setTimeout(() => {
-            readerBuffer = '';
-        }, 500);
-    });
+    // Capture phase: the reader's keys are seen before they reach the text box.
+    document.addEventListener('keydown', onReaderKey, true);
 
     result.addEventListener('click', close);
 
@@ -108,6 +77,68 @@ function init(root) {
             startCamera();
         }
     });
+
+    /**
+     * USB/Bluetooth readers type the link the QR code holds, usually followed
+     * by Enter. The link is checked the moment its token is complete, so a
+     * reader without Enter works too, and keys are read by their position
+     * rather than their letter, so an Arabic keyboard does not garble it.
+     */
+    function onReaderKey(event) {
+        if (event.ctrlKey || event.metaKey || event.altKey) {
+            return;
+        }
+
+        // When the key was pressed, not when this ran: a busy moment on the page must not split a scan.
+        const now = event.timeStamp;
+        const inBurst = now - reader.lastAt <= READER_GAP;
+        reader.lastAt = now;
+
+        // The rest of a scan already handled: its Enter, Tab or anything after the token.
+        if (inBurst && now < reader.swallowUntil) {
+            event.preventDefault();
+            return;
+        }
+
+        if (event.key === 'Enter') {
+            const text = reader.text;
+            reader.text = '';
+
+            // Anything shorter is someone typing a code in the box: the form handles that.
+            if (inBurst && (text.length >= 15 || (text && document.activeElement !== input))) {
+                event.preventDefault();
+                fromReader(text, now);
+            }
+
+            return;
+        }
+
+        const char = keyChar(event);
+
+        if (char === null) {
+            return;
+        }
+
+        reader.text = (inBurst ? reader.text : '') + char;
+
+        if (INVITATION.test(reader.text)) {
+            event.preventDefault();
+            fromReader(reader.text, now);
+        }
+    }
+
+    function fromReader(text, at) {
+        reader.text = '';
+        reader.swallowUntil = at + 300;
+
+        // A reader that typed into the box leaves no trace there.
+        if (document.activeElement === input) {
+            input.value = '';
+            input.blur();
+        }
+
+        handle(text, 'reader');
+    }
 
     async function setupDetector() {
         if (!('BarcodeDetector' in window)) {
@@ -140,11 +171,13 @@ function init(root) {
         cameraOff('جارٍ تشغيل الكاميرا…', false);
 
         try {
+            // HD instead of the 640×480 many phones give by default: small QR codes read at once.
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: { ideal: 'environment' } },
+                video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
                 audio: false,
             });
 
+            await keepFocusing(stream.getVideoTracks()[0]);
             video.srcObject = stream;
             await video.play();
             camera.classList.remove('is-off');
@@ -154,6 +187,17 @@ function init(root) {
             cameraOff(error?.name === 'NotAllowedError'
                 ? 'لم يُسمح باستخدام الكاميرا. اسمح بها من إعدادات المتصفح ثم اضغط «تشغيل الكاميرا».'
                 : 'تعذّر تشغيل الكاميرا. أغلق أي تطبيق آخر يستخدمها ثم حاول مجدداً.', true);
+        }
+    }
+
+    /** Continuous autofocus where the phone lets the page ask for it (Android); iPhones do it themselves. */
+    async function keepFocusing(track) {
+        try {
+            if (track?.getCapabilities?.().focusMode?.includes('continuous')) {
+                await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+            }
+        } catch {
+            // Focus stays as the camera set it.
         }
     }
 
@@ -181,12 +225,12 @@ function init(root) {
                 return;
             }
 
-            if (!busy && now - lastFrame > 150 && video.readyState >= 2) {
+            if (!pending && now - lastFrame > (detector ? 60 : 100) && video.readyState >= 2) {
                 lastFrame = now;
                 const code = await read();
 
                 if (code) {
-                    handle(code, false);
+                    handle(code, 'camera');
                 }
             }
 
@@ -196,7 +240,7 @@ function init(root) {
         requestAnimationFrame(tick);
     }
 
-    /** The QR code in the middle of the picture (the square the page shows), or null. */
+    /** The QR code inside the frame the page draws over the picture, or null. */
     async function read() {
         if (detector) {
             try {
@@ -214,8 +258,9 @@ function init(root) {
             return null;
         }
 
-        const side = Math.min(width, height);
-        const size = Math.min(side, 640);
+        // The page shows the middle square; the frame covers most of it.
+        const side = Math.min(width, height) * 0.8;
+        const size = Math.round(Math.min(side, 600));
         canvas.width = size;
         canvas.height = size;
         context.drawImage(video, (width - side) / 2, (height - side) / 2, side, side, 0, 0, size, size);
@@ -225,19 +270,39 @@ function init(root) {
         return jsQR(image.data, size, size, { inversionAttempts: 'dontInvert' })?.data || null;
     }
 
-    /** @returns {Promise<string|undefined>} The result's status. */
-    async function handle(value, typed) {
+    /**
+     * @param {'camera'|'reader'|'typed'} source
+     * @returns {Promise<string|undefined>} The result's status.
+     */
+    async function handle(value, source) {
         const code = String(value || '').trim();
 
-        if (!code || busy) {
+        if (!code) {
             return;
         }
 
-        if (!typed && code === recent.code && Date.now() < recent.until) {
+        if (pending) {
+            // A card read during the previous check is checked right after it, not dropped.
+            if (source !== 'camera') {
+                queued = [code, source];
+            }
+
             return;
         }
 
-        busy = true;
+        if (source === 'camera') {
+            if (code === recent.code && Date.now() < recent.until) {
+                return;
+            }
+
+            // Another card replaces a result once it has been seen for a moment.
+            if (shownAt && Date.now() - shownAt < 1000) {
+                return;
+            }
+        }
+
+        close();
+        pending = true;
         let data;
 
         try {
@@ -272,11 +337,19 @@ function init(root) {
             }
         } catch {
             data = { status: 'error', message: 'تعذّر الاتصال بالإنترنت. تأكد من الشبكة ثم أعد المحاولة.' };
+        } finally {
+            pending = false;
         }
 
         // A failed request may be retried at once with the same card.
         recent = data.status === 'error' ? { code: null, until: 0 } : { code, until: Infinity };
         show(data);
+
+        if (queued) {
+            const [next, nextSource] = queued;
+            queued = null;
+            handle(next, nextSource);
+        }
 
         return data.status;
     }
@@ -304,37 +377,108 @@ function init(root) {
 
         result.classList.add('is-open');
         result.querySelector('[data-result-close]').focus();
+        shownAt = Date.now();
         feedback(ok);
 
-        // A welcome goes by itself; a warning waits for a tap so it is seen.
+        // A welcome goes by itself; a warning stays until a tap or the next card.
         if (ok) {
-            closeTimer = setTimeout(close, 2500);
+            closeTimer = setTimeout(close, 1500);
         }
     }
 
     function close() {
         clearTimeout(closeTimer);
-        result.classList.remove('is-open');
 
-        if (recent.code) {
-            recent.until = Date.now() + 5000;
+        if (!shownAt) {
+            return;
         }
 
-        busy = false;
+        result.classList.remove('is-open');
+        shownAt = 0;
+
+        if (recent.code) {
+            recent.until = Date.now() + 4000;
+        }
     }
 }
 
-// Sound needs one tap on the page first (browser rule); vibration works on Android only.
+const SHIFTED_DIGITS = ')!@#$%^&*(';
+
+/** The other keys a link can hold: [plain, with Shift], as on an English keyboard. */
+const SYMBOLS = {
+    Minus: '-_',
+    Equal: '=+',
+    BracketLeft: '[{',
+    BracketRight: ']}',
+    Backslash: '\\|',
+    Semicolon: ';:',
+    Quote: '\'"',
+    Backquote: '`~',
+    Comma: ',<',
+    Period: '.>',
+    Slash: '/?',
+    Space: '  ',
+    NumpadDecimal: '..',
+    NumpadDivide: '//',
+    NumpadMultiply: '**',
+    NumpadSubtract: '--',
+    NumpadAdd: '++',
+};
+
+/**
+ * The character a reader meant by this key. Readers press the keys of an
+ * English keyboard, so the key's position is read rather than the letter the
+ * device's own keyboard language (often Arabic) would put there.
+ */
+function keyChar(event) {
+    const { code, key, shiftKey } = event;
+
+    if (/^Key[A-Z]$/.test(code)) {
+        // An English keyboard gives the letter itself, its case included.
+        if (key?.length === 1 && key.toUpperCase() === code[3]) {
+            return key;
+        }
+
+        return shiftKey ? code[3] : code[3].toLowerCase();
+    }
+
+    if (/^Digit\d$/.test(code)) {
+        if (/^\d$/.test(key)) {
+            return key;
+        }
+
+        return shiftKey ? SHIFTED_DIGITS[code[5]] : code[5];
+    }
+
+    if (/^Numpad\d$/.test(code)) {
+        return code[6];
+    }
+
+    if (SYMBOLS[code]) {
+        return SYMBOLS[code].includes(key) ? key : SYMBOLS[code][shiftKey ? 1 : 0];
+    }
+
+    // Keyboards that report no key position (some phones): the character itself.
+    return event.key?.length === 1 ? event.key : null;
+}
+
+// Sound needs a tap or a key on the page first (browser rule); vibration works on Android only.
 let audio = null;
 
-document.addEventListener('pointerdown', () => {
-    try {
-        audio ??= new (window.AudioContext || window.webkitAudioContext)();
-        audio.resume();
-    } catch {
-        audio = null;
-    }
-});
+function unlockAudio() {
+    // Afterwards, so setting up sound never holds up a reader's keys.
+    setTimeout(() => {
+        try {
+            audio ??= new (window.AudioContext || window.webkitAudioContext)();
+            audio.resume();
+        } catch {
+            audio = null;
+        }
+    });
+}
+
+document.addEventListener('pointerdown', unlockAudio);
+document.addEventListener('keydown', unlockAudio);
 
 function feedback(ok) {
     navigator.vibrate?.(ok ? 120 : [220, 90, 220]);
