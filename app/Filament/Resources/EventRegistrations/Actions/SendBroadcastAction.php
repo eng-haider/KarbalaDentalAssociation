@@ -17,9 +17,25 @@ use RuntimeException;
  */
 class SendBroadcastAction extends Action
 {
+    /** The template this button sends; «msg» (services.adscientist.broadcast_template) when not set. */
+    protected ?string $templateName = null;
+
     public static function getDefaultName(): ?string
     {
         return 'sendBroadcast';
+    }
+
+    /** One button per template: «إرسال رسالة للجميع» sends «msg», a second one another template. */
+    public function template(string $name): static
+    {
+        $this->templateName = $name;
+
+        return $this;
+    }
+
+    public function getTemplateName(): string
+    {
+        return $this->templateName ?? OsifBroadcast::templateName();
     }
 
     protected function setUp(): void
@@ -41,7 +57,7 @@ class SendBroadcastAction extends Action
                 }
 
                 try {
-                    $template = OsifBroadcast::approvedTemplate();
+                    $template = OsifBroadcast::approvedTemplate($this->getTemplateName());
                     $problem = null;
                 } catch (RuntimeException $exception) {
                     $template = null;
@@ -54,11 +70,11 @@ class SendBroadcastAction extends Action
                 $latest = OsifBroadcast::query()->withCount([
                     'messages',
                     'messages as sent_count' => fn ($query) => $query->whereNotNull('sent_at'),
-                ])->latest('id')->first();
+                ])->where('template', $this->getTemplateName())->latest('id')->first();
                 $unfinished = $latest && $latest->sent_count < $latest->messages_count ? $latest : null;
 
                 return view('filament.osif.broadcast-modal', [
-                    'templateName' => $template['name'] ?? OsifBroadcast::templateName(),
+                    'templateName' => $template['name'] ?? $this->getTemplateName(),
                     'body' => $template ? OsifBroadcast::bodyText($template) : null,
                     'needsImage' => $template && OsifBroadcast::needsImage($template),
                     'problem' => $problem,

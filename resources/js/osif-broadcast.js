@@ -33,7 +33,7 @@ async function failure(response) {
     return message || `HTTP ${response.status}`;
 }
 
-window.osifBroadcast = ({ storeUrl, total, needsImage, resume }) => ({
+window.osifBroadcast = ({ storeUrl, template, total, needsImage, resume }) => ({
     status: 'idle', // idle → countdown → (idle on «تراجع») | preparing → running → done | stopped
     queue: [],
     next: 0,
@@ -150,6 +150,7 @@ window.osifBroadcast = ({ storeUrl, total, needsImage, resume }) => ({
     async upload() {
         this.status = 'preparing';
         const body = new FormData();
+        body.append('template', template);
 
         if (this.image) {
             body.append('image', this.image);

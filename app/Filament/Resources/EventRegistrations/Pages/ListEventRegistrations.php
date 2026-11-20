@@ -10,6 +10,7 @@ use App\Filament\Resources\EventRegistrations\Actions\SendBroadcastAction;
 use App\Filament\Resources\EventRegistrations\EventRegistrationResource;
 use App\Filament\Widgets\OsifProfessionalTitleCountsWidget;
 use App\Filament\Widgets\OsifRegistrationStatsWidget;
+use App\Models\OsifBroadcast;
 use Filament\Actions\CreateAction;
 use Filament\Facades\Filament;
 use Filament\Resources\Pages\ListRecords;
@@ -26,6 +27,12 @@ class ListEventRegistrations extends ListRecords
         return [
             SendAllInvitationsAction::make(),
             SendBroadcastAction::make(),
+            // The «whait_lap» template, to everyone registered, from its own button.
+            SendBroadcastAction::make('sendLabBroadcast')
+                ->template(OsifBroadcast::labTemplateName())
+                ->label('إرسال رسالة whait_lap للجميع')
+                ->icon(Heroicon::OutlinedPhoto)
+                ->modalHeading('إرسال رسالة whait_lap لكل المسجّلين'),
             ReturnUndeliveredInvitationsAction::make(),
             ExportNumbersAction::make(),
             ExportRegistrationsAction::make(),

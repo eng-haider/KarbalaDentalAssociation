@@ -8,6 +8,7 @@ use App\Support\OsifInvitation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use RuntimeException;
 
 /**
@@ -24,7 +25,10 @@ class OsifBroadcastController extends Controller
         $validator = Validator::make($request->all(), [
             // WhatsApp takes JPEG or PNG images up to 5 MB.
             'image' => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:5120'],
+            // Which button was pressed; «msg» when none is named.
+            'template' => ['nullable', 'string', Rule::in(OsifBroadcast::templateNames())],
         ], [
+            'template.in' => 'هذا القالب غير متاح للإرسال للجميع.',
             'image.file' => 'تعذّر رفع الصورة. اختر الصورة مرة أخرى.',
             'image.mimes' => 'الصورة يجب أن تكون JPG أو PNG.',
             'image.max' => 'حجم الصورة يجب ألا يتجاوز 5 ميغابايت.',
@@ -35,7 +39,7 @@ class OsifBroadcastController extends Controller
         }
 
         try {
-            $broadcast = OsifBroadcast::start($request->user(), $request->file('image'));
+            $broadcast = OsifBroadcast::start($request->user(), $request->file('image'), $request->input('template'));
         } catch (RuntimeException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
         }

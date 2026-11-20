@@ -29,6 +29,7 @@ class OsifBroadcastTest extends TestCase
         config([
             'services.adscientist.key' => 'test-key',
             'services.adscientist.broadcast_template' => 'msg',
+            'services.adscientist.lab_template' => 'whait_lap',
             'services.adscientist.phone_number_id' => '737599209436750',
         ]);
     }
@@ -51,6 +52,14 @@ class OsifBroadcastTest extends TestCase
                 'components' => [
                     ['type' => 'HEADER', 'format' => 'IMAGE'],
                     ['type' => 'BODY', 'text' => $this->templateBody],
+                ],
+            ], [
+                'name' => 'whait_lap',
+                'language' => 'ar',
+                'status' => 'APPROVED',
+                'components' => [
+                    ['type' => 'HEADER', 'format' => 'IMAGE'],
+                    ['type' => 'BODY', 'text' => 'رسالة المختبر'],
                 ],
             ]]]),
             'ai.adscientist.iq/v1/media/upload' => Http::response(['success' => true, 'data' => ['id' => 'media-123']]),
@@ -217,5 +226,47 @@ class OsifBroadcastTest extends TestCase
             ->assertMountedActionModalSee('اختيار الصورة');
 
         Http::assertNotSent(fn (Request $request): bool => str_ends_with($request->url(), '/messages/send-template'));
+    }
+
+    public function test_the_whait_lap_button_sends_its_own_template_to_everyone(): void
+    {
+        $this->withoutVite();
+        $this->fakeAdScientist();
+        $this->registration();
+        $this->registration(['name' => 'ثاني', 'phone' => '07700000002']);
+        $this->sender();
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+        Livewire::test(ListEventRegistrations::class)
+            ->mountAction('sendLabBroadcast')
+            ->assertMountedActionModalSee('رسالة المختبر')
+            ->assertMountedActionModalSee('ستُرسل إلى 2 رقم واتساب');
+
+        $queue = $this->post('/osif/broadcasts', ['template' => 'whait_lap', 'image' => UploadedFile::fake()->image('lab.jpg')], ['Accept' => 'application/json'])
+            ->assertOk()
+            ->json('queue');
+
+        $this->assertSame('whait_lap', OsifBroadcast::sole()->template);
+
+        foreach ($queue as $item) {
+            $this->postJson($item['url'])->assertOk();
+        }
+
+        $sends = Http::recorded(fn (Request $request): bool => str_ends_with($request->url(), '/messages/send-template'))->values();
+        $this->assertCount(2, $sends);
+        $this->assertSame('whait_lap', $sends[0][0]->data()['templateName']);
+        $this->assertSame('9647801234567', $sends[0][0]->data()['phoneNumber']);
+    }
+
+    public function test_only_the_dashboard_templates_can_be_broadcast(): void
+    {
+        $this->fakeAdScientist();
+        $this->registration();
+        $this->sender();
+
+        $this->post('/osif/broadcasts', ['template' => 'oct_26'], ['Accept' => 'application/json'])
+            ->assertStatus(422);
+
+        $this->assertSame(0, OsifBroadcast::count());
     }
 }

@@ -45,6 +45,22 @@ class OsifBroadcast extends Model
         return (string) config('services.adscientist.broadcast_template');
     }
 
+    public static function labTemplateName(): string
+    {
+        return (string) config('services.adscientist.lab_template');
+    }
+
+    /**
+     * The templates the dashboard has a «send to everyone» button for; the
+     * server sends no other, whatever a request asks for.
+     *
+     * @return list<string>
+     */
+    public static function templateNames(): array
+    {
+        return array_values(array_unique(array_filter([static::templateName(), static::labTemplateName()])));
+    }
+
     /**
      * The template as Ad Scientist holds it, once it is one this button can
      * send: approved, with no {{1}} to fill in, and an image or text header.
@@ -127,9 +143,9 @@ class OsifBroadcast extends Model
      *
      * @throws RuntimeException when the template or the image cannot be used.
      */
-    public static function start(User $user, ?UploadedFile $image): self
+    public static function start(User $user, ?UploadedFile $image, ?string $templateName = null): self
     {
-        $template = static::approvedTemplate();
+        $template = static::approvedTemplate($templateName);
         $path = $mediaId = null;
 
         if (static::needsImage($template)) {
@@ -171,10 +187,10 @@ class OsifBroadcast extends Model
         });
     }
 
-    /** The latest broadcast while some of its numbers are still waiting; null once it has reached them all. */
-    public static function unfinished(): ?self
+    /** The latest broadcast (of that template) while some of its numbers are still waiting; null once it has reached them all. */
+    public static function unfinished(?string $template = null): ?self
     {
-        $latest = static::query()->latest('id')->first();
+        $latest = static::query()->when($template, fn ($query) => $query->where('template', $template))->latest('id')->first();
 
         return $latest?->pending()->exists() ? $latest : null;
     }

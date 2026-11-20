@@ -14,7 +14,7 @@
 
 {{-- wire:ignore keeps the run going while the list behind the dialog refreshes. --}}
 <div wire:ignore
-     x-data="osifBroadcast(@js(['storeUrl' => $storeUrl, 'total' => $total, 'needsImage' => $needsImage, 'resume' => $resume['queue'] ?? []]))"
+     x-data="osifBroadcast(@js(['storeUrl' => $storeUrl, 'template' => $templateName, 'total' => $total, 'needsImage' => $needsImage, 'resume' => $resume['queue'] ?? []]))"
      class="osif-cast">
     <style>
         .osif-cast { display: grid; gap: 1rem; }
