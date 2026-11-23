@@ -117,11 +117,12 @@ class AdScientist
      * send reached it. A file without a recipient_status column, such as
      * «تصدير الأرقام» makes, is already a list of them.
      *
+     * @param  string|null  $template  Only that template's rows, when the report has a template_name column.
      * @return list<string> As WhatsApp::number() writes them.
      *
      * @throws RuntimeException when the file has no phone_number column.
      */
-    public static function failedNumbers(string $path): array
+    public static function failedNumbers(string $path, ?string $template = null): array
     {
         $rows = IOFactory::load($path, 0, [IOFactory::READER_CSV, IOFactory::READER_XLSX])
             ->getActiveSheet()
@@ -131,6 +132,7 @@ class AdScientist
         $columns = array_map(fn ($heading): string => str_replace(' ', '_', strtolower(trim((string) $heading))), array_shift($rows) ?? []);
         $phoneColumn = array_search('phone_number', $columns, true);
         $statusColumn = array_search('recipient_status', $columns, true);
+        $templateColumn = $template === null ? false : array_search('template_name', $columns, true);
 
         if ($phoneColumn === false) {
             throw new RuntimeException('لا يحتوي الملف على عمود phone_number: ارفع تقرير الإرسال من Ad Scientist، أو ملف أرقام فيه هذا العمود.');
@@ -139,6 +141,10 @@ class AdScientist
         $failed = $reached = [];
 
         foreach ($rows as $row) {
+            if ($templateColumn !== false && trim((string) ($row[$templateColumn] ?? '')) !== $template) {
+                continue;
+            }
+
             // Excel keeps a long number as a float.
             $phone = $row[$phoneColumn] ?? null;
             $number = WhatsApp::number(is_float($phone) ? number_format($phone, 0, '', '') : (string) $phone);

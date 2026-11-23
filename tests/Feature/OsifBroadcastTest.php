@@ -258,6 +258,64 @@ class OsifBroadcastTest extends TestCase
         $this->assertSame('9647801234567', $sends[0][0]->data()['phoneNumber']);
     }
 
+    public function test_the_numbers_the_report_shows_as_failed_are_sent_again_and_no_one_else(): void
+    {
+        $this->withoutVite();
+        $this->fakeAdScientist();
+        $this->registration(['phone' => '07717078987']);
+        $this->registration(['name' => 'وصلته', 'phone' => '07700000002']);
+        $this->registration(['name' => 'غير موجود على واتساب', 'phone' => '07730421414']);
+        $this->registration(['name' => 'فشلت له msg فقط', 'phone' => '07700000004']);
+        $this->sender();
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+        // Sent, but Meta refused two of them afterwards.
+        $queue = $this->post('/osif/broadcasts', ['template' => 'whait_lap', 'image' => UploadedFile::fake()->image('lab.jpg')], ['Accept' => 'application/json'])
+            ->json('queue');
+
+        foreach ($queue as $item) {
+            $this->postJson($item['url'])->assertOk();
+        }
+
+        $broadcast = OsifBroadcast::sole();
+        $this->assertNull(OsifBroadcast::unfinished('whait_lap'));
+
+        // As exported from the Ad Scientist dashboard.
+        $report = UploadedFile::fake()->createWithContent('External_Executions_All_2026-11-23.csv', implode("\n", [
+            'execution_name,execution_created_at,template_name,template_category,execution_status,phone_number,recipient_status,sent_at,delivered_at,read_at,wa_message_id,error_code,error_message',
+            '"whait_lap — 2026-11-20","20/11/2026, 23:33:40","whait_lap","MARKETING","partial","9647717078987","failed","20/11/2026, 23:33:40","","","wamid.1","131048","Spam Rate limit hit"',
+            '"whait_lap — 2026-11-20","20/11/2026, 23:30:36","whait_lap","MARKETING","partial","9647730421414","failed","20/11/2026, 23:30:36","","","wamid.2","131026","Message undeliverable"',
+            '"msg — 2026-11-18","18/11/2026, 21:00:00","msg","MARKETING","partial","9647700000004","failed","18/11/2026, 21:00:00","","","wamid.3","131048","Spam Rate limit hit"',
+        ]));
+
+        Livewire::test(ListEventRegistrations::class)
+            ->assertActionVisible('returnUndeliveredBroadcast')
+            ->callAction('returnUndeliveredBroadcast', data: ['template' => 'whait_lap', 'report' => $report])
+            ->assertHasNoFormErrors()
+            ->assertNotified('عادت 2 رسالة (whait_lap) إلى الانتظار');
+
+        $this->assertSame(['9647717078987', '9647730421414'], $broadcast->pending()->orderBy('id')->pluck('phone')->all());
+        $this->assertTrue(OsifBroadcast::unfinished('whait_lap')->is($broadcast));
+
+        // The whait_lap dialog offers to carry on with those two only.
+        Livewire::test(ListEventRegistrations::class)
+            ->mountAction('sendLabBroadcast')
+            ->assertMountedActionModalSee('متابعة الإرسال')
+            ->assertMountedActionModalSee('يكمل الباقين (2)');
+
+        foreach ($broadcast->pending()->orderBy('id')->get() as $message) {
+            $this->postJson($message->queueItem()['url'])->assertOk();
+        }
+
+        // After the four of the first run.
+        $resent = Http::recorded(fn (Request $request): bool => str_ends_with($request->url(), '/messages/send-template'))->values()->slice(4)->values();
+        $this->assertSame(['9647717078987', '9647730421414'], $resent->map(fn ($pair) => $pair[0]->data()['phoneNumber'])->all());
+        $this->assertSame('whait_lap', $resent[0][0]->data()['templateName']);
+        // The same image as the first run, without uploading it again.
+        $this->assertSame('media-123', $resent[0][0]->data()['components'][0]['parameters'][0]['image']['media_id']);
+        $this->assertSame(0, $broadcast->pending()->count());
+    }
+
     public function test_only_the_dashboard_templates_can_be_broadcast(): void
     {
         $this->fakeAdScientist();

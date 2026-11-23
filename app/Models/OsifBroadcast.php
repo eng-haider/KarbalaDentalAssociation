@@ -195,6 +195,30 @@ class OsifBroadcast extends Model
         return $latest?->pending()->exists() ? $latest : null;
     }
 
+    /**
+     * Puts the numbers WhatsApp did not deliver back to waiting in the latest
+     * broadcast of that template, so its «متابعة الإرسال» sends them again,
+     * with the same image, and no one else. Ad Scientist accepts a message
+     * before Meta decides (a spam limit, a number not on WhatsApp), so it was
+     * recorded as sent; only the sending report shows it failed.
+     *
+     * @param  list<string>  $numbers  As WhatsApp::number() writes them.
+     * @return int How many went back.
+     */
+    public static function returnUndelivered(string $template, array $numbers): int
+    {
+        $broadcast = static::query()->where('template', $template)->latest('id')->first();
+
+        if (! $broadcast || $numbers === []) {
+            return 0;
+        }
+
+        return $broadcast->messages()
+            ->whereNotNull('sent_at')
+            ->whereIn('phone', $numbers)
+            ->update(['sent_at' => null, 'claimed_at' => null, 'error' => null]);
+    }
+
     public function pending(): HasMany
     {
         return $this->messages()->whereNull('sent_at');

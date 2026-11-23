@@ -4,6 +4,7 @@ namespace App\Filament\Resources\EventRegistrations\Pages;
 
 use App\Filament\Resources\EventRegistrations\Actions\ExportNumbersAction;
 use App\Filament\Resources\EventRegistrations\Actions\ExportRegistrationsAction;
+use App\Filament\Resources\EventRegistrations\Actions\ReturnUndeliveredBroadcastAction;
 use App\Filament\Resources\EventRegistrations\Actions\ReturnUndeliveredInvitationsAction;
 use App\Filament\Resources\EventRegistrations\Actions\SendAllInvitationsAction;
 use App\Filament\Resources\EventRegistrations\Actions\SendBroadcastAction;
@@ -34,6 +35,7 @@ class ListEventRegistrations extends ListRecords
                 ->icon(Heroicon::OutlinedPhoto)
                 ->modalHeading('إرسال رسالة whait_lap لكل المسجّلين'),
             ReturnUndeliveredInvitationsAction::make(),
+            ReturnUndeliveredBroadcastAction::make(),
             ExportNumbersAction::make(),
             ExportRegistrationsAction::make(),
             CreateAction::make()
